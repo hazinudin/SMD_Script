@@ -1,0 +1,23 @@
+{
+  "gdb_conn": "Database Connections\\ELRS@GEODBBM 144.sde",
+  "LRS_Network": "ELRS.National_Network2018",
+  "in_MXD_file": "C:/Users/Asus/Documents/ArcGIS/blank_doc.mxd",
+  "out_MXD_path": "C:/Users/Asus/Documents/ArcGIS/",
+  "GISServer_folder": "Data_2018",
+  "ArcGIS_Server_conn": "GIS Servers/arcgis on gisserver.binamarga.pu.go.id_6443 (admin).ags",
+  "roughness": [
+    {"length": 8, "null": true, "type": "DATE", "name": "FROMDATE"},
+    {"length": 8, "null": true, "type": "DATE", "name": "TODATE"},
+    {"length": 38, "null": false, "type": "TEXT", "name": "EVENTID"},
+    {"length": 255, "null": false, "type": "TEXT", "name": "ROUTEID"},
+    {"length": 8, "null": false, "type": "DOUBLE", "name": "FROMMEASURE"},
+    {"length": 8, "null": false, "type": "DOUBLE", "name": "TOMEASURE"},
+    {"length": 8, "null": true, "type": "DOUBLE", "name": "IRI"},
+    {"length": 2, "null": true, "type": "SHORT", "name": "YEAR"},
+    {"length": 50, "null": true, "type": "TEXT", "name": "SEMESTER"},
+    {"length": 50, "null": true, "type": "TEXT", "name": "DIRECTION"},
+    {"length": 8, "null": true, "type": "DATE", "name": "SURV_DATE"},
+    {"length": 50, "null": true, "type": "TEXT", "name": "CODE_LANE"},
+    {"length": 50, "null": true, "type": "TEXT", "name": "PROV"}
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "arcgis_server":{
+    "token_url":"https://gisportal.binamarga.pu.go.id/arcgis/sharing/rest/generateToken",
+    "username":"subditadps",
+    "password":"data0217210371"
+  },
+  "smd_database":{
+    "instance":"ELRS@GEODBBM 144.sde",
+    "username":"ELRS",
+    "password":"ELRS"
+  },
+  "table_names":{
+    "lrs_network":"ELRS.National_Network2018",
+    "balai_table":"ELRS.All_Balai_Prov",
+    "rni": "ELRS.RAW_RNI_2018_2"
+  },
+  "table_fields":{
+    "lrs_network":{
+      "route_id":"ROUTEID",
+      "route_name":"ROUTE_NAME"
+    },
+    "rni":{
+      "route_id":"LINKID",
+      "lane_code":"LANE_CODE",
+      "from_measure":"FROMMEASURE",
+      "to_measure":"TOMEASURE"
+    }
+  }
+}
