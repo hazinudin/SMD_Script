@@ -2,7 +2,8 @@
   "arcgis_server":{
     "token_url":"https://gisportal.binamarga.pu.go.id/arcgis/sharing/rest/generateToken",
     "username":"subditadps",
-    "password":"data0217210371"
+    "password":"data0217210371",
+    "referer":"https://gisserver.binamarga.pu.go.id:6443/arcgis/admin"
   },
   "smd_database":{
     "instance":"ELRS@GEODBBM 144.sde",
