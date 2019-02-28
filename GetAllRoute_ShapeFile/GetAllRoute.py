@@ -102,7 +102,7 @@ class RouteFinder(object):
 
 
 # Change the directory to the SMD Script root folder
-os.chdir('D:\SMD_Script')
+os.chdir('E:\SMD_Script')
 
 # Get the parameter for script
 inputJSON = GetParameterAsText(0)

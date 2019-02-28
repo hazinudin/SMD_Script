@@ -1,4 +1,9 @@
-from arcpy import da, GetParameterAsText, SetParameterAsText, Exists, env
+"""
+This script get all route from the specified code(Kode Balai or Kode Provinsi) in the input JSON and return the query
+result in a form of string JSON.
+"""
+
+from arcpy import da, GetParameterAsText, SetParameterAsText, Exists, env, AddMessage
 import json
 import os
 
@@ -24,95 +29,80 @@ def results_output(status, type, results):
     return json.dumps(results_dict)
 
 
-def route_prov_query(LRS_Network_FC, LRS_Network_FC_ProvCode, LRS_Network_FC_RouteID, ALL=True, prov_codes=None):
-    """Select all route from selected province."""
-    query_rslt = []
+class RouteFinder(object):
+    def __init__(self, query_type, query_value, lrs_network, lrs_routeid, lrs_prov_code, balai_table,
+                 balai_code_field, balai_prov_field):
 
-    if ALL:
-        with da.SearchCursor(LRS_Network_FC, [LRS_Network_FC_ProvCode], where_clause="1=1") as prov_cursor:
-            for prov_row in prov_cursor:
-                prov_code = prov_row[0]
-                routes = []
+        # Check for query value type
+        if query_value == "ALL":  # If the query value is 'ALL'
+            pass
+        else:
+            if type(query_value) == unicode:
+                query_value = [str(query_value)]
+            elif type(query_value) == list:
+                query_value = [str(x) for x in query_value]
 
-                # Only load route in the current province
-                with da.SearchCursor(LRS_Network_FC, [LRS_Network_FC_RouteID],
-                                     where_clause='{0} = {1}'.format(LRS_Network_FC_ProvCode, prov_code)) as route_cursor:
-                    for route_row in route_cursor:
-                        routes.append(route_row[0])
+        self.lrs_network = lrs_network
+        self.lrs_routeid = lrs_routeid
+        self.lrs_prov_code = lrs_prov_code
+        self.query_type = query_type
+        self.string_json_output = None
 
-                result = {"code": prov_code, "routes": routes}
+        balai_prov_dict = {}  # Create a "prov": "kode_balai" dictionary
+        self.balai_route_dict = {}  # Create a "prov": [list of route_id] dictionary
+        self.results_list = [] # Create a list for storing the route query result for every code
 
-                query_rslt.append(result)
-    else:
+        # If the query type is based on province code and not all province are requested
+        if query_type == 'no_prov' and query_value != "ALL":
+            sql_statement = '{0} in ({1})'.format(balai_prov_field, str(query_value).strip('[]'))
+        else:
+            if query_value == "ALL":  # If the requested value is all the same
+                sql_statement = None
+            if query_type == 'balai' and query_value != "ALL":
+                sql_statement = '{0} in ({1})'.format(balai_code_field, str(query_value).strip('[]'))
 
-        # Only load route in the current province
-        for prov_code in prov_codes:
-            routes = []
-            with da.SearchCursor(LRS_Network_FC, [LRS_Network_FC_RouteID],
-                                 where_clause='{0} = {1}'.format(LRS_Network_FC_ProvCode, prov_code)) as route_cursor:
-                for route_row in route_cursor:
-                    routes.append(route_row[0])
+        # Start the balai and prov query from the balai_prov table in geodatabase
+        with da.SearchCursor(balai_table, [balai_prov_field, balai_code_field], where_clause=sql_statement,
+                             sql_clause=('DISTINCT', None)) as search_cursor:
+            for row in search_cursor:
+                balai_prov_dict[str(row[0])] = str(row[1])
 
-            result = {"code": prov_code, "routes": routes}
+        self.balai_prov_dict = balai_prov_dict  # Return a kode balai and province relation dictionary
 
-            query_rslt.append(result)
+    def route_query(self):
+        """
+        This function will find the route based on requested province
+        """
+        balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
 
-    return query_rslt
+        # Start iterating over the requested province
+        for prov_code in self.balai_prov_dict:
+            kode_balai = self.balai_prov_dict[prov_code]
+            with da.SearchCursor(self.lrs_network, [self.lrs_routeid],
+                                 where_clause='{0}=({1})'.format(self.lrs_prov_code, prov_code)) as search_cursor:
+                if kode_balai not in balai_route_dict:
+                    balai_route_dict[kode_balai] = [str(row[0]) for row in search_cursor]
+                else:
+                    balai_route_dict[kode_balai] += [str(row[0]) for row in search_cursor]
 
+        self.balai_route_dict = balai_route_dict
+        return self
 
-def route_balai_query(LRS_Network_FC, balai_table, BalaiTable_Prov, BalaiTable_Code, LRS_Network_FC_ProvCode,
-                      LRS_Network_FC_RouteID, ALL=True, balai_list=None):
-    """Select all route from selected balai"""
-    query_rslt = []
+    def create_json_output(self):
+        """
+        This funtion create the JSON string to be used as the output of the script
+        """
+        for balai in self.balai_route_dict:
+            route_list = self.balai_route_dict[balai]
+            result_object = {"code":str(balai), "routes":route_list}
+            self.results_list.append(result_object)
 
-    if ALL:
-
-        # Create a list containing all distinct Balai code
-        all_balai_list = []
-        with da.SearchCursor(balai_table, [BalaiTable_Code], sql_clause=('DISTINCT', None)) as All_cursor:
-            for row in All_cursor:
-                all_balai_list.append(row[0])
-
-        # Loop for every balai code available
-        for balai in all_balai_list:
-            with da.SearchCursor(balai_table, [BalaiTable_Prov],
-                                 where_clause="{0}='{1}'".format(BalaiTable_Code, balai)) as balai_cursor:
-                for row in balai_cursor:
-                    # Get the province code
-                    prov_code = row[0]
-                    routes = []
-                    with da.SearchCursor(LRS_Network_FC, [LRS_Network_FC_RouteID],
-                                         where_clause="{0}='{1}'".format(LRS_Network_FC_ProvCode,
-                                                                         prov_code)) as route_cursor:
-                        for route_row in route_cursor:
-                            routes.append(route_row[0])
-
-            result = {"code": balai, "routes": routes}
-
-            query_rslt.append(result)
-    else:
-
-        for balai in balai_list:
-            with da.SearchCursor(balai_table, [BalaiTable_Prov],
-                                 where_clause="{0}='{1}'".format(BalaiTable_Code, balai)) as balai_cursor:
-                for row in balai_cursor:
-                    prov_code = row[0]
-                    routes = []
-                    with da.SearchCursor(LRS_Network_FC, [LRS_Network_FC_RouteID],
-                                         where_clause="{0}='{1}'".format(LRS_Network_FC_ProvCode,
-                                                                         prov_code)) as route_cursor:
-                        for route_row in route_cursor:
-                            routes.append(route_row[0])
-
-            result = {"code": balai, "routes": routes}
-
-            query_rslt.append(result)
-
-    return query_rslt
+        self.string_json_output = results_output("Succeeded", self.query_type, self.results_list)
+        return self
 
 
 # Change the directory to the SMD Script root folder
-os.chdir('D:\SMD_Script')
+os.chdir('E:\SMD_Script')
 
 # Get the parameter for script
 inputJSON = GetParameterAsText(0)
@@ -172,50 +162,9 @@ for table in [balaiTable, lrsNetwork]:
         SetParameterAsText(1, output_message("Failed", message))
         raise
 
-
-# Start the query process
-# If the query type is based on province code
-if queryType == 'no_prov':
-
-    # Get all route from all province
-    if queryValue == 'ALL':
-        query_result = route_prov_query(lrsNetwork, lrs_ProvCode_field, lrs_RouteID_field, ALL=True)
-        SetParameterAsText(1, results_output("Succeeded", queryType, query_result))
-
-    # If the value is not ALL then select based on defined province in the input JSON
-    else:
-        provList = []
-
-        if type(queryValue) == str:
-            provList.append(str(queryValue))
-        else:
-            for prov in queryValue:
-                provList.append(str(prov))
-
-        query_result = route_prov_query(lrsNetwork, lrs_ProvCode_field, lrs_RouteID_field, ALL=False,
-                                        prov_codes=provList)
-        SetParameterAsText(1, results_output("Succeeded", queryType, query_result))
-
-
-# If the query is based on balai based
-elif queryType == 'balai':
-
-    # Get all route from all Balai
-    if queryValue == 'ALL':
-        query_result = route_balai_query(lrsNetwork, balaiTable, balaiTable_ProvCode_field, balaiTable_BalaiCode_field,
-                                         lrs_ProvCode_field, lrs_RouteID_field, ALL=True)
-        SetParameterAsText(1, results_output("Succeeded", queryType, query_result))
-
-    # If the value is not all then select based on defined Balai in the input JSON
-    else:
-        balaiList = []
-
-        if type(queryValue) == str:
-            balaiList.append(str(queryValue))
-        else:
-            for prov in queryValue:
-                balaiList.append(str(prov))
-
-        query_result = route_balai_query(lrsNetwork, balaiTable, balaiTable_ProvCode_field, balaiTable_BalaiCode_field,
-                                         lrs_ProvCode_field, lrs_RouteID_field, ALL=False, balai_list=balaiList)
-        SetParameterAsText(1, results_output("Succeeded", queryType, query_result))
+# Creating the route query request object
+route_query_request = RouteFinder(queryType, queryValue, lrsNetwork, lrs_RouteID_field, lrs_ProvCode_field, balaiTable,
+                                  balaiTable_BalaiCode_field, balaiTable_ProvCode_field)
+route_query_request.route_query()  # Start the query process
+route_query_request.create_json_output()  # Creating the string json output
+SetParameterAsText(1, route_query_request.string_json_output)

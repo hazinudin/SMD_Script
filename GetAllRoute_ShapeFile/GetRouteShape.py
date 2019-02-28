@@ -341,7 +341,7 @@ class DictionaryToFeatureClass(object):
 
 
 # Change the directory
-os.chdir('D:/SMD_Script')
+os.chdir('E:/SMD_Script')
 
 # Get the script parameter
 inputJSON = GetParameterAsText(0)
