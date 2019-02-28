@@ -195,11 +195,12 @@ class DictionaryToFeatureClass(object):
         self.polyline_output = None
         self.point_output = None
 
-    def segments_polyline(self, shapefile_name):
+    def segments_polyline(self):
         """
         This function gets all the shape from every segments from the LRS network feature class, then write it to a
         output shapefile.
         """
+        shapefile_name = 'Segmen_Lane.shp'
         # Create new empty shapefile
         CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
                                       spatial_reference=self.spatial_reference)
@@ -260,10 +261,11 @@ class DictionaryToFeatureClass(object):
         self.polyline_count = polyline_feature_count  # Shapefile feature count
         self.polyline_fc_name = shapefile_name  # Shapefile name
 
-    def routes_start_end_point(self, shapefile_name):
+    def routes_start_end_point(self):
         """
         This function creates a shapefile containing the start and end point for every requested routes
         """
+        shapefile_name = 'Titik_Awal_Akhir_Ruas.shp'
         # Create a new empty shapefile
         CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POINT',
                                       spatial_reference=self.spatial_reference)
@@ -328,7 +330,7 @@ class DictionaryToFeatureClass(object):
         result_format = {"requested_routes":route_list, "polyline_fc":polyline feature class name,
         "polyline_count":count, "point_fc":point feature class name, "point_count":count}
         """
-        result = {"requesetd_routes": self.route_list, "polyline_fc": self.polyline_fc_name,
+        result = {"requested_routes": self.route_list, "polyline_fc": self.polyline_fc_name,
                   "polyline_count": self.polyline_count, "point_fc": self.point_fc_name,
                   "point_count": self.point_feature_count}
 
@@ -390,8 +392,8 @@ if ConnectionCheck.all_connected:
         # Create the shapefile from the segment created by the dissolve segment function
         RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
                                                    DissolvedSegmentDict)
-        RouteGeometries.segments_polyline('tes_segmented_routes.shp')  # Create the polyline shapefile
-        RouteGeometries.routes_start_end_point('tes_awal_akhir_ruas.shp')  # Create the point shapefile
+        RouteGeometries.segments_polyline()  # Create the polyline shapefile
+        RouteGeometries.routes_start_end_point()  # Create the point shapefile
 
         SetParameter(2, RouteGeometries.polyline_output)
         SetParameter(3, RouteGeometries.point_output)

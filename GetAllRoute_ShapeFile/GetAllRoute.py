@@ -168,3 +168,4 @@ route_query_request = RouteFinder(queryType, queryValue, lrsNetwork, lrs_RouteID
 route_query_request.route_query()  # Start the query process
 route_query_request.create_json_output()  # Creating the string json output
 SetParameterAsText(1, route_query_request.string_json_output)
+SetParameterAsText(2, inputJSON)
