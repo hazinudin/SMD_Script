@@ -29,8 +29,12 @@ class TokenGenerator(object):
                                   context=tlsv1_context).read()  # Get the response
         response_dict = json.loads(response)  # Read the response JSON
 
-        self.token = response_dict['token']
-        self.expiration = response_dict['expires']
+        if "token" not in response_dict:
+            self.failed_response = response_dict
+            print "Token generation failed"
+        else:
+            self.token = response_dict['token']
+            self.expiration = response_dict['expires']
 
 
 # If the script is not imported
