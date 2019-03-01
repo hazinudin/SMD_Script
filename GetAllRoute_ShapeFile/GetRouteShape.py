@@ -8,6 +8,7 @@ from arcpy import env, GetParameterAsText, SetParameter, da, CreateFeatureclass_
 import os
 import json
 import pandas as pd
+import zipfile
 
 
 def results_output(status, results):
@@ -194,8 +195,9 @@ class DictionaryToFeatureClass(object):
 
         self.polyline_output = None
         self.point_output = None
+        self.zip_output = None
 
-    def segments_polyline(self):
+    def create_segment_polyline(self):
         """
         This function gets all the shape from every segments from the LRS network feature class, then write it to a
         output shapefile.
@@ -261,7 +263,7 @@ class DictionaryToFeatureClass(object):
         self.polyline_count = polyline_feature_count  # Shapefile feature count
         self.polyline_fc_name = shapefile_name  # Shapefile name
 
-    def routes_start_end_point(self):
+    def create_start_end_point(self):
         """
         This function creates a shapefile containing the start and end point for every requested routes
         """
@@ -341,6 +343,24 @@ class DictionaryToFeatureClass(object):
 
         return output_json_string
 
+    def create_zipfile(self):
+        """
+        This class method will create a zipfile within the scratchFolder directory of the class.
+        :return:
+        """
+
+        zip_output = 'GetRouteResults'
+        zip_output_path = '{0}/{1}'.format(self.outpath, zip_output)
+
+        with zipfile.ZipFile(zip_output_path+'.zip', 'w') as newzip:
+            for fc_name in [self.polyline_fc_name, self.point_fc_name]:
+                fc_name = fc_name.replace('.shp', '')
+                for file_extension in ['.cpg', '.dbf', '.shp', '.shx', '.prj', '.shp.xml']:
+                    newzip.write('{0}/{1}'.format(self.outpath, fc_name+file_extension), fc_name+file_extension)
+
+        self.zip_output = zip_output_path+'.zip'
+        return self
+
 
 # Change the directory
 os.chdir('E:/SMD_Script')
@@ -392,19 +412,22 @@ if ConnectionCheck.all_connected:
         # Create the shapefile from the segment created by the dissolve segment function
         RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
                                                    DissolvedSegmentDict)
-        RouteGeometries.segments_polyline()  # Create the polyline shapefile
-        RouteGeometries.routes_start_end_point()  # Create the point shapefile
+        RouteGeometries.create_segment_polyline()  # Create the polyline shapefile
+        RouteGeometries.create_start_end_point()  # Create the point shapefile
 
         SetParameter(2, RouteGeometries.polyline_output)
         SetParameter(3, RouteGeometries.point_output)
         SetParameterAsText(4, RouteGeometries.output_message())
+        SetParameter(5, RouteGeometries.create_zipfile().zip_output)
 
     elif RequestCheckResult is None:
         SetParameter(2, None)
         SetParameter(3, None)
         SetParameterAsText(4, results_output("Failed", None))
+        SetParameter(5, None)
 
 else:
     SetParameter(2, None)
     SetParameter(3, None)
     SetParameterAsText(4, results_output("Required table are missing.{0}".format(ConnectionCheck.missing_table), None))
+    SetParameter(5, None)
