@@ -1,0 +1,17 @@
+{
+  "column_details":{
+    "LINKID":{"dtype":"string"},
+    "STA_FR":{"dtype":"integer"},
+    "STA_TO":{"dtype":"integer"},
+    "LENGTH":{"dtype":"double"},
+    "CODE_LANE":{"dtype":"string"},
+    "IRI":{"dtype":"double"},
+    "YEAR":{"dtype":"integer"},
+    "SEMESTER":{"dtype":"integer"},
+    "DIRECTION":{"dtype":"string"},
+    "SURV_DATE":{"dtype":"date"},
+    "LONGITUDE":{"dtype":"double"},
+    "LATITUDE":{"dtype":"double"},
+    "ALTITUDE":{"dtype":"double"}
+  }
+}
