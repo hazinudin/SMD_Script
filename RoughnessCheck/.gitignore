@@ -1,3 +1,3 @@
-# Ignore all the .xlsx file
+# Ignore all the .xlsx file and test_input.json
+test_input.json
 *.xlsx
-RoughnessCheck/test_input.json

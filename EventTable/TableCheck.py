@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 
 
 class EventTableCheck(object):
@@ -25,7 +26,9 @@ class EventTableCheck(object):
 
         self.ev_table_path = str(event_table_path)
         self.column_details = column_details
-        self.header_check_result = None
+
+        self.header_check_result = self.header_check()  # The header checking result
+        self.dtype_check_result = self.dtype_check()  # The data type checing result
 
     def header_check(self):
         """
@@ -41,7 +44,7 @@ class EventTableCheck(object):
             df = self.df_string  # Get the string data frame
 
             table_header = list(df)
-            missing_column = []
+            missing_column = []  # List for storing the missing columns
 
             # Check if the required header is not in the input header
             for req_header in self.column_details:
@@ -58,21 +61,46 @@ class EventTableCheck(object):
             error_message += 'Tabel input tidak berformat .xls atau .xlsx.'
 
         if error_message == '':
-            pass
+            return None
         else:
-            self.header_check_result = reject_message(error_message)
-
-        return self
+            return reject_message(error_message)
 
     def dtype_check(self):
         """
         This function check the input table column data type
         :return:
         """
+        error_message = ''
+
         # Run the header check method
-        self.header_check()
-        if self.header_check_result is None: # If there is no problem with the header then continue
-            pass
+        if self.header_check_result is None:  # If there is no problem with the header then continue
+
+            # Start checking the data type for every numeric columns
+            df = self.df_string
+
+            for col in self.column_details:  # Iterate over every column in required col dict
+                col_name = col  # Column name
+                col_dtype = self.column_details[col]['dtype']  # Column data types
+
+                if col_dtype in ["integer", "double"]:  # Check for numeric column
+                    # Convert the column to numeric
+                    # If the column contain non numerical value, then change that value to Null
+                    df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
+                    error_i = df.loc[df[col_name].isnull()].index.tolist()  # Find the index of the null
+
+                    # If there is an error
+                    if len(error_i) != 0:
+                        excel_i = [x+1 for x in error_i]
+                        error_message += '{0} memiliki nilai non-numeric pada baris{1}.'\
+                            .format(col_name, str(excel_i))
+
+                elif col_dtype == 'date':  # Check for date column
+                    pass
+
+            return reject_message(error_message)
+
+        else:
+            return self.header_check_result
 
 
 def reject_message(err_message):
@@ -81,4 +109,4 @@ def reject_message(err_message):
         'msg': err_message
     }
 
-    return message
+    return json.dumps(message)
