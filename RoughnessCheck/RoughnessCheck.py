@@ -10,14 +10,16 @@ os.chdir('E:/SMD_Script')  # Change the directory to the SMD root directory
 with open('RoughnessCheck/roughness_config.json') as config_f:
     config = json.load(config_f)
 
-column_details = config['column_details']  # Load the roughness column details dictionary
+ColumnDetails = config['column_details']  # Load the roughness column details dictionary
+TablePath = 'RoughnessCheck/Format Data Rough.xlsx'
 
 # Create a EventTableCheck class object
-event_check = TableCheck.EventTableCheck('RoughnessCheck/Format Data Rough.xlsx')
+event_check = TableCheck.EventTableCheck(TablePath, ColumnDetails)
+event_check.header_check()  # Start check the header
 
-# Start checking the event table column name and redundant column in event table
-if event_check.header_checker(column_details) is None:
+if event_check.header_check_result is None:  # If the header check returns None, the process can continue
     pass
+    print event_check.df_string
 else:
     # Should return a SetParameterAsText
-    print event_check.header_checker(column_details)
+    print event_check.header_check_result
