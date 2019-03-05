@@ -1,2 +1,3 @@
 # Ignore all the .xlsx file
 *.xlsx
+RoughnessCheck/test_input.json
