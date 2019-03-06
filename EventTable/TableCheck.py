@@ -10,7 +10,6 @@ class EventTableCheck(object):
     def __init__(self, event_table_path, column_details):
         """
         Initialize EventTable class
-        :param event_table_path:
         """
         self.file_format = str(event_table_path).split('.')[1]  # Get the table file format
         if self.file_format in ['xls', 'xlsx']:
@@ -30,11 +29,11 @@ class EventTableCheck(object):
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check()  # The data type checing result
         self.error_list = []
+        self.missing_route = []
 
     def header_check(self):
         """
         This function check for the input table header name and any redundant column in the input table.
-        :param columns_details:
         :return:
         """
 
@@ -141,6 +140,25 @@ class EventTableCheck(object):
                               format(year_col, sem_col, excel_i, year_input, semester_input))
 
             self.error_list += error_list
+
+        return self
+
+    def route_domain(self, balai_code, balai_route_domain, routeid_col='LINKID'):
+        """
+        This function check if the route id submitted in the input table is in the domain of balai submitted
+        :param routeid_col:
+        :param balai_route:
+        :return:
+        """
+        df = self.df_string
+        input_routes = df[routeid_col].unique().tolist()  # All Route included in the input table
+
+        for route in input_routes:
+            if route not in balai_route_domain:
+                self.missing_route.append(route)  # Append route which does not exist in the balai route domain
+                # Create error message
+                error_message = '{0} tidak ada pada domain rute balai {1}'.format(route, balai_code)
+                self.error_list.append(error_message)  # Append error message
 
         return self
 

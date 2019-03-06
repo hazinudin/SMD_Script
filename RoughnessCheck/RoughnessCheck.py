@@ -17,8 +17,17 @@ AllRoute_Result = GetParameterAsText(1)
 
 # Load the input JSON
 InputDetails = json.loads(input_JSON)
-ColumnDetails = config['column_details']  # Load the roughness column details dictionary
 TablePath = InputDetails["file_name"]
+DataYear = InputDetails["year"]
+Semester = InputDetails['semester']
+KodeBalai = InputDetails["balai"]
+
+# All the column details in the roughness_config.json
+ColumnDetails = config['column_details']  # Load the roughness column details dictionary
+
+# GetAllRoute result containing all route from a Balai
+Route_and_balai = json.loads(AllRoute_Result)
+BalaiRoutes = Route_and_balai['results'][0]['routes']
 
 # Create a EventTableCheck class object
 EventCheck = TableCheck.EventTableCheck(TablePath, ColumnDetails)  # The __init__ already include header check
@@ -27,11 +36,19 @@ AddMessage(EventCheck.dtype_check_result)
 
 # If the header check and data type check returns None, the process can continue
 if EventCheck.header_check_result is None and EventCheck.dtype_check_result is None:
-    # Check the year and semester value
-    EventCheck.year_and_semester_check(InputDetails['year'], InputDetails['semester'])
-    SetParameterAsText(2, EventCheck.error_list)
+
+    EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
+    EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
+
+    ErrorMessageList = EventCheck.error_list
+    if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dtype check
+        SetParameterAsText(2, TableCheck.reject_message(ErrorMessageList))
+    else:  # If there is no error
+        SetParameterAsText(2, "Finish")
+
 else:
-    if EventCheck.header_check_result is None:
+    if EventCheck.header_check_result is None:  # If there is an error with header check
         SetParameterAsText(2, EventCheck.dtype_check_result)
     else:
+        # There must be an error with the dtype check
         SetParameterAsText(2, EventCheck.header_check_result)
