@@ -21,15 +21,15 @@ class EventTableCheck(object):
 
             df_string = pd.read_excel(event_table_path, converters=s_converter)
             df_string.columns = df_string.columns.str.upper()
-            self.df_string = df_string
+            self.df_string = df_string  # df_string is dataframe which contain all data in string format
         else:
             self.df_string = None
 
-        self.ev_table_path = str(event_table_path)
         self.column_details = column_details
 
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check()  # The data type checing result
+        self.error_list = []
 
     def header_check(self):
         """
@@ -77,11 +77,10 @@ class EventTableCheck(object):
         error_list = []
 
         # Run the header check method
+        self.header_check()
         if self.header_check_result is None:  # If there is no problem with the header then continue
 
-            # Start checking the data type for every numeric columns
             df = self.df_string
-
             for col in self.column_details:  # Iterate over every column in required col dict
                 col_name = col  # Column name
                 col_dtype = self.column_details[col]['dtype']  # Column data types
@@ -109,13 +108,41 @@ class EventTableCheck(object):
                     # If there is an error
                     if len(error_i) != 0:
                         excel_i = [x + 2 for x in error_i]
-                        error_list.append('{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.' \
+                        error_list.append('{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.'
                                           .format(col_name, str(excel_i)))
 
-            return reject_message(error_list)
+            # If the check does not detect error then return None
+            if len(error_list) == 0:
+                return None
+            else:
+                return reject_message(error_list)
 
         else:
             return self.header_check_result
+
+    def year_and_semester_check(self, year_input, semester_input, year_col='YEAR', sem_col='SEMESTER'):
+        """
+        This function check if the inputted data year and semester in JSON match with the data in input table
+        :param year_input: The input year mentioned in the input JSON.
+        :param semester_input: The input semester mentioned in the the input JSON.
+        :return: the excel row index which has a mismatch year or semester data
+        """
+        df = self.df_string
+        error_list = []  # List for storing error result
+
+        # the index of row with bad val
+        error_i = df.loc[
+            (df[year_col] != year_input)|(df[sem_col] != semester_input)].index.tolist()
+
+        # If  there is an error
+        if len(error_i) != 0:
+            excel_i = [x + 2 for x in error_i]
+            error_list.append('{0} atau {1} tidak sesuai dengan input ({3}/{4}) pada baris{2}.'.
+                              format(year_col, sem_col, excel_i, year_input, semester_input))
+
+            self.error_list += error_list
+
+        return self
 
 
 def reject_message(err_message):
