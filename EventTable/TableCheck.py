@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from arcpy import AddMessage
 
 
 class EventTableCheck(object):
@@ -32,7 +33,7 @@ class EventTableCheck(object):
 
     def header_check(self):
         """
-        This function check for the input table header name and any redundant column in the input table
+        This function check for the input table header name and any redundant column in the input table.
         :param columns_details:
         :return:
         """
@@ -67,10 +68,13 @@ class EventTableCheck(object):
 
     def dtype_check(self):
         """
-        This function check the input table column data type
+        This function check the input table column data type and the data contained in that row.
+
+        If there is a value which does not comply to the stated data type, then input table will be rejected and a
+        message stating which row is the row with error.
         :return:
         """
-        error_message = ''
+        error_list = []
 
         # Run the header check method
         if self.header_check_result is None:  # If there is no problem with the header then continue
@@ -83,6 +87,7 @@ class EventTableCheck(object):
                 col_dtype = self.column_details[col]['dtype']  # Column data types
 
                 if col_dtype in ["integer", "double"]:  # Check for numeric column
+
                     # Convert the column to numeric
                     # If the column contain non numerical value, then change that value to Null
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
@@ -90,14 +95,24 @@ class EventTableCheck(object):
 
                     # If there is an error
                     if len(error_i) != 0:
-                        excel_i = [x+1 for x in error_i]
-                        error_message += '{0} memiliki nilai non-numeric pada baris{1}.'\
-                            .format(col_name, str(excel_i))
+                        excel_i = [x + 2 for x in error_i]
+                        error_list.append('{0} memiliki nilai non-numeric pada baris{1}.'\
+                            .format(col_name, str(excel_i)))
 
                 elif col_dtype == 'date':  # Check for date column
-                    pass
 
-            return reject_message(error_message)
+                    # Convert the column to a date data type
+                    # If the column contain an invalid date format, then change that value to Null
+                    df[col_name] = pd.to_datetime(df[col_name], errors='coerce')
+                    error_i = df.loc[df[col_name].isnull()].index.tolist()  # Find the index of the null
+
+                    # If there is an error
+                    if len(error_i) != 0:
+                        excel_i = [x + 2 for x in error_i]
+                        error_list.append('{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.' \
+                                          .format(col_name, str(excel_i)))
+
+            return reject_message(error_list)
 
         else:
             return self.header_check_result
