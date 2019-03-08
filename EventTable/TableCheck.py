@@ -156,9 +156,11 @@ class EventTableCheck(object):
         for route in input_routes:
             if route not in balai_route_domain:
                 self.missing_route.append(route)  # Append route which does not exist in the balai route domain
-                # Create error message
-                error_message = '{0} tidak ada pada domain rute balai {1}'.format(route, balai_code)
-                self.error_list.append(error_message)  # Append error message
+
+        if len(self.missing_route) != 0:
+            # Create error message
+            error_message = '{0} tidak ada pada domain rute balai {1}'.format(route, balai_code)
+            self.error_list.append(error_message)  # Append error message
 
         return self
 
@@ -173,14 +175,18 @@ class EventTableCheck(object):
         """
         df = self.df_string
 
-        error_i = df.loc[(df[d_column]<lower)|(df[d_column]>upper)].index.tolist()
-        excel_i = [x+2 for x in error_i]
+        # Get all the row with invalid value
+        error_i = df.loc[(df[d_column] < lower) | (df[d_column] > upper)].index.tolist()
+        excel_i = [x+2 for x in error_i]  # Create row for excel file index
 
-        error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
-            format(d_column, lower, upper, excel_i)
-        self.error_list.append(error_message)
+        if len(error_i) != 0:
+            # Create error message
+            error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
+                format(d_column, lower, upper, excel_i)
+            self.error_list.append(error_message)  # Append to the error message
 
         return self
+
 
 def reject_message(err_message):
     message = {

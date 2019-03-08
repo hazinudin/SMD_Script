@@ -42,7 +42,7 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
-    EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)
+    EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
 
     ErrorMessageList = EventCheck.error_list
     if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dtype check
