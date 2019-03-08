@@ -101,7 +101,7 @@ class EventTableCheck(object):
 
                     # Convert the column to a date data type
                     # If the column contain an invalid date format, then change that value to Null
-                    df[col_name] = pd.to_datetime(df[col_name], errors='coerce')
+                    df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='d%/m%/%y')
                     error_i = df.loc[df[col_name].isnull()].index.tolist()  # Find the index of the null
 
                     # If there is an error
@@ -162,6 +162,25 @@ class EventTableCheck(object):
 
         return self
 
+    def value_range_check(self, lower, upper, d_column):
+        """
+        This function checks every value in a specified data column, to match the specified range value defined by
+        parameter upper and lower (lower < [value] < upper).
+        :param lower: Allowed lower bound
+        :param upper: Allowed upper bound
+        :param d_column: Specified data column to be checked
+        :return:
+        """
+        df = self.df_string
+
+        error_i = df.loc[(df[d_column]<lower)|(df[d_column]>upper)].index.tolist()
+        excel_i = [x+2 for x in error_i]
+
+        error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
+            format(d_column, lower, upper, excel_i)
+        self.error_list.append(error_message)
+
+        return self
 
 def reject_message(err_message):
     message = {

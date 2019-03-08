@@ -9,7 +9,7 @@ os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
 # Load the roughness script config JSON file
 with open('RoughnessCheck/roughness_config.json') as config_f:
-    config = json.load(config_f)
+    roughness_config = json.load(config_f)
 
 # Get GeoProcessing input parameter
 input_JSON = GetParameterAsText(0)
@@ -23,7 +23,10 @@ Semester = InputDetails['semester']
 KodeBalai = InputDetails["balai"]
 
 # All the column details in the roughness_config.json
-ColumnDetails = config['column_details']  # Load the roughness column details dictionary
+ColumnDetails = roughness_config['column_details']  # Load the roughness column details dictionary
+UpperBound = roughness_config['upper_bound']
+LowerBound = roughness_config['lower_bound']
+IRIColumn = "IRI"
 
 # GetAllRoute result containing all route from a Balai
 Route_and_balai = json.loads(AllRoute_Result)
@@ -39,6 +42,7 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
+    EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)
 
     ErrorMessageList = EventCheck.error_list
     if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dtype check
