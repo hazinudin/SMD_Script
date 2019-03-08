@@ -15,7 +15,7 @@ class EventTableCheck(object):
         if self.file_format in ['xls', 'xlsx']:
 
             df_self_dtype = pd.read_excel(event_table_path)
-            s_converter = {col: str for col in list(df_self_dtype)}
+            s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
             del df_self_dtype
 
             df_string = pd.read_excel(event_table_path, converters=s_converter)
@@ -127,7 +127,6 @@ class EventTableCheck(object):
         :return: the excel row index which has a mismatch year or semester data
         """
         df = self.df_string
-        error_list = []  # List for storing error result
 
         # the index of row with bad val
         error_i = df.loc[
@@ -136,10 +135,10 @@ class EventTableCheck(object):
         # If  there is an error
         if len(error_i) != 0:
             excel_i = [x + 2 for x in error_i]
-            error_list.append('{0} atau {1} tidak sesuai dengan input ({3}/{4}) pada baris{2}.'.
-                              format(year_col, sem_col, excel_i, year_input, semester_input))
+            error_message = '{0} atau {1} tidak sesuai dengan input ({3}/{4}) pada baris{2}.'.\
+                format(year_col, sem_col, excel_i, year_input, semester_input)
 
-            self.error_list += error_list
+            self.error_list.append(error_message)
 
         return self
 
@@ -184,6 +183,31 @@ class EventTableCheck(object):
             error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
                 format(d_column, lower, upper, excel_i)
             self.error_list.append(error_message)  # Append to the error message
+
+        return self
+
+    def segment_len_check(self, segment_len=0.1, from_col='STA_FR', to_col='STA_TO', length_col='LENGTH'):
+        """
+        This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
+        has to match the stated From Measure and To Measure
+        :param segment_len: Required semgent legnth, the default value is 100 meters
+        :param from_col: From Measure column
+        :param to_col: To Measure column
+        :param length_col: Segment length column
+        :return:
+        """
+        df = self.df_string
+        df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure
+        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measurek
+        error_i = df.loc[(df[length_col] != segment_len) | ((df[to_col]-df[from_col]) != df[length_col])]\
+            .index.tolist()
+
+        if len(error_i) != 0:
+            excel_i = [x+2 for x in error_i]
+            # Create error message
+            error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen'.\
+                format(from_col, to_col, excel_i)
+            self.error_list.append(error_message)
 
         return self
 
