@@ -1,3 +1,4 @@
+from arcpy import env, da
 import pandas as pd
 import json
 
@@ -6,7 +7,7 @@ class EventTableCheck(object):
     """
     This class will be used for event table review, consist of table columns review and row by row review.
     """
-    def __init__(self, event_table_path, column_details):
+    def __init__(self, event_table_path, column_details, lrs_network, db_conn):
         """
         Initialize EventTable class
         """
@@ -23,13 +24,16 @@ class EventTableCheck(object):
         else:
             self.df_string = None
 
-        self.column_details = column_details
+        self.column_details = column_details  # Dictionary containing req col names and dtypes
+        self.lrs_network = lrs_network  # Specified LRS Network feature class in SDE database
+        self.sde_connection = db_conn  # The specifier gdb connection incl db version and username
 
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check()  # The data type checking result
         self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.error_list = []  # List for storing the error message for all checks
-        self.missing_route = []  # List for storing the all route which is not in the balai route domain
+        self.missing_route = []  # List for storing all route which is not in the balai route domain
+        self.valid_route = []  # List for storing all route which is in the balai route domain
 
     def header_check(self):
         """
@@ -112,7 +116,7 @@ class EventTableCheck(object):
 
             # If the check does not detect error then return None
             if len(error_list) == 0:
-                self.df_valid = df
+                self.df_valid = df  # Assign the df (the check result) as self.df_valid
                 return None
             else:
                 return reject_message(error_list)
@@ -156,10 +160,12 @@ class EventTableCheck(object):
         for route in input_routes:
             if route not in balai_route_domain:
                 self.missing_route.append(route)  # Append route which does not exist in the balai route domain
+            else:
+                self.valid_route.append(route)  # Append route which exist in the balai route domain
 
         if len(self.missing_route) != 0:
             # Create error message
-            error_message = '{0} tidak ada pada domain rute balai {1}'.format(route, balai_code)
+            error_message = '{0} tidak ada pada domain rute balai {1}'.format(self.missing_route, balai_code)
             self.error_list.append(error_message)  # Append error message
 
         return self
@@ -213,6 +219,68 @@ class EventTableCheck(object):
             self.error_list.append(error_message)  # Append the error message
 
         return self
+
+    def measurement_check(self, from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
+        """
+        This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
+        measurement should match the route M-value where the event is assigned to.
+        :return:
+        """
+        env.workspace = self.sde_connection  # Setting up the env.workspace
+        if (self.df_valid is None) and (self.dtype_check() is None):
+            df = self.df_valid
+        else:
+            df = self.df_string
+
+        df = self.drop_invalid_route(df)
+
+        # Sort the DataFrame based on the RouteId and FromMeasure
+        df.sort_values(by=[route_col, from_m_col], inplace=True)
+
+        # Iterate over valid row in the input table
+        for route in self.valid_route:
+            df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col]]  # Create a route DataFrame
+            df_route.reset_index(inplace=True)  # Reset the df_route index, preserve the index column
+
+            for index, row in df_route.iterrows():
+                if index == 0:
+                    from_m = row[from_m_col]
+                    to_m = row[to_m_col]
+                else:
+                    pass
+
+    def coordinate_check(self):
+        """
+        This function checks wheter if the segment starting coordinate located not further than
+        30meters from the LRS Network.
+        :return:
+        """
+        env.workspace = self.sde_connection  # Setting up the env.workspace
+        if (self.df_valid is None) and (self.dtype_check() is None):
+            df = self.df_valid
+        else:
+            df = self.df_string
+
+    def drop_invalid_route(self, df, route_col="LINKID"):
+        """
+        This function drops all the route which does not belong to the balai route domain, the result is a DataFrame
+        which only contain the route within the balai route domain.
+        :return:
+        """
+        # Check whether the route domain checks has been done
+        if (len(self.missing_route) != 0) or (len(self.valid_route) != 0):
+
+            if len(self.missing_route) == 0:  # If there is no missing route then analyze all row in input table
+                pass
+            else:
+                # If there is an invalid route then drop the row which contain the invalid route
+                invalid_route_i = df.loc[df[route_col].isin(self.missing_route)].index.tolist()
+                df.drop(invalid_route_i, inplace=True)  # Drop the row by index
+
+        else:  # if the route domain checks has not been done, checks all route in the input table
+            pass
+
+        return df  # Return the DataFrame with dropped invalid route
 
 
 def reject_message(err_message):
