@@ -26,9 +26,10 @@ class EventTableCheck(object):
         self.column_details = column_details
 
         self.header_check_result = self.header_check()  # The header checking result
-        self.dtype_check_result = self.dtype_check()  # The data type checing result
-        self.error_list = []
-        self.missing_route = []
+        self.dtype_check_result = self.dtype_check()  # The data type checking result
+        self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
+        self.error_list = []  # List for storing the error message for all checks
+        self.missing_route = []  # List for storing the all route which is not in the balai route domain
 
     def header_check(self):
         """
@@ -93,8 +94,8 @@ class EventTableCheck(object):
                     # If there is an error
                     if len(error_i) != 0:
                         excel_i = [x + 2 for x in error_i]
-                        error_list.append('{0} memiliki nilai non-numeric pada baris{1}.'\
-                            .format(col_name, str(excel_i)))
+                        error_list.append('{0} memiliki nilai non-numeric pada baris{1}.'
+                                          .format(col_name, str(excel_i)))
 
                 elif col_dtype == 'date':  # Check for date column
 
@@ -111,6 +112,7 @@ class EventTableCheck(object):
 
             # If the check does not detect error then return None
             if len(error_list) == 0:
+                self.df_valid = df
                 return None
             else:
                 return reject_message(error_list)
