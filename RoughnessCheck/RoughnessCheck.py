@@ -47,6 +47,8 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
     if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dType check
+        for error_message in ErrorMessageList:
+            AddMessage(error_message)
         SetParameterAsText(2, TableCheck.reject_message(ErrorMessageList))
     else:  # If there is no error
         SetParameterAsText(2, "Finish")
