@@ -11,6 +11,14 @@ os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 with open('RoughnessCheck/roughness_config.json') as config_f:
     roughness_config = json.load(config_f)
 
+# Load the SMD config JSON file
+with open('smd_config.json') as smd_config_f:
+    smd_config = json.load(smd_config_f)
+
+# The smd config JSON details
+LrsNetwork = smd_config['table_names']['lrs_network']
+dbConnection = smd_config['smd_database']['instance']
+
 # Get GeoProcessing input parameter
 input_JSON = GetParameterAsText(0)
 AllRoute_Result = GetParameterAsText(1)
@@ -33,7 +41,8 @@ Route_and_balai = json.loads(AllRoute_Result)
 BalaiRoutes = Route_and_balai['results'][0]['routes']
 
 # Create a EventTableCheck class object
-EventCheck = TableCheck.EventTableCheck(TablePath, ColumnDetails)  # The __init__ already include header check
+# The __init__ already include header check
+EventCheck = TableCheck.EventTableCheck(TablePath, ColumnDetails, LrsNetwork, dbConnection)
 AddMessage(EventCheck.header_check_result)
 AddMessage(EventCheck.dtype_check_result)
 
