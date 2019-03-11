@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-from arcpy import AddMessage
 
 
 class EventTableCheck(object):
@@ -198,16 +197,18 @@ class EventTableCheck(object):
         """
         df = self.df_string
         df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure
-        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measurek
+        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure
+
+        # Find the row with segment len error, find the index
         error_i = df.loc[(df[length_col] != segment_len) | ((df[to_col]-df[from_col]) != df[length_col])]\
             .index.tolist()
 
         if len(error_i) != 0:
-            excel_i = [x+2 for x in error_i]
+            excel_i = [x+2 for x in error_i]  # Create the index for excel table
             # Create error message
             error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen'.\
                 format(from_col, to_col, excel_i)
-            self.error_list.append(error_message)
+            self.error_list.append(error_message)  # Append the error message
 
         return self
 
