@@ -10,6 +10,7 @@ class EventTableCheck(object):
     def __init__(self, event_table_path, column_details, lrs_network, db_conn):
         """
         Initialize EventTable class
+        the header_check and dtype_check also called when the class is initialized
         """
         self.file_format = str(event_table_path).split('.')[1]  # Get the table file format
         if self.file_format in ['xls', 'xlsx']:
@@ -220,19 +221,19 @@ class EventTableCheck(object):
 
         return self
 
-    def measurement_check(self, from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
+    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
-        if (self.df_valid is None) and (self.dtype_check() is None):
-            df = self.df_valid
-        else:
-            df = self.df_string
+        df = self.create_valid_df()  # Create a valid DataFrame with matching DataType with requirement
 
-        df = self.drop_invalid_route(df)
+        if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
 
         # Sort the DataFrame based on the RouteId and FromMeasure
         df.sort_values(by=[route_col, from_m_col], inplace=True)
@@ -249,37 +250,49 @@ class EventTableCheck(object):
                 else:
                     pass
 
-    def coordinate_check(self):
+    def coordinate_check(self, routes='ALL'):
         """
-        This function checks wheter if the segment starting coordinate located not further than
+        This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
+        df = self.create_valid_df()
+
+        if routes == 'ALL': # Only process selected routes, if 'ALL' then process all routes in input table
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+    def create_valid_df(self):
+        """
+        This function create a valid DataFrame from the dtype check class method, which ensures every column match the
+        required DataType
+        :return:
+        """
         if (self.df_valid is None) and (self.dtype_check() is None):
             df = self.df_valid
         else:
             df = self.df_string
 
-    def drop_invalid_route(self, df, route_col="LINKID"):
+        return df
+
+    @staticmethod
+    def selected_route_df(df, routes, route_col="LINKID"):
         """
-        This function drops all the route which does not belong to the balai route domain, the result is a DataFrame
-        which only contain the route within the balai route domain.
+        This function selects only route which is defined in the routes parameter
+        :param df:
+        :param routes:
+        :param route_col:
         :return:
         """
-        # Check whether the route domain checks has been done
-        if (len(self.missing_route) != 0) or (len(self.valid_route) != 0):
+        route_list = []  # List for storing all requested routes
+        if type(routes) != list:
+            route_list.append(routes)  # Append the requested routes to the list
+        else:
+            route_list = routes  # If the requested routes is in list format
 
-            if len(self.missing_route) == 0:  # If there is no missing route then analyze all row in input table
-                pass
-            else:
-                # If there is an invalid route then drop the row which contain the invalid route
-                invalid_route_i = df.loc[df[route_col].isin(self.missing_route)].index.tolist()
-                df.drop(invalid_route_i, inplace=True)  # Drop the row by index
-
-        else:  # if the route domain checks has not been done, checks all route in the input table
-            pass
-
+        df = df.loc[df[route_col].isin(route_list)]
         return df  # Return the DataFrame with dropped invalid route
 
 
