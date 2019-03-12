@@ -84,7 +84,7 @@ class EventTableCheck(object):
         self.header_check()
         if self.header_check_result is None:  # If there is no problem with the header then continue
 
-            df = self.df_string
+            df = self.df_string.copy(deep=True)
             for col in self.column_details:  # Iterate over every column in required col dict
                 col_name = col  # Column name
                 col_dtype = self.column_details[col]['dtype']  # Column data types
@@ -263,7 +263,7 @@ class EventTableCheck(object):
         :param lat_col: Column in the input table which contain the latitude value
         :param from_m_col: Column in the input table which contain the from measure value of a segment
         :param input_projection: The coordinate system used to project the lat and long value from the input table
-        :param threshold: The maximum tolerated distance for a submitted coordinate
+        :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -297,17 +297,16 @@ class EventTableCheck(object):
                 point_geom = point_geom.projectAs(route_spat_ref)
 
                 # The starting point of a segment in LRS
-                from_m_meters = row[from_m_col] * 10
-                ref_point = route_geom.positionAlongLine(from_m_meters)
+                from_m_meters = row[from_m_col] * 10  # Convert the measurement value to meters (from decimeters)
+                ref_point = route_geom.positionAlongLine(from_m_meters)  # Create a ref point geometry
                 distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
-                AddMessage("{0} {1},{2}".format(distance_to_ref, ref_point.projectAs('4326').firstPoint.X, ref_point.projectAs('4326').firstPoint.Y))
 
                 if distance_to_ref > threshold:
                     error_i.append(index)  # Append the index of row with coordinate error
 
         if len(error_i) != 0:
             excel_i = [x+2 for x in error_i]
-            error_message = 'Koordinat awal pada baris {0} berjarak lebih dari {1} dari titik awal segmen.'.\
+            error_message = 'Koordinat awal pada baris {0} berjarak lebih dari {1} meter dari titik awal segmen.'.\
                 format(excel_i, threshold)
             self.error_list.append(error_message)
 
@@ -319,7 +318,7 @@ class EventTableCheck(object):
         required DataType
         :return:
         """
-        if (self.df_valid is None) and (self.dtype_check() is None):
+        if self.dtype_check() is None:  # If there is a problem with the data type check then return the df_string
             df = self.df_valid
         else:
             df = self.df_string
