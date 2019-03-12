@@ -1,4 +1,5 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
+import numpy as np
 import pandas as pd
 import json
 
@@ -132,7 +133,7 @@ class EventTableCheck(object):
         :param semester_input: The input semester mentioned in the the input JSON.
         :return: the excel row index which has a mismatch year or semester data
         """
-        df = self.df_string
+        df = self.create_valid_df()
 
         # the index of row with bad val
         error_i = df.loc[
@@ -180,7 +181,7 @@ class EventTableCheck(object):
         :param d_column: Specified data column to be checked
         :return:
         """
-        df = self.df_string
+        df = self.create_valid_df()
 
         # Get all the row with invalid value
         error_i = df.loc[(df[d_column] < lower) | (df[d_column] > upper)].index.tolist()
@@ -205,12 +206,14 @@ class EventTableCheck(object):
         :return:
         """
         df = self.create_valid_df()
+
         df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure
         df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure
+        df['diff'] = pd.Series(df[to_col]-df[from_col])
 
         # Find the row with segment len error, find the index
-        error_i = df.loc[(df[length_col] != segment_len) | ((df[to_col]-df[from_col]) != df[length_col])]\
-            .index.tolist()
+        error_i = df.loc[~(np.isclose(df['diff'], df[length_col], rtol=0.001) &
+                           (np.isclose(df[length_col], segment_len, rtol=0.001)))].index.tolist()
 
         if len(error_i) != 0:
             excel_i = [x+2 for x in error_i]  # Create the index for excel table
@@ -219,7 +222,6 @@ class EventTableCheck(object):
                 format(from_col, to_col, excel_i)
             self.error_list.append(error_message)  # Append the error message
 
-        del df  # Delete the valid_df copy
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
@@ -252,7 +254,8 @@ class EventTableCheck(object):
                     pass
 
     def coordinate_check(self, lrs_routeid, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
-                         from_m_col='STA_FR', input_projection='4326', threshold=30):
+                         from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
+                         threshold=30):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -279,7 +282,7 @@ class EventTableCheck(object):
         # Iterate for every requested routes
         for route in route_list:
             # Create a selected route DF
-            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col]]
+            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, lane_code]]
 
             # Acquire the LRS Network for the requested route
             with da.SearchCursor(self.lrs_network, "SHAPE@", where_clause="{0}='{1}'".
@@ -297,8 +300,12 @@ class EventTableCheck(object):
                 point_geom = point_geom.projectAs(route_spat_ref)
 
                 # The starting point of a segment in LRS
-                from_m_meters = row[from_m_col] * 10  # Convert the measurement value to meters (from decimeters)
-                ref_point = route_geom.positionAlongLine(from_m_meters)  # Create a ref point geometry
+                if row[lane_code][0] == 'L':
+                    measurement = row[from_m_col] * 10  # Convert the measurement value to meters (from decimeters)
+                elif row[lane_code][0] == 'R':
+                    measurement = row[to_m_col] * 10
+                    
+                ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
                 distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
 
                 if distance_to_ref > threshold:
