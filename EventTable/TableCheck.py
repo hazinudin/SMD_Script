@@ -1,4 +1,4 @@
-from arcpy import env, da
+from arcpy import env, da, Point, PointGeometry, AddMessage
 import pandas as pd
 import json
 
@@ -136,7 +136,7 @@ class EventTableCheck(object):
 
         # the index of row with bad val
         error_i = df.loc[
-            (df[year_col] != year_input)|(df[sem_col] != semester_input)].index.tolist()
+            (df[year_col] != year_input) | (df[sem_col] != semester_input)].index.tolist()
 
         # If  there is an error
         if len(error_i) != 0:
@@ -204,7 +204,7 @@ class EventTableCheck(object):
         :param length_col: Segment length column
         :return:
         """
-        df = self.df_string
+        df = self.create_valid_df()
         df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure
         df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure
 
@@ -219,6 +219,7 @@ class EventTableCheck(object):
                 format(from_col, to_col, excel_i)
             self.error_list.append(error_message)  # Append the error message
 
+        del df  # Delete the valid_df copy
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
@@ -250,19 +251,67 @@ class EventTableCheck(object):
                 else:
                     pass
 
-    def coordinate_check(self, routes='ALL'):
+    def coordinate_check(self, lrs_routeid, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
+                         from_m_col='STA_FR', input_projection='4326', threshold=30):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
+        :param lrs_routeid: Column in LRS Feature Class which contain the LRS Network Route ID
+        :param routes: The requested routes
+        :param route_col: Column in the input table which contain the route id
+        :param long_col: Column in the input table which contain the longitude value
+        :param lat_col: Column in the input table which contain the latitude value
+        :param from_m_col: Column in the input table which contain the from measure value of a segment
+        :param input_projection: The coordinate system used to project the lat and long value from the input table
+        :param threshold: The maximum tolerated distance for a submitted coordinate
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.create_valid_df()
+        error_i = []  # list for storing the row with error
 
-        if routes == 'ALL': # Only process selected routes, if 'ALL' then process all routes in input table
-            pass
+        if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
+            route_list = df[route_col].unique().tolist()  # Create a route list
         else:
             df = self.selected_route_df(df, routes)
+            route_list = df[route_col].unique().tolist()
+
+        # Iterate for every requested routes
+        for route in route_list:
+            # Create a selected route DF
+            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col]]
+
+            # Acquire the LRS Network for the requested route
+            with da.SearchCursor(self.lrs_network, "SHAPE@", where_clause="{0}='{1}'".
+                                 format(lrs_routeid, route)) as cur:
+                for s_row in cur:
+                    route_geom = s_row[0]
+                    route_spat_ref = route_geom.spatialReference
+
+            for index, row in df_route.iterrows():
+                point = Point(row[long_col], row[lat_col])  # Create a point object
+
+                # Create a point geom object with WGS 1984 by default
+                point_geom = PointGeometry(point).projectAs(input_projection)
+                # Re-project the point geometry using the lrs spat ref
+                point_geom = point_geom.projectAs(route_spat_ref)
+
+                # The starting point of a segment in LRS
+                from_m_meters = row[from_m_col] * 10
+                ref_point = route_geom.positionAlongLine(from_m_meters)
+                distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
+                AddMessage("{0} {1},{2}".format(distance_to_ref, ref_point.projectAs('4326').firstPoint.X, ref_point.projectAs('4326').firstPoint.Y))
+
+                if distance_to_ref > threshold:
+                    error_i.append(index)  # Append the index of row with coordinate error
+
+        if len(error_i) != 0:
+            excel_i = [x+2 for x in error_i]
+            error_message = 'Koordinat awal pada baris {0} berjarak lebih dari {1} dari titik awal segmen.'.\
+                format(excel_i, threshold)
+            self.error_list.append(error_message)
+
+        return self
 
     def create_valid_df(self):
         """
@@ -275,12 +324,12 @@ class EventTableCheck(object):
         else:
             df = self.df_string
 
-        return df
+        return df.copy(deep=True)
 
     @staticmethod
     def selected_route_df(df, routes, route_col="LINKID"):
         """
-        This function selects only route which is defined in the routes parameter
+        This static method selects only route which is defined in the routes parameter
         :param df:
         :param routes:
         :param route_col:
