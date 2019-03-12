@@ -17,6 +17,7 @@ with open('smd_config.json') as smd_config_f:
 
 # The smd config JSON details
 LrsNetwork = smd_config['table_names']['lrs_network']
+LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
@@ -53,6 +54,8 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
     EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
     EventCheck.segment_len_check()  # Check the segment length validity
+    EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
+    EventCheck.coordinate_check(LrsNetworkRID, routes=EventCheck.valid_route)  # Check the segment starting coordinate
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
     if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dType check
@@ -60,7 +63,7 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
             AddMessage(error_message)
         SetParameterAsText(2, TableCheck.reject_message(ErrorMessageList))
     else:  # If there is no error
-        SetParameterAsText(2, "Finish")
+        SetParameterAsText(2, "Finish")  # Should return a success JSON String
 
 else:
     if EventCheck.header_check_result is None:  # If there is an error with header check
