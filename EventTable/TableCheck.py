@@ -1,4 +1,4 @@
-from arcpy import env, da, Point, PointGeometry, AddMessage
+from arcpy import env, da, Point, PointGeometry
 import numpy as np
 import pandas as pd
 import json
@@ -133,7 +133,7 @@ class EventTableCheck(object):
         :param semester_input: The input semester mentioned in the the input JSON.
         :return: the excel row index which has a mismatch year or semester data
         """
-        df = self.create_valid_df()
+        df = self.copy_valid_df()
 
         # the index of row with bad val
         error_i = df.loc[
@@ -181,7 +181,7 @@ class EventTableCheck(object):
         :param d_column: Specified data column to be checked
         :return:
         """
-        df = self.create_valid_df()
+        df = self.copy_valid_df()
 
         # Get all the row with invalid value
         error_i = df.loc[(df[d_column] < lower) | (df[d_column] > upper)].index.tolist()
@@ -195,7 +195,8 @@ class EventTableCheck(object):
 
         return self
 
-    def segment_len_check(self, segment_len=0.1, from_col='STA_FR', to_col='STA_TO', length_col='LENGTH'):
+    def segment_len_check(self, lrs_routeid, segment_len=0.1, route_col='LINKID', from_col='STA_FR', to_col='STA_TO',
+                          length_col='LENGTH'):
         """
         This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
         has to match the stated From Measure and To Measure
@@ -205,22 +206,45 @@ class EventTableCheck(object):
         :param length_col: Segment length column
         :return:
         """
-        df = self.create_valid_df()
+        env.workspace = self.sde_connection  # Setting up the env.workspace
+        df = self.copy_valid_df()  # Create a copy of the valid DataFrame
 
-        df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure
-        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure
-        df['diff'] = pd.Series(df[to_col]-df[from_col])
+        df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure to Km
+        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure to Km
+        df['diff'] = pd.Series(df[to_col]-df[from_col])  # Create a diff column for storing from-to difference
 
-        # Find the row with segment len error, find the index
-        error_i = df.loc[~(np.isclose(df['diff'], df[length_col], rtol=0.001) &
-                           (np.isclose(df[length_col], segment_len, rtol=0.001)))].index.tolist()
+        for route in df[route_col].unique().tolist():  # Iterate over all available row
 
-        if len(error_i) != 0:
-            excel_i = [x+2 for x in error_i]  # Create the index for excel table
-            # Create error message
-            error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen'.\
-                format(from_col, to_col, excel_i)
-            self.error_list.append(error_message)  # Append the error message
+            network_feature_found = False  # Variable for determining if the requested route exist in LRS Network
+            with da.SearchCursor(self.lrs_network, 'SHAPE@', where_clause="{0}='{1}'".
+                                 format(lrs_routeid, route))as cursor:
+                for fc_row in cursor:
+                    network_feature_found = True
+                    route_geom = fc_row[0]  # Route geometry object
+
+            if network_feature_found:
+                df_route = df.loc[df[route_col] == route]  # Create a selected route DataFrame
+                max_to_m = df_route.at[df_route[to_col].idxmax(), to_col]  # Get the max To measure value of a route
+                lrs_max_to_m = route_geom.lastPoint.M  # Get the max measurement value for route in LRS Network
+
+                # If the max length from survey data is less then the max measurement in LRS network
+                # then create an error message
+                if max_to_m < lrs_max_to_m:
+                    len_diff = lrs_max_to_m - max_to_m  # Len difference is in Kilometers
+                    error_message = "Data survey pada rute {0} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {1} Kilometer".\
+                        format(route, len_diff.round(3))
+                    self.error_list.append(error_message)
+
+                # Find the row with segment len error, find the index
+                error_i = df_route.loc[~(np.isclose(df_route['diff'], df_route[length_col], rtol=0.001) &
+                                       (np.isclose(df_route[length_col], segment_len, rtol=0.001)))].index.tolist()
+
+            if len(error_i) != 0:
+                excel_i = [x+2 for x in error_i]  # Create the index for excel table
+                # Create error message
+                error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen'.\
+                    format(from_col, to_col, excel_i)
+                self.error_list.append(error_message)  # Append the error message
 
         return self
 
@@ -231,7 +255,7 @@ class EventTableCheck(object):
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
-        df = self.create_valid_df()  # Create a valid DataFrame with matching DataType with requirement
+        df = self.copy_valid_df()  # Create a valid DataFrame with matching DataType with requirement
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -270,7 +294,7 @@ class EventTableCheck(object):
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
-        df = self.create_valid_df()
+        df = self.copy_valid_df()
         error_i = []  # list for storing the row with error
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
@@ -319,7 +343,7 @@ class EventTableCheck(object):
 
         return self
 
-    def create_valid_df(self):
+    def copy_valid_df(self):
         """
         This function create a valid DataFrame from the dtype check class method, which ensures every column match the
         required DataType
