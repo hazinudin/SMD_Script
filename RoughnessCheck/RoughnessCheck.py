@@ -18,6 +18,13 @@ with open('smd_config.json') as smd_config_f:
 # The smd config JSON details
 LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
+
+RNIEventTable = smd_config['table_names']['rni']
+RNIRouteID = smd_config['table_fields']['rni']['route_id']
+RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
+RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
+RNILaneCode = smd_config['table_fields']['rni']['lane_code']
+
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
@@ -55,13 +62,17 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
     EventCheck.segment_len_check(LrsNetworkRID)  # Check the segment length validity
     EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
-    EventCheck.coordinate_check(LrsNetworkRID, routes=EventCheck.valid_route)  # Check the segment starting coordinate
+    EventCheck.coordinate_check(LrsNetworkRID,
+                                routes=EventCheck.valid_route, threshold=50)  # Check the segment starting coordinate
+    EventCheck.lane_code_check(RNIEventTable, rni_route_col=RNIRouteID)  # Check the event layer lane code combination
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dType check
+        msg_count = 1
         for error_message in ErrorMessageList:
-            AddMessage(error_message)
+            AddMessage(str(msg_count)+'. '+error_message)
+            msg_count += 1
         SetParameterAsText(2, TableCheck.reject_message(ErrorMessageList))
     else:  # If there is no error
         SetParameterAsText(2, "Finish")  # Should return a success JSON String
