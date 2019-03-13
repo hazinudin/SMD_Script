@@ -1,4 +1,4 @@
-from arcpy import env, da, Point, PointGeometry
+from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
 import json
@@ -215,6 +215,7 @@ class EventTableCheck(object):
 
         for route in df[route_col].unique().tolist():  # Iterate over all available row
 
+            error_i = []  # Create an empty list for storing the error_index
             network_feature_found = False  # Variable for determining if the requested route exist in LRS Network
             with da.SearchCursor(self.lrs_network, 'SHAPE@', where_clause="{0}='{1}'".
                                  format(lrs_routeid, route))as cursor:
@@ -306,7 +307,7 @@ class EventTableCheck(object):
         # Iterate for every requested routes
         for route in route_list:
             # Create a selected route DF
-            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, lane_code]]
+            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
 
             # Acquire the LRS Network for the requested route
             with da.SearchCursor(self.lrs_network, "SHAPE@", where_clause="{0}='{1}'".
@@ -340,6 +341,83 @@ class EventTableCheck(object):
             error_message = 'Koordinat awal pada baris {0} berjarak lebih dari {1} meter dari titik awal segmen.'.\
                 format(excel_i, threshold)
             self.error_list.append(error_message)
+
+        return self
+
+    def lane_code_check(self, rni_table, routes='ALL', route_col='LINKID', lane_code='CODE_LANE', from_m_col='STA_FR',
+                        to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
+                        rni_lane_code='LANE_CODE'):
+        """
+        This function checks the lane code combination for all segment in the input table, the segment interval value
+        has to be the same with interval value in the RNI Table.
+        :param rni_table: RNI event table
+        :param routes: requested routes, if 'ALL' then all routes in the input table will be processed
+        :param lane_code: lane code column in the input table
+        :param from_m_col: Column in the input table which contain the From Measurement value
+        :param to_m_col: Column in the input table which  contain the To Measurement value
+        :return:
+        """
+        df = self.copy_valid_df()  # Get a copy of valid DataFrame
+        df[from_m_col] = pd.Series(df[from_m_col]).astype(int)
+        df[to_m_col] = pd.Series(df[to_m_col]).astype(int)
+        env.workspace = self.sde_connection  # Setting up the SDE Connection workspace
+
+        if routes == 'ALL':  # If 'ALL' then process all available route in input table
+            route_list = df[route_col].unique().tolist()  # Create a list containing all requested routes
+        else:
+            # Else then only process the selected routes
+            df = self.selected_route_df(df, routes)
+            route_list = df[route_col].unique().tolist()
+
+        # Iterate over all requested routes
+        for route in route_list:
+            df_route = df.loc[df[route_col] == route]  # Create a DataFrame containing only selected routes
+            # Create a numpy array from RNI Table containing only row from the selected routes
+            rni_np = da.FeatureClassToNumPyArray(rni_table, [rni_route_col, rni_from_col, rni_to_col, rni_lane_code],
+                                                 where_clause="{0}='{1}'".format(rni_route_col, route))
+            df_rni = pd.DataFrame(rni_np)  # The DataFrame of RNI
+            df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)
+            df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
+
+            if len(df_rni) == 0:  # Check if the route exist in the RNI Table
+                error_message = "Ruas {0} tidak terdapat pada table RNI".format(route)  # Create an error message
+                self.error_list.append(error_message)
+            else:
+                # Create the join key for both DataFrame
+                input_merge_key = [route_col, from_m_col, to_m_col]
+                rni_merge_key = [rni_route_col, rni_from_col, rni_to_col]
+
+                # Create a groupby DataFrame
+                input_groupped = df_route.groupby(by=input_merge_key)[lane_code].unique().reset_index()
+                rni_groupped = df_rni.groupby(by=rni_merge_key)[rni_lane_code].unique().reset_index()
+
+                # Start the merge process between the input table
+                df_merge = pd.merge(input_groupped, rni_groupped, how='outer', left_on=input_merge_key,
+                                    right_on=rni_merge_key, indicator=True, suffixes=['_INPUT', '_RNI'])
+                df_both = df_merge.loc[df_merge['_merge'] == 'both']  # Interval found on both input table and RNI
+                df_input_only = df_merge.loc[df_merge['_merge'] == 'left_only']  # Interval found only on the input
+
+                if len(df_input_only) != 0:
+                    missing_intrv_i = df_input_only.index.tolist()  # The index of row on input table without match
+                    excel_i = [x+2 for x in missing_intrv_i]
+                    error_message = "Segmen pada baris {0} tidak memiliki pasangan pada table RNI.".format(excel_i)
+                    self.error_list.append(error_message)
+
+                # Create a column containing intersection count of lane code combination
+                # between the input table and RNI Table
+                df_both.loc[:, 'lane_intersect_count'] = [len(set(a).intersection(b)) for a, b in
+                                                          zip(df_both[lane_code], df_both[rni_lane_code])]
+
+                df_both[from_m_col] = pd.Series(df_both[from_m_col]/100).astype(str)
+                df_both[to_m_col] = pd.Series(df_both[to_m_col]/100).astype(str)
+                df_both['segment'] = pd.Series((df_both[from_m_col])+'-'+(df_both[to_m_col]))
+                df_both.set_index(['segment'], inplace=True)
+
+                invalid_lane_seg = df_both.loc[df_both['lane_intersect_count'] != df_both[rni_lane_code].str.len()].\
+                    index.tolist()
+                error_message = 'Rute {0} memiliki segmen dengan kombinasi lane code yang tidak sesuai dengan RNI. Segmen {1}'.\
+                    format(route, invalid_lane_seg)
+                self.error_list.append(error_message)
 
         return self
 
