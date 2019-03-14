@@ -174,7 +174,7 @@ class EventTableCheck(object):
 
         if len(self.missing_route) != 0:
             # Create error message
-            error_message = '{0} tidak ada pada domain rute balai {1}'.format(self.missing_route, balai_code)
+            error_message = '{0} tidak ada pada domain rute balai {1}.'.format(self.missing_route, balai_code)
             self.error_list.append(error_message)  # Append error message
 
         return self
@@ -245,7 +245,7 @@ class EventTableCheck(object):
                 # then create an error message
                 if max_to_m < lrs_max_to_m:
                     len_diff = lrs_max_to_m - max_to_m  # Len difference is in Kilometers
-                    error_message = "Data survey pada rute {0} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {1} Kilometer".\
+                    error_message = "Data survey pada rute {0} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {1} Kilometer.".\
                         format(route, len_diff.round(3))
                     self.error_list.append(error_message)
 
@@ -256,7 +256,7 @@ class EventTableCheck(object):
             if len(error_i) != 0:
                 excel_i = [x+2 for x in error_i]  # Create the index for excel table
                 # Create error message
-                error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen'.\
+                error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
                     format(from_col, to_col, excel_i)
                 self.error_list.append(error_message)  # Append the error message
 
@@ -304,7 +304,7 @@ class EventTableCheck(object):
 
                     elif row[from_m_col] > row[to_m_col]:
                         # Create an error message
-                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}'.\
+                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
                             format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
                         self.error_list.append(error_message)
                         to_m = row[from_m_col]  # Rewrite the To Measure variable
@@ -382,7 +382,7 @@ class EventTableCheck(object):
 
                 if distance_to_ref > threshold:
                     error_i.append(index)  # Append the index of row with coordinate error
-                    error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen'.\
+                    error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
                         format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
                     self.error_list.append(error_message)
 
@@ -424,7 +424,7 @@ class EventTableCheck(object):
             df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
 
             if len(df_rni) == 0:  # Check if the route exist in the RNI Table
-                error_message = "Ruas {0} tidak terdapat pada table RNI".format(route)  # Create an error message
+                error_message = "Ruas {0} tidak terdapat pada table RNI.".format(route)  # Create an error message
                 self.error_list.append(error_message)
             else:
                 # Create the join key for both DataFrame
@@ -459,7 +459,7 @@ class EventTableCheck(object):
 
                 invalid_lane_seg = df_both.loc[df_both['lane_intersect_count'] != df_both[rni_lane_code].str.len()].\
                     index.tolist()
-                error_message = 'Rute {0} memiliki segmen dengan kombinasi lane code yang tidak sesuai dengan RNI. Segmen {1}'.\
+                error_message = 'Rute {0} memiliki segmen dengan kombinasi lane code yang tidak sesuai dengan RNI. Segmen {1}.'.\
                     format(route, invalid_lane_seg)
                 self.error_list.append(error_message)
 
