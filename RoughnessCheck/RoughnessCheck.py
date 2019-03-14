@@ -61,8 +61,8 @@ if EventCheck.header_check_result is None:
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
     EventCheck.segment_len_check(LrsNetworkRID, routes=EventCheck.valid_route)  # Check the segment length validity
     EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
-    EventCheck.coordinate_check(LrsNetworkRID,
-                                routes=EventCheck.valid_route, threshold=SearchRadius)  # Check the segment starting coordinate
+    EventCheck.coordinate_check(LrsNetworkRID,  # Check the segment starting coordinate
+                                routes=EventCheck.valid_route, threshold=SearchRadius, at_start=False)
     EventCheck.lane_code_check(RNIEventTable, routes=EventCheck.valid_route,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
 
