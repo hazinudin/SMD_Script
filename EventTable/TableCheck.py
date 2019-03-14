@@ -355,6 +355,7 @@ class EventTableCheck(object):
                 for s_row in cur:
                     route_geom = s_row[0]
                     route_spat_ref = route_geom.spatialReference
+                    route_max_m = route_geom.lastPoint.M
 
             for index, row in df_route.iterrows():
                 point = Point(row[long_col], row[lat_col])  # Create a point object
@@ -376,15 +377,18 @@ class EventTableCheck(object):
                         measurement = row[to_m_col] * 10  # Convert the measurement value to meters (from decimeters)
                     elif row[lane_code][0] == 'R':
                         measurement = row[from_m_col] * 10
-                    
-                ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
-                distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
 
-                if distance_to_ref > threshold:
-                    error_i.append(index)  # Append the index of row with coordinate error
-                    error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
-                        format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                    self.error_list.append(error_message)
+                if measurement > route_max_m:  # If the measurement value is beyond the route max m then pass
+                    pass
+                else:
+                    ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
+                    distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
+
+                    if distance_to_ref > threshold:
+                        error_i.append(index)  # Append the index of row with coordinate error
+                        error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
+                            format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                        self.error_list.append(error_message)
 
         return self
 
