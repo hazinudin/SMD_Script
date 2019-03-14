@@ -320,7 +320,7 @@ class EventTableCheck(object):
 
     def coordinate_check(self, lrs_routeid, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
                          from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
-                         threshold=30):
+                         threshold=30, at_start=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -364,23 +364,27 @@ class EventTableCheck(object):
                 # Re-project the point geometry using the lrs spat ref
                 point_geom = point_geom.projectAs(route_spat_ref)
 
-                # The starting point of a segment in LRS
-                if row[lane_code][0] == 'L':
-                    measurement = row[from_m_col] * 10  # Convert the measurement value to meters (from decimeters)
-                elif row[lane_code][0] == 'R':
-                    measurement = row[to_m_col] * 10
+                if at_start:
+                    # The starting point of a segment in LRS
+                    if row[lane_code][0] == 'L':
+                        measurement = row[from_m_col] * 10  # Convert the measurement value to meters (from decimeters)
+                    elif row[lane_code][0] == 'R':
+                        measurement = row[to_m_col] * 10
+                else:
+                    # The end point of a segment in LRS
+                    if row[lane_code][0] == 'L':
+                        measurement = row[to_m_col] * 10  # Convert the measurement value to meters (from decimeters)
+                    elif row[lane_code][0] == 'R':
+                        measurement = row[from_m_col] * 10
                     
                 ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
                 distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
 
                 if distance_to_ref > threshold:
                     error_i.append(index)  # Append the index of row with coordinate error
-
-        if len(error_i) != 0:
-            excel_i = [x+2 for x in error_i]
-            error_message = 'Koordinat awal pada baris {0} berjarak lebih dari {1} meter dari titik awal segmen.'.\
-                format(excel_i, threshold)
-            self.error_list.append(error_message)
+                    error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen'.\
+                        format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                    self.error_list.append(error_message)
 
         return self
 
