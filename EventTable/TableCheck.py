@@ -30,10 +30,10 @@ class EventTableCheck(object):
         self.lrs_network = lrs_network  # Specified LRS Network feature class in SDE database
         self.sde_connection = db_conn  # The specifier gdb connection incl db version and username
 
-        self.header_check_result = self.header_check()  # The header checking result
-        self.dtype_check_result = self.dtype_check()  # The data type checking result
-        self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.error_list = []  # List for storing the error message for all checks
+        self.header_check_result = self.header_check()  # The header checking result
+        self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
+        self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
 
@@ -71,7 +71,7 @@ class EventTableCheck(object):
         else:
             return reject_message(error_message)
 
-    def dtype_check(self):
+    def dtype_check(self, write_error=False):
         """
         This function check the input table column data type and the data contained in that row.
 
@@ -100,8 +100,11 @@ class EventTableCheck(object):
                     # If there is an error
                     if len(error_i) != 0:
                         excel_i = [x + 2 for x in error_i]
-                        error_list.append('{0} memiliki nilai non-numeric pada baris{1}.'
-                                          .format(col_name, str(excel_i)))
+                        error_message = '{0} memiliki nilai non-numeric pada baris{1}.'\
+                            .format(col_name, str(excel_i))
+                        error_list.append(error_message)
+                        if write_error:
+                            self.error_list.append(error_message)
 
                 elif col_dtype == 'date':  # Check for date column
 
@@ -113,15 +116,19 @@ class EventTableCheck(object):
                     # If there is an error
                     if len(error_i) != 0:
                         excel_i = [x + 2 for x in error_i]
-                        error_list.append('{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.'
-                                          .format(col_name, str(excel_i)))
+                        error_message = '{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.'\
+                            .format(col_name, str(excel_i))
+                        error_list.append(error_message)
+                        if write_error:
+                            self.error_list.append(error_message)
+
+            self.df_valid = df  # Assign the df (the check result) as self.df_valid
 
             # If the check does not detect error then return None
             if len(error_list) == 0:
-                self.df_valid = df  # Assign the df (the check result) as self.df_valid
                 return None
             else:
-                return reject_message(error_list)
+                return False
 
         else:
             return self.header_check_result
@@ -195,8 +202,8 @@ class EventTableCheck(object):
 
         return self
 
-    def segment_len_check(self, lrs_routeid, segment_len=0.1, route_col='LINKID', from_col='STA_FR', to_col='STA_TO',
-                          length_col='LENGTH'):
+    def segment_len_check(self, lrs_routeid, routes='ALL', segment_len=0.1, route_col='LINKID', from_col='STA_FR',
+                          to_col='STA_TO', length_col='LENGTH'):
         """
         This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
         has to match the stated From Measure and To Measure
@@ -213,7 +220,13 @@ class EventTableCheck(object):
         df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure to Km
         df['diff'] = pd.Series(df[to_col]-df[from_col])  # Create a diff column for storing from-to difference
 
-        for route in df[route_col].unique().tolist():  # Iterate over all available row
+        if routes == 'ALL':
+            route_list = df[route_col].unique().tolist()
+        else:
+            df = self.selected_route_df(df, routes, route_col=route_col)
+            route_list = df[route_col].unique().tolist()
+
+        for route in route_list:  # Iterate over all available row
 
             error_i = []  # Create an empty list for storing the error_index
             network_feature_found = False  # Variable for determining if the requested route exist in LRS Network
@@ -249,7 +262,8 @@ class EventTableCheck(object):
 
         return self
 
-    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID'):
+    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID',
+                          lane_code='CODE_LANE'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -257,26 +271,52 @@ class EventTableCheck(object):
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a valid DataFrame with matching DataType with requirement
+        groupby_cols = [route_col, from_m_col, to_m_col]
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
-            pass
+            route_list = df[route_col].unique().tolist()
         else:
             df = self.selected_route_df(df, routes)
-
-        # Sort the DataFrame based on the RouteId and FromMeasure
-        df.sort_values(by=[route_col, from_m_col], inplace=True)
+            route_list = df[route_col].unique().tolist()
 
         # Iterate over valid row in the input table
-        for route in self.valid_route:
-            df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col]]  # Create a route DataFrame
-            df_route.reset_index(inplace=True)  # Reset the df_route index, preserve the index column
+        for route in route_list:
+            # Create a route DataFrame
+            df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col, lane_code]]
+            df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
+                reset_index()  # Group the route df
 
-            for index, row in df_route.iterrows():
-                if index == 0:
+            # Sort the DataFrame based on the RouteId and FromMeasure
+            df_groupped.sort_values(by=[route_col, from_m_col], inplace=True)
+            df_groupped.reset_index(drop=True)
+            for index, row in df_groupped.iterrows():
+                if index == 0:  # Initialize the from_m and to_m value with the first row of a route
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
+                    if from_m != 0:
+                        error_message = 'Data survey pada rute {0} tidak dimulai dari 0.'.format(route)
+                        self.error_list.append(error_message)
                 else:
-                    pass
+                    # Make sure the from measure is smaller than to measure, and
+                    # the next row from measure is the same as previous row to measure (no gaps).
+                    if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], rtol=0.01)):
+                        to_m = row[to_m_col]  # Rewrite the To Measure variable
+
+                    elif row[from_m_col] > row[to_m_col]:
+                        # Create an error message
+                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}'.\
+                            format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
+                        self.error_list.append(error_message)
+                        to_m = row[from_m_col]  # Rewrite the To Measure variable
+
+                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01):
+                        # Create an error message
+                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
+                            format(route, to_m/100, row[from_m_col]/100)
+                        self.error_list.append(error_message)
+                        to_m = row[to_m_col]  # Rewrite the To Measure variable
+
+        return self
 
     def coordinate_check(self, lrs_routeid, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
                          from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
@@ -421,7 +461,7 @@ class EventTableCheck(object):
 
         return self
 
-    def copy_valid_df(self):
+    def copy_valid_df(self, dropna=True):
         """
         This function create a valid DataFrame from the dtype check class method, which ensures every column match the
         required DataType
@@ -429,7 +469,9 @@ class EventTableCheck(object):
         """
         if self.dtype_check() is None:  # If there is a problem with the data type check then return the df_string
             df = self.df_valid
-        else:
+        elif dropna:
+            df = self.df_valid.dropna()
+        elif not dropna:
             df = self.df_string
 
         return df.copy(deep=True)

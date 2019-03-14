@@ -51,20 +51,19 @@ BalaiRoutes = Route_and_balai['results'][0]['routes']
 # Create a EventTableCheck class object
 # The __init__ already include header check
 EventCheck = TableCheck.EventTableCheck(TablePath, ColumnDetails, LrsNetwork, dbConnection)
-AddMessage(EventCheck.header_check_result)
-AddMessage(EventCheck.dtype_check_result)
 
 # If the header check and data type check returns None, the process can continue
-if EventCheck.header_check_result is None and EventCheck.dtype_check_result is None:
+if EventCheck.header_check_result is None:
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
-    EventCheck.segment_len_check(LrsNetworkRID)  # Check the segment length validity
+    EventCheck.segment_len_check(LrsNetworkRID, routes=EventCheck.valid_route)  # Check the segment length validity
     EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
     EventCheck.coordinate_check(LrsNetworkRID,
                                 routes=EventCheck.valid_route, threshold=50)  # Check the segment starting coordinate
-    EventCheck.lane_code_check(RNIEventTable, rni_route_col=RNIRouteID)  # Check the event layer lane code combination
+    EventCheck.lane_code_check(RNIEventTable, routes=EventCheck.valid_route,
+                               rni_route_col=RNIRouteID)  # Check the event layer lane code combination
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
@@ -78,8 +77,5 @@ if EventCheck.header_check_result is None and EventCheck.dtype_check_result is N
         SetParameterAsText(2, "Finish")  # Should return a success JSON String
 
 else:
-    if EventCheck.header_check_result is None:  # If there is an error with header check
-        SetParameterAsText(2, EventCheck.dtype_check_result)
-    else:
-        # There must be an error with the dType check
-        SetParameterAsText(2, EventCheck.header_check_result)
+    # There must be an error with the dType check
+    SetParameterAsText(2, EventCheck.header_check_result)
