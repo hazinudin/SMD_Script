@@ -287,7 +287,7 @@ class EventTableCheck(object):
                 reset_index()  # Group the route df
 
             # Sort the DataFrame based on the RouteId and FromMeasure
-            df_groupped.sort_values(by=[route_col, from_m_col], inplace=True)
+            df_groupped.sort_values(by=[route_col, from_m_col, to_m_col], inplace=True)
             df_groupped.reset_index(drop=True)
             for index, row in df_groupped.iterrows():
                 if index == 0:  # Initialize the from_m and to_m value with the first row of a route
@@ -301,21 +301,37 @@ class EventTableCheck(object):
                     # the next row from measure is the same as previous row to measure (no gaps).
                     if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], rtol=0.01)):
                         # This means OK
-                        to_m = row[to_m_col]  # Rewrite the To Measure variable
+                        # Rewrite the To Measure and From Measure variable
+                        from_m = row[from_m_col]
+                        to_m = row[to_m_col]
 
                     elif row[from_m_col] > row[to_m_col]:
                         # Create an error message
                         error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
                             format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
                         self.error_list.append(error_message)
-                        to_m = row[from_m_col]  # Rewrite the To Measure variable
+                        # Rewrite the To Measure and From Measure variable
+                        to_m = row[from_m_col]
+                        from_m = row[to_m_col]
 
-                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01) and (to_m < row[from_m_col]):
-                        # Create an error message
-                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
-                            format(route, to_m/100, row[from_m_col]/100)
-                        self.error_list.append(error_message)
-                        to_m = row[to_m_col]  # Rewrite the To Measure variable
+                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01):
+                        if to_m < row[from_m_col]:
+                            # Create an error message
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
+                                format(route, to_m/100, row[from_m_col]/100)
+                            self.error_list.append(error_message)
+                            # Rewrite the To Measure and From Measure variable
+                            from_m = row[from_m_col]
+                            to_m = row[to_m_col]
+
+                        if to_m > row[from_m_col]:
+                            # Create an error message
+                            error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'.\
+                                format(from_m, to_m, row[from_m_col], row[to_m_col], route)
+                            self.error_list.append(error_message)
+                            # Rewrite the To Measure and From Measure variable
+                            from_m = row[from_m_col]
+                            to_m = row[to_m_col]
 
         return self
 
