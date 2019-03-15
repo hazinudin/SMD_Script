@@ -300,6 +300,7 @@ class EventTableCheck(object):
                     # Make sure the from measure is smaller than to measure, and
                     # the next row from measure is the same as previous row to measure (no gaps).
                     if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], rtol=0.01)):
+                        # This means OK
                         to_m = row[to_m_col]  # Rewrite the To Measure variable
 
                     elif row[from_m_col] > row[to_m_col]:
@@ -309,7 +310,7 @@ class EventTableCheck(object):
                         self.error_list.append(error_message)
                         to_m = row[from_m_col]  # Rewrite the To Measure variable
 
-                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01):
+                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01) and (to_m < row[from_m_col]):
                         # Create an error message
                         error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
                             format(route, to_m/100, row[from_m_col]/100)
