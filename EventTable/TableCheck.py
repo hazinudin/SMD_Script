@@ -285,7 +285,6 @@ class EventTableCheck(object):
             df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col, lane_code]]
             df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
                 reset_index()  # Group the route df
-            AddMessage(df_groupped)
 
             # Sort the DataFrame based on the RouteId and FromMeasure
             df_groupped.sort_values(by=[route_col, from_m_col, to_m_col], inplace=True)
