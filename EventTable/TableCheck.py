@@ -285,6 +285,7 @@ class EventTableCheck(object):
             df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col, lane_code]]
             df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
                 reset_index()  # Group the route df
+            AddMessage(df_groupped)
 
             # Sort the DataFrame based on the RouteId and FromMeasure
             df_groupped.sort_values(by=[route_col, from_m_col, to_m_col], inplace=True)
@@ -321,17 +322,16 @@ class EventTableCheck(object):
                                 format(route, to_m/100, row[from_m_col]/100)
                             self.error_list.append(error_message)
                             # Rewrite the To Measure and From Measure variable
-                            from_m = row[from_m_col]
-                            to_m = row[to_m_col]
 
                         if to_m > row[from_m_col]:
                             # Create an error message
                             error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'.\
                                 format(from_m, to_m, row[from_m_col], row[to_m_col], route)
                             self.error_list.append(error_message)
-                            # Rewrite the To Measure and From Measure variable
-                            from_m = row[from_m_col]
-                            to_m = row[to_m_col]
+
+                        # Rewrite the To Measure and From Measure variable
+                        from_m = row[from_m_col]
+                        to_m = row[to_m_col]
 
         return self
 
