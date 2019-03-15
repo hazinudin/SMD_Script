@@ -402,9 +402,16 @@ class EventTableCheck(object):
 
                     if distance_to_ref > threshold:
                         error_i.append(index)  # Append the index of row with coordinate error
-                        error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
-                            format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                        self.error_list.append(error_message)
+
+                        if at_start:
+                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
+                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                            self.error_list.append(error_message)
+
+                        if not at_start:
+                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'.\
+                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                            self.error_list.append(error_message)
 
         return self
 
