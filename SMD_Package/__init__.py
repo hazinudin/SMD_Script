@@ -1,2 +1,2 @@
-# Initialize Pakcakge
+# Initialize Package
 from TableCheck import *

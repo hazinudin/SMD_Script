@@ -2,8 +2,8 @@ import os
 import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage
-sys.path.append('E:\SMD_Script')  # Import the EventTable package
-from EventTable import EventTableCheck, reject_message
+sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
+from SMD_Package import EventValidation, reject_message
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -51,7 +51,7 @@ BalaiRoutes = Route_and_balai['results'][0]['routes']
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-EventCheck = EventTableCheck(TablePath, ColumnDetails, LrsNetwork, dbConnection)
+EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, dbConnection)
 
 # If the header check and data type check returns None, the process can continue
 if EventCheck.header_check_result is None:

@@ -4,13 +4,13 @@ import pandas as pd
 import json
 
 
-class EventTableCheck(object):
+class EventValidation(object):
     """
     This class will be used for event table review, consist of table columns review and row by row review.
     """
     def __init__(self, event_table_path, column_details, lrs_network, db_conn):
         """
-        Initialize EventTable class
+        Initialize EventTableCheck class
         the header_check and dtype_check also called when the class is initialized
         """
         self.file_format = str(event_table_path).split('.')[1]  # Get the table file format
