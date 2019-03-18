@@ -43,7 +43,7 @@ class EventValidation(object):
         :return:
         """
 
-        error_message = ''
+        error_list = []
 
         # Check the file format
         if self.df_string is not None:
@@ -57,19 +57,19 @@ class EventValidation(object):
                 if req_header not in table_header:
                     missing_column.append(str(req_header))
             if len(missing_column) != 0:
-                error_message += 'Table input tidak memiliki kolom {0}.'.format(missing_column)
+                error_list.append('Table input tidak memiliki kolom {0}.'.format(missing_column))
 
             # Check if the amount of header is the same as the requirement
             if len(table_header) != len(self.column_details.keys()):
-                error_message += 'Table input memiliki jumlah kolom yang berlebih.'
+                error_list.append('Table input memiliki jumlah kolom yang berlebih.')
 
         else:
-            error_message += 'Tabel input tidak berformat .xls atau .xlsx.'
+            error_list.append('Tabel input tidak berformat .xls atau .xlsx.')
 
-        if error_message == '':
+        if len(error_list) == 0:
             return None
         else:
-            return reject_message(error_message)
+            return error_list
 
     def dtype_check(self, write_error=False):
         """
@@ -524,12 +524,3 @@ class EventValidation(object):
 
         df = df.loc[df[route_col].isin(route_list)]
         return df  # Return the DataFrame with dropped invalid route
-
-
-def reject_message(err_message):
-    message = {
-        'status': 'rejected',
-        'msg': err_message
-    }
-
-    return json.dumps(message)
