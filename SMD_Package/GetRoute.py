@@ -63,6 +63,30 @@ class GetRoutes(object):
         string_json_output = self.results_output("Succeeded", self.query_type, self.results_list)
         return string_json_output
 
+    def route_list(self, req_balai='ALL'):
+        """
+        This function return a list from the requested codes in the __init__, if the 'req_balai' is 'ALL' then all the
+        route from requested route in __init__ will be returned. If the req_balai is specified, then only the specified
+        route from selected domain will be returned. req_balai has to be a member of the requested balai submitted in
+        __init__ function.
+        :param req_balai: the requested balai code, has to be a member of requested balai submitted in the __init__ func
+        :return: a list containing all requested routes. If the requested balai is more than one, all routes will be
+        merged into single list.
+        """
+        route_list = []
+        if req_balai == 'ALL':
+            for balai in self.balai_route_dict:
+                route_list += self.balai_route_dict[balai]
+        else:
+            for code in req_balai:
+                if code in self.balai_route_dict.keys():
+                    route_list += self.balai_rotue_dict[code]
+                else:
+                    pass
+
+        return route_list
+
+
     @staticmethod
     def results_output(status, type, results):
         """Create the results of the query."""

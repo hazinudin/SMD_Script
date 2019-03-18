@@ -1,9 +1,9 @@
 import os
 import sys
 import json
-from arcpy import GetParameterAsText, SetParameterAsText, AddMessage
+from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message
+from SMD_Package import EventValidation, output_message, GetRoutes
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -25,11 +25,11 @@ RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
 RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 RNILaneCode = smd_config['table_fields']['rni']['lane_code']
 
+BalaiTable = smd_config['table_names']['balai_table']
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
 input_JSON = GetParameterAsText(0)
-AllRoute_Result = GetParameterAsText(1)
 
 # Load the input JSON
 InputDetails = json.loads(input_JSON)
@@ -46,8 +46,8 @@ SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
 
 # GetAllRoute result containing all route from a Balai
-Route_and_balai = json.loads(AllRoute_Result)
-BalaiRoutes = Route_and_balai['results'][0]['routes']
+env.workspace = dbConnection
+routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
@@ -57,7 +57,7 @@ EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, dbConnection)
 if EventCheck.header_check_result is None:
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
-    EventCheck.route_domain(KodeBalai, BalaiRoutes)  # Check the input route domain
+    EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
     EventCheck.segment_len_check(LrsNetworkRID, routes=EventCheck.valid_route)  # Check the segment length validity
     EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
@@ -73,10 +73,10 @@ if EventCheck.header_check_result is None:
         for error_message in ErrorMessageList:
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
-        SetParameterAsText(2, output_message("Rejected", ErrorMessageList))
+        SetParameterAsText(1, output_message("Rejected", ErrorMessageList))
     else:  # If there is no error
-        SetParameterAsText(2, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
+        SetParameterAsText(1, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
 
 else:
     # There must be an error with the dType check
-    SetParameterAsText(2, output_message("Rejected", EventCheck.header_check_result))
+    SetParameterAsText(1, output_message("Rejected", EventCheck.header_check_result))
