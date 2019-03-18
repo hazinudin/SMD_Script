@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage
 sys.path.append('E:\SMD_Script')  # Import the EventTable package
-from EventTable import TableCheck
+from EventTable import EventTableCheck, reject_message
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -51,7 +51,7 @@ BalaiRoutes = Route_and_balai['results'][0]['routes']
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-EventCheck = TableCheck.EventTableCheck(TablePath, ColumnDetails, LrsNetwork, dbConnection)
+EventCheck = EventTableCheck(TablePath, ColumnDetails, LrsNetwork, dbConnection)
 
 # If the header check and data type check returns None, the process can continue
 if EventCheck.header_check_result is None:
@@ -73,7 +73,7 @@ if EventCheck.header_check_result is None:
         for error_message in ErrorMessageList:
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
-        SetParameterAsText(2, TableCheck.reject_message(ErrorMessageList))
+        SetParameterAsText(2, reject_message(ErrorMessageList))
     else:  # If there is no error
         SetParameterAsText(2, "Finish")  # Should return a success JSON String
 
