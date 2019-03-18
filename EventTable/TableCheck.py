@@ -486,7 +486,7 @@ class EventTableCheck(object):
 
                 invalid_lane_seg = df_both.loc[df_both['lane_intersect_count'] != df_both[rni_lane_code].str.len()].\
                     index.tolist()
-                error_message = 'Rute {0} memiliki segmen dengan kombinasi lane code yang tidak sesuai dengan RNI. Segmen {1}.'.\
+                error_message = 'Rute {0} memiliki kombinasi lane code yang tidak sesuai dengan RNI pada segmen {1}.'.\
                     format(route, invalid_lane_seg)
                 self.error_list.append(error_message)
 
