@@ -1,2 +1,3 @@
-# Ignore all XML Files
+# Ignore all XML and IML Files
 *.xml
+*.iml
