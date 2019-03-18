@@ -18,13 +18,18 @@
   "table_fields":{
     "lrs_network":{
       "route_id":"ROUTEID",
-      "route_name":"ROUTE_NAME"
+      "route_name":"ROUTE_NAME",
+      "prov_code":"NOPROP"
     },
     "rni":{
       "route_id":"LINKID",
       "lane_code":"LANE_CODE",
       "from_measure":"FROMMEASURE",
       "to_measure":"TOMEASURE"
+    },
+    "balai_table":{
+      "prov_code":"NO_PROV",
+      "balai_code":"NOMOR_BALAI"
     }
   }
 }
