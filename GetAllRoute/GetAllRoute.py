@@ -18,20 +18,9 @@ def output_message(status, message):
     return json.dumps(output_dict)
 
 
-def results_output(status, type, results):
-    """Create the results of the query."""
-    results_dict = {
-        "status": status,
-        "type": type,
-        "results": results
-    }
-
-    return json.dumps(results_dict)
-
-
 class RouteFinder(object):
-    def __init__(self, query_type, query_value, lrs_network, lrs_routeid, lrs_prov_code, balai_table,
-                 balai_code_field, balai_prov_field):
+    def __init__(self, query_type, query_value, lrs_network, balai_table, lrs_routeid='ROUTEID', lrs_prov_code='NOPROP',
+                 balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
 
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
@@ -42,51 +31,41 @@ class RouteFinder(object):
             elif type(query_value) == list:
                 query_value = [str(x) for x in query_value]
 
-        self.lrs_network = lrs_network
-        self.lrs_routeid = lrs_routeid
-        self.lrs_prov_code = lrs_prov_code
-        self.query_type = query_type
         self.string_json_output = None
 
         balai_prov_dict = {}  # Create a "prov": "kode_balai" dictionary
         self.balai_route_dict = {}  # Create a "prov": [list of route_id] dictionary
         self.results_list = [] # Create a list for storing the route query result for every code
+        self.query_type = query_type
 
         # If the query type is based on province code and not all province are requested
         if query_type == 'no_prov' and query_value != "ALL":
-            sql_statement = '{0} in ({1})'.format(balai_prov_field, str(query_value).strip('[]'))
+            sql_statement = '{0} in ({1})'.format(balai_prov, str(query_value).strip('[]'))
         else:
             if query_value == "ALL":  # If the requested value is all the same
                 sql_statement = None
             if query_type == 'balai' and query_value != "ALL":
-                sql_statement = '{0} in ({1})'.format(balai_code_field, str(query_value).strip('[]'))
+                sql_statement = '{0} in ({1})'.format(balai_code, str(query_value).strip('[]'))
 
         # Start the balai and prov query from the balai_prov table in geodatabase
-        with da.SearchCursor(balai_table, [balai_prov_field, balai_code_field], where_clause=sql_statement,
+        with da.SearchCursor(balai_table, [balai_prov, balai_code], where_clause=sql_statement,
                              sql_clause=('DISTINCT', None)) as search_cursor:
             for row in search_cursor:
-                balai_prov_dict[str(row[0])] = str(row[1])
+                balai_prov_dict[str(row[0])] = str(row[1])  # Create a "prov":"kode_balai" dictionary
 
-        self.balai_prov_dict = balai_prov_dict  # Return a kode balai and province relation dictionary
-
-    def route_query(self):
-        """
-        This function will find the route based on requested province
-        """
         balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
 
         # Start iterating over the requested province
-        for prov_code in self.balai_prov_dict:
-            kode_balai = self.balai_prov_dict[prov_code]
-            with da.SearchCursor(self.lrs_network, [self.lrs_routeid],
-                                 where_clause='{0}=({1})'.format(self.lrs_prov_code, prov_code)) as search_cursor:
+        for prov_code in balai_prov_dict:
+            kode_balai = balai_prov_dict[prov_code]
+            with da.SearchCursor(lrs_network, [lrs_routeid],
+                                 where_clause='{0}=({1})'.format(lrs_prov_code, prov_code)) as search_cursor:
                 if kode_balai not in balai_route_dict:
                     balai_route_dict[kode_balai] = [str(row[0]) for row in search_cursor]
                 else:
                     balai_route_dict[kode_balai] += [str(row[0]) for row in search_cursor]
 
         self.balai_route_dict = balai_route_dict
-        return self
 
     def create_json_output(self):
         """
@@ -97,8 +76,19 @@ class RouteFinder(object):
             result_object = {"code":str(balai), "routes":route_list}
             self.results_list.append(result_object)
 
-        self.string_json_output = results_output("Succeeded", self.query_type, self.results_list)
-        return self
+        string_json_output = self.results_output("Succeeded", self.query_type, self.results_list)
+        return string_json_output
+
+    @staticmethod
+    def results_output(status, type, results):
+        """Create the results of the query."""
+        results_dict = {
+            "status": status,
+            "type": type,
+            "results": results
+        }
+
+        return json.dumps(results_dict)
 
 
 # Change the directory to the SMD Script root folder
@@ -137,10 +127,11 @@ queryType = input_details['type']
 queryValue = input_details['codes']
 lrsNetwork = config['table_names']['lrs_network']
 balaiTable = config['table_names']['balai_table']
-lrs_RouteID_field = 'ROUTEID'
-lrs_ProvCode_field = 'NOPROP'
-balaiTable_BalaiCode_field = 'NOMOR_BALAI'
-balaiTable_ProvCode_field = 'NO_PROV'
+
+lrs_RID = 'ROUTEID'
+lrs_provcode = 'NOPROP'
+balaiTableBalaiCode = 'NOMOR_BALAI'
+balaiTableProvCode = 'NO_PROV'
 
 env.workspace = config['smd_database']['instance']
 
@@ -163,8 +154,6 @@ for table in [balaiTable, lrsNetwork]:
         raise
 
 # Creating the route query request object
-route_query_request = RouteFinder(queryType, queryValue, lrsNetwork, lrs_RouteID_field, lrs_ProvCode_field, balaiTable,
-                                  balaiTable_BalaiCode_field, balaiTable_ProvCode_field)
-route_query_request.route_query()  # Start the query process
-route_query_request.create_json_output()  # Creating the string json output
-SetParameterAsText(1, route_query_request.string_json_output)
+route_query = RouteFinder(queryType, queryValue, lrsNetwork, balaiTable, lrs_routeid=lrs_RID,
+                          lrs_prov_code=lrs_provcode, balai_code=balaiTableBalaiCode, balai_prov=balaiTableProvCode)
+SetParameterAsText(1, route_query.create_json_output())
