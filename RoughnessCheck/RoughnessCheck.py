@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, reject_message
+from SMD_Package import EventValidation, output_message
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -73,10 +73,10 @@ if EventCheck.header_check_result is None:
         for error_message in ErrorMessageList:
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
-        SetParameterAsText(2, reject_message(ErrorMessageList))
+        SetParameterAsText(2, output_message("Rejected", ErrorMessageList))
     else:  # If there is no error
-        SetParameterAsText(2, "Finish")  # Should return a success JSON String
+        SetParameterAsText(2, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
 
 else:
     # There must be an error with the dType check
-    SetParameterAsText(2, EventCheck.header_check_result)
+    SetParameterAsText(2, output_message("Rejected", EventCheck.header_check_result))
