@@ -1,7 +1,6 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
-import json
 
 
 class EventValidation(object):
