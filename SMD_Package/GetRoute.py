@@ -18,6 +18,8 @@ class GetRoutes(object):
         self.string_json_output = None
 
         balai_prov_dict = {}  # Create a "prov": "kode_balai" dictionary
+        balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
+
         self.balai_route_dict = {}  # Create a "prov": [list of route_id] dictionary
         self.results_list = [] # Create a list for storing the route query result for every code
         self.query_type = query_type
@@ -36,8 +38,6 @@ class GetRoutes(object):
                              sql_clause=('DISTINCT', None)) as search_cursor:
             for row in search_cursor:
                 balai_prov_dict[str(row[0])] = str(row[1])  # Create a "prov":"kode_balai" dictionary
-
-        balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
 
         # Start iterating over the requested province
         for prov_code in balai_prov_dict:
