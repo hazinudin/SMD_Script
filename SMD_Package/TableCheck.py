@@ -468,9 +468,10 @@ class EventValidation(object):
                 df_input_only = df_merge.loc[df_merge['_merge'] == 'left_only']  # Interval found only on the input
 
                 if len(df_input_only) != 0:
-                    missing_intrv_i = df_input_only.index.tolist()  # The index of row on input table without match
-                    excel_i = [x+2 for x in missing_intrv_i]
-                    error_message = "Segmen pada baris {0} tidak memiliki pasangan pada table RNI.".format(excel_i)
+                    missing_segments = df_input_only.groupby(by=[from_m_col, to_m_col]).groups.keys()
+                    str_segment = [str(x).replace(', ', '-') for x in missing_segments]
+                    error_message = "Segmen di rute {0} pada interval {1} tidak memiliki pasangan pada table RNI.".\
+                        format(route, str(str_segment).strip('[]'))
                     self.error_list.append(error_message)
 
                 # Create a column containing intersection count of lane code combination
