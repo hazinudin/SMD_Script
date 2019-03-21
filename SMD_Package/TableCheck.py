@@ -393,7 +393,7 @@ class EventValidation(object):
                     elif row[lane_code][0] == 'R':
                         measurement = row[from_m_col] * 10
 
-                if measurement > route_max_m:  # If the measurement value is beyond the route max m then pass
+                if measurement/1000 > route_max_m:  # If the measurement value is beyond the route max m then pass
                     pass
                 else:
                     ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
