@@ -201,23 +201,23 @@ class EventValidation(object):
 
         return self
 
-    def segment_len_check(self, lrs_routeid, routes='ALL', segment_len=0.1, route_col='LINKID', from_col='STA_FR',
-                          to_col='STA_TO', length_col='LENGTH'):
+    def segment_len_check(self, lrs_routeid, routes='ALL', segment_len=0.1, route_col='LINKID', from_m_col='STA_FR',
+                          to_m_col='STA_TO', lane_code='CODE_LANE', length_col='LENGTH'):
         """
         This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
         has to match the stated From Measure and To Measure
         :param segment_len: Required semgent legnth, the default value is 100 meters
-        :param from_col: From Measure column
-        :param to_col: To Measure column
+        :param from_m_col: From Measure column
+        :param to_m_col: To Measure column
         :param length_col: Segment length column
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a copy of the valid DataFrame
 
-        df[from_col] = pd.Series(df[from_col]/100)  # Convert the from measure to Km
-        df[to_col] = pd.Series(df[to_col]/100)  # Convert the to measure to Km
-        df['diff'] = pd.Series(df[to_col]-df[from_col])  # Create a diff column for storing from-to difference
+        df[from_m_col] = pd.Series(df[from_m_col] / 100)  # Convert the from measure to Km
+        df[to_m_col] = pd.Series(df[to_m_col] / 100)  # Convert the to measure to Km
+        df['diff'] = pd.Series(df[to_m_col] - df[from_m_col])  # Create a diff column for storing from-to difference
 
         if routes == 'ALL':
             route_list = df[route_col].unique().tolist()
@@ -237,27 +237,39 @@ class EventValidation(object):
 
             if network_feature_found:
                 df_route = df.loc[df[route_col] == route]  # Create a selected route DataFrame
-                max_to_m = df_route.at[df_route[to_col].idxmax(), to_col]  # Get the max To measure value of a route
                 lrs_max_to_m = route_geom.lastPoint.M  # Get the max measurement value for route in LRS Network
+                lane_list = df_route[lane_code].unique().tolist()
 
-                # If the max length from survey data is less then the max measurement in LRS network
-                # then create an error message
-                if max_to_m < lrs_max_to_m:
-                    len_diff = lrs_max_to_m - max_to_m  # Len difference is in Kilometers
-                    error_message = "Data survey pada rute {0} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {1} Kilometer.".\
-                        format(route, len_diff.round(3))
-                    self.error_list.append(error_message)
+                for lane in lane_list:
+                    df_lane = df_route[df_route[lane_code] == lane]
+                    max_to_ind = df_lane[to_m_col].idxmax()
+                    max_to_m = df_lane.at[max_to_ind, to_m_col]  # Max To measure value of a input table
 
-                # Find the row with segment len error, find the index
-                error_i = df_route.loc[~(np.isclose(df_route['diff'], df_route[length_col], rtol=0.001) &
-                                       (np.isclose(df_route[length_col], segment_len, rtol=0.001)))].index.tolist()
+                    # If the max length from survey data is less then the max measurement in LRS network
+                    # then create an error message
+                    if max_to_m < lrs_max_to_m:
+                        len_diff = lrs_max_to_m - max_to_m  # Len difference is in Kilometers
+                        error_message = "Data survey di rute {0} pada lane {1} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {2} Kilometer.".\
+                            format(route, lane, len_diff.round(3))
+                        self.error_list.append(error_message)
 
-            if len(error_i) != 0:
-                excel_i = [x+2 for x in error_i]  # Create the index for excel table
-                # Create error message
-                error_message = 'Segmen pada baris {2} tidak memiliki panjang = 0.1km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
-                    format(from_col, to_col, excel_i)
-                self.error_list.append(error_message)  # Append the error message
+                    # Find the row with segment len error, find the index
+                    error_i = df_lane.loc[~(np.isclose(df_lane['diff'], df_lane[length_col], rtol=0.001) &
+                                             (np.isclose(df_lane[length_col], segment_len, rtol=0.001)))].index
+                    # Pop the last segment from the list of invalid segment
+                    error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
+
+                    if len(error_i_pop_last) != 0:
+                        excel_i = [x+2 for x in error_i_pop_last]  # Create the index for excel table
+                        # Create error message
+                        error_message = 'Segmen pada baris {2} tidak memiliki panjang = {3}km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
+                            format(from_m_col, to_m_col, excel_i, segment_len)
+                        self.error_list.append(error_message)  # Append the error message
+
+                    if df_lane.at[max_to_ind, 'diff'] > segment_len:
+                        error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang lebih dari {2}km'.\
+                            format(route, lane, segment_len)
+                        self.error_list.append(error_message)
 
         return self
 
