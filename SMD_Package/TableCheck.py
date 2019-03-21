@@ -351,6 +351,7 @@ class EventValidation(object):
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
+        df['measureOnLine'] = pd.Series(np.nan, dtype=np.float)  # Create a new column for storing coordinate m-value
         error_i = []  # list for storing the row with error
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
@@ -372,6 +373,7 @@ class EventValidation(object):
                     route_spat_ref = route_geom.spatialReference
                     route_max_m = route_geom.lastPoint.M
 
+            # Iterate over all available segment in the route
             for index, row in df_route.iterrows():
                 point = Point(row[long_col], row[lat_col])  # Create a point object
 
@@ -398,6 +400,7 @@ class EventValidation(object):
                 else:
                     ref_point = route_geom.positionAlongLine(measurement)  # Create a ref point geometry
                     distance_to_ref = point_geom.distanceTo(ref_point)  # The point_geom to ref_point distance
+                    df_route.loc[index, 'measureOnLine'] = route_geom.measureOnLine(point_geom)  # Insert the m-value
 
                     if distance_to_ref > threshold:
                         error_i.append(index)  # Append the index of row with coordinate error
@@ -411,6 +414,28 @@ class EventValidation(object):
                             error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'.\
                                 format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
                             self.error_list.append(error_message)
+
+            for lane in df_route[lane_code].unique().tolist():
+                df_lane = df_route.loc[df_route[lane_code] == lane]  # Create a DataFrame for every available lane
+                df_lane.sort_values(by=[from_m_col, to_m_col], inplace=True)  # Sort the DataFrame
+                monotonic_check = np.diff(df_lane['measureOnLine']) > 0
+                check_unique = np.unique(monotonic_check)
+
+                if check_unique.all():  # Check whether the result only contain True
+                    pass  # This means OK
+                elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
+                    error_message = '{0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
+                    self.error_list.append(error_message)
+                else:  # If not entirely False then give the segment which has the faulty measurement
+                    faulty_index = np.where(monotonic_check == False)
+                    faulty_segment = df_lane.loc[faulty_index]
+
+                    for index, row in faulty_segment.iterrows():
+                        from_meas = row[from_m_col]
+                        to_meas = row[to_m_col]
+                        error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
+                            format(from_meas, to_meas, lane, route)
+                        self.error_list.append(error_message)
 
         return self
 
