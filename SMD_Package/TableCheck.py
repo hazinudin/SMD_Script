@@ -1,6 +1,7 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
+from RNITable import rni_segment_dissolve
 
 
 class EventValidation(object):
