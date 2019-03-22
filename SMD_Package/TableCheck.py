@@ -483,8 +483,8 @@ class EventValidation(object):
             rni_np = da.FeatureClassToNumPyArray(rni_table, [rni_route_col, rni_from_col, rni_to_col, rni_lane_code],
                                                  where_clause="{0}='{1}'".format(rni_route_col, route))
             df_rni = pd.DataFrame(rni_np)  # The DataFrame of RNI
-            df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)
-            df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
+            df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).round(2).astype(int)
+            df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).round(2).astype(int)
 
             if len(df_rni) == 0:  # Check if the route exist in the RNI Table
                 error_message = "Ruas {0} tidak terdapat pada table RNI.".format(route)  # Create an error message
