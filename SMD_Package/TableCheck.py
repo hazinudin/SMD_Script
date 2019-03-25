@@ -1,7 +1,6 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
-from RNITable import rni_segment_dissolve
 
 
 class EventValidation(object):
@@ -519,8 +518,8 @@ class EventValidation(object):
                 df_both.loc[:, 'RNI-input'] = pd.Series([np.setdiff1d(b, a) for a, b in
                                                          zip(df_both[lane_code], df_both[rni_lane_code])])
 
-                df_both[from_m_col] = pd.Series(df_both[from_m_col]/100).astype(str)
-                df_both[to_m_col] = pd.Series(df_both[to_m_col]/100).astype(str)
+                df_both[from_m_col] = pd.Series(df_both[from_m_col]).astype(str)
+                df_both[to_m_col] = pd.Series(df_both[to_m_col]).astype(str)
                 df_both['segment'] = pd.Series((df_both[from_m_col])+'-'+(df_both[to_m_col]))
                 df_both.set_index(['segment'], inplace=True)  # Make segment as the index
 
