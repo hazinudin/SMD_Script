@@ -202,7 +202,7 @@ class EventValidation(object):
 
         return self
 
-    def segment_len_check(self, lrs_routeid, routes='ALL', segment_len=0.1, route_col='LINKID', from_m_col='STA_FR',
+    def segment_len_check(self, routes='ALL', segment_len=0.1, route_col='LINKID', from_m_col='STA_FR',
                           to_m_col='STA_TO', lane_code='CODE_LANE', length_col='LENGTH'):
         """
         This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
@@ -221,56 +221,44 @@ class EventValidation(object):
         df['diff'] = pd.Series(df[to_m_col] - df[from_m_col])  # Create a diff column for storing from-to difference
 
         if routes == 'ALL':
-            route_list = df[route_col].unique().tolist()
+            pass
         else:
             df = self.selected_route_df(df, routes, route_col=route_col)
-            route_list = df[route_col].unique().tolist()
 
-        for route in route_list:  # Iterate over all available row
+        for route, lane in self.route_lane_tuple(df, route_col, lane_code):  # Iterate over all route and lane
 
-            error_i = []  # Create an empty list for storing the error_index
-            network_feature_found = False  # Variable for determining if the requested route exist in LRS Network
-            with da.SearchCursor(self.lrs_network, 'SHAPE@', where_clause="{0}='{1}'".
-                                 format(lrs_routeid, route))as cursor:
-                for fc_row in cursor:
-                    network_feature_found = True
-                    route_geom = fc_row[0]  # Route geometry object
+                df_route_lane = df.loc[(df[lane_code] == lane) & (df[route_col] == route)]
+                max_to_ind = df_route_lane[to_m_col].idxmax()
+                last_segment_len = df_route_lane.at[max_to_ind, 'diff']
+                last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]
 
-            if network_feature_found:
-                df_route = df.loc[df[route_col] == route]  # Create a selected route DataFrame
-                lrs_max_to_m = route_geom.lastPoint.M  # Get the max measurement value for route in LRS Network
-                lane_list = df_route[lane_code].unique().tolist()
+                # Find the row with segment len error, find the index
+                error_i = df_route_lane.loc[~(np.isclose(df_route_lane['diff'], df_route_lane[length_col], rtol=0.001) &
+                                            (np.isclose(df_route_lane[length_col], segment_len, rtol=0.001)))].index
 
-                for lane in lane_list:
-                    df_lane = df_route[df_route[lane_code] == lane]
-                    max_to_ind = df_lane[to_m_col].idxmax()
-                    max_to_m = df_lane.at[max_to_ind, to_m_col]  # Max To measure value of a input table
+                # Pop the last segment from the list of invalid segment
+                error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
 
-                    # If the max length from survey data is less then the max measurement in LRS network
-                    # then create an error message
-                    if max_to_m < lrs_max_to_m:
-                        len_diff = lrs_max_to_m - max_to_m  # Len difference is in Kilometers
-                        error_message = "Data survey di rute {0} pada lane {1} tidak mencakup seluruh ruas. Panjang segmen yang tidak tercakup adalah {2} Kilometer.".\
-                            format(route, lane, len_diff.round(3))
-                        self.error_list.append(error_message)
+                if len(error_i_pop_last) != 0:
+                    excel_i = [x+2 for x in error_i_pop_last]  # Create the index for excel table
+                    # Create error message
+                    error_message = 'Segmen pada baris {2} tidak memiliki panjang = {3}km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
+                        format(from_m_col, to_m_col, excel_i, segment_len)
+                    self.error_list.append(error_message)  # Append the error message
 
-                    # Find the row with segment len error, find the index
-                    error_i = df_lane.loc[~(np.isclose(df_lane['diff'], df_lane[length_col], rtol=0.001) &
-                                             (np.isclose(df_lane[length_col], segment_len, rtol=0.001)))].index
-                    # Pop the last segment from the list of invalid segment
-                    error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
+                # Check whether the last segment fulfill the check criteria (length should not exceed 'segment_len')
+                if last_segment_len > segment_len:
+                    # Create error message
+                    error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang lebih dari {2}km'.\
+                        format(route, lane, last_segment_statedlen)
+                    self.error_list.append(error_message)
 
-                    if len(error_i_pop_last) != 0:
-                        excel_i = [x+2 for x in error_i_pop_last]  # Create the index for excel table
-                        # Create error message
-                        error_message = 'Segmen pada baris {2} tidak memiliki panjang = {3}km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
-                            format(from_m_col, to_m_col, excel_i, segment_len)
-                        self.error_list.append(error_message)  # Append the error message
-
-                    if df_lane.at[max_to_ind, 'diff'] > segment_len:
-                        error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang lebih dari {2}km'.\
-                            format(route, lane, segment_len)
-                        self.error_list.append(error_message)
+                # Check whether the stated length for the last segment match the actual length
+                if not np.isclose(last_segment_len, last_segment_statedlen, rtol=0.001):
+                    # Create error message
+                    error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang berbeda dengan yang tertera pada kolom {2}'.\
+                        format(route, lane, length_col)
+                    self.error_list.append(error_message)
 
         return self
 
