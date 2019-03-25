@@ -291,7 +291,7 @@ class EventValidation(object):
             df_groupped.reset_index(drop=True)
 
             # Get the LRS Network route length
-            lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).length/1000
+            lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
             max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
             max_to_meas = df_groupped.at[max_to_ind, to_m_col]/100  # The largest To Measure value
             # If the largest To Measure value is less than the LRS Network route length then there is a gap at the end
@@ -368,13 +368,12 @@ class EventValidation(object):
         error_i = []  # list for storing the row with error
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
-            route_list = df[route_col].unique().tolist()  # Create a route list
+            pass
         else:
             df = self.selected_route_df(df, routes)
-            route_list = df[route_col].unique().tolist()
 
         # Iterate for every requested routes
-        for route in route_list:
+        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
             # Create a selected route DF
             df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
 
@@ -467,14 +466,13 @@ class EventValidation(object):
         env.workspace = self.sde_connection  # Setting up the SDE Connection workspace
 
         if routes == 'ALL':  # If 'ALL' then process all available route in input table
-            route_list = df[route_col].unique().tolist()  # Create a list containing all requested routes
+            pass
         else:
             # Else then only process the selected routes
             df = self.selected_route_df(df, routes)
-            route_list = df[route_col].unique().tolist()
 
         # Iterate over all requested routes
-        for route in route_list:
+        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
             df_route = df.loc[df[route_col] == route]  # Create a DataFrame containing only selected routes
             # Create a numpy array from RNI Table containing only row from the selected routes
             rni_np = da.FeatureClassToNumPyArray(rni_table, [rni_route_col, rni_from_col, rni_to_col, rni_lane_code],
@@ -510,19 +508,58 @@ class EventValidation(object):
 
                 # Create a column containing intersection count of lane code combination
                 # between the input table and RNI Table
-                df_both.loc[:, 'lane_intersect_count'] = [len(set(a).intersection(b)) for a, b in
-                                                          zip(df_both[lane_code], df_both[rni_lane_code])]
+                df_both.loc[:, 'lane_intersect_count'] = pd.Series([len(set(a).intersection(b)) for a, b in
+                                                                    zip(df_both[lane_code], df_both[rni_lane_code])])
+
+                # Create a column containing the lane diff of Input - RNI
+                df_both.loc[:, 'input-RNI'] = pd.Series([np.setdiff1d(a, b) for a, b in
+                                                         zip(df_both[lane_code], df_both[rni_lane_code])])
+
+                # Create a column containing the lane diff of RNI - Input
+                df_both.loc[:, 'RNI-input'] = pd.Series([np.setdiff1d(b, a) for a, b in
+                                                         zip(df_both[lane_code], df_both[rni_lane_code])])
 
                 df_both[from_m_col] = pd.Series(df_both[from_m_col]/100).astype(str)
                 df_both[to_m_col] = pd.Series(df_both[to_m_col]/100).astype(str)
                 df_both['segment'] = pd.Series((df_both[from_m_col])+'-'+(df_both[to_m_col]))
-                df_both.set_index(['segment'], inplace=True)
+                df_both.set_index(['segment'], inplace=True)  # Make segment as the index
 
-                invalid_lane_seg = df_both.loc[df_both['lane_intersect_count'] != df_both[rni_lane_code].str.len()].\
-                    index.tolist()
-                error_message = 'Rute {0} memiliki kombinasi lane code yang tidak sesuai dengan RNI pada segmen {1}.'.\
-                    format(route, invalid_lane_seg)
-                self.error_list.append(error_message)
+                # Zero match mean there is no intersection between input and RNI segment
+                zero_match_i = df_both.loc[df_both['lane_intersect_count'] == 0].index.tolist()
+                for i in zero_match_i:
+                    error_message = 'Segmen {0} pada rute {1} memiliki kombinasi lane yang tidak cocok dengan RNI.'.\
+                        format(i, route)
+                    self.error_list.append(error_message)
+
+                # 1st partial match case is where there is a partial match and input have excess lane
+                # and also missing lane
+                partial_1st = df_both.loc[(df_both['lane_intersect_count'] != 0) &
+                                              (df_both['RNI-input'].str.len() != 0) &
+                                              (df_both['input-RNI'].str.len() != 0)].index.tolist()
+                for i in partial_1st:
+                    error_message = 'Segmen {0} pada rute {1} memiliki kombinasi lane yang tidak sepenuhnya cocok dengan RNI.'.\
+                        format(i, route)
+                    self.error_list.append(error_message)
+
+                # 2nd partial match case is where there is a partial match and input have excess lane
+                partial_2nd = df_both.loc[(df_both['lane_intersect_count'] != 0) &
+                                              (df_both['RNI-input'].str.len() == 0) &
+                                              (df_both['input-RNI'].str.len() != 0)].index.tolist()
+                for i in partial_2nd:
+                    excess_lane = [str(x) for x in df_both.at[i, 'input-RNI']]
+                    error_message = 'Lane {0} pada segmen {1} di rute {2} tidak terdapat pada tabel RNI.'.\
+                        format(excess_lane, i, route)
+                    self.error_list.append(error_message)
+
+                # 3rd partial match case is where there is a partial match and input have a missing lane
+                partial_3rd = df_both.loc[(df_both['lane_intersect_count'] != 0) &
+                                          (df_both['RNI-input'].str.len() != 0) &
+                                          (df_both['input-RNI'].str.len() == 0)].index.tolist()
+                for i in partial_3rd:
+                    missing_lane = [str(x) for x in df_both.at[i, 'RNI-input']]
+                    error_message = 'Segmen {0} pada rute {1} tidak memiliki lane {2}.'. \
+                        format(i, route, missing_lane)
+                    self.error_list.append(error_message)
 
         return self
 
