@@ -549,9 +549,9 @@ class EventValidation(object):
     def selected_route_df(df, routes, route_col="LINKID"):
         """
         This static method selects only route which is defined in the routes parameter
-        :param df:
-        :param routes:
-        :param route_col:
+        :param df: Input table DataFrame
+        :param routes: The requested routes
+        :param route_col: RouteId column of the input table
         :return:
         """
         route_list = []  # List for storing all requested routes
@@ -562,3 +562,26 @@ class EventValidation(object):
 
         df = df.loc[df[route_col].isin(route_list)]
         return df  # Return the DataFrame with dropped invalid route
+
+    @staticmethod
+    def route_lane_tuple(df, route_col, lane_code, route_only=False):
+        """
+        This static method return a list containing tuple (route, lane) to be iterated to df_route_lane
+        :param df: Input table DataFrame
+        :param route_col: RouteID column of the input table
+        :param lane_code: Lane Code column of the input table
+        :param route_only: If route only is False then the function returns (route, lane), if True then the function
+        returns a list containing route.
+        :return: List containing a tuple (route, lane)
+        """
+        return_list = []  # Empty list for storing route, lane tuple
+
+        for route in df[route_col].unique().tolist():  # Iterate for every available route
+            if route_only:  # if route only
+                return_list.append(str(route))
+            if not route_only:
+                for lane in df.loc[df[route_col] == route, lane_code].unique().tolist():  # Iterate for every lane
+                    route_lane_tuple = (str(route), lane)  # Create tuple object
+                    return_list.append(route_lane_tuple)  # Append the tuple object
+
+        return return_list  # Return a list containing the (route, lane) tuple
