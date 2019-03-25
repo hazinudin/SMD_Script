@@ -347,13 +347,12 @@ class EventValidation(object):
 
         return self
 
-    def coordinate_check(self, lrs_routeid, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
+    def coordinate_check(self, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
                          from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
                          threshold=30, at_start=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
-        :param lrs_routeid: Column in LRS Feature Class which contain the LRS Network Route ID
         :param routes: The requested routes
         :param route_col: Column in the input table which contain the route id
         :param long_col: Column in the input table which contain the longitude value
@@ -379,13 +378,9 @@ class EventValidation(object):
             # Create a selected route DF
             df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
 
-            # Acquire the LRS Network for the requested route
-            with da.SearchCursor(self.lrs_network, "SHAPE@", where_clause="{0}='{1}'".
-                                 format(lrs_routeid, route)) as cur:
-                for s_row in cur:
-                    route_geom = s_row[0]
-                    route_spat_ref = route_geom.spatialReference
-                    route_max_m = route_geom.lastPoint.M
+            route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
+            route_spat_ref = route_geom.spatialReference
+            route_max_m = route_geom.lastPoint.M
 
             # Iterate over all available segment in the route
             for index, row in df_route.iterrows():
