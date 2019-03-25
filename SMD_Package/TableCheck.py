@@ -8,7 +8,7 @@ class EventValidation(object):
     """
     This class will be used for event table review, consist of table columns review and row by row review.
     """
-    def __init__(self, event_table_path, column_details, lrs_network, db_conn):
+    def __init__(self, event_table_path, column_details, lrs_network, lrs_routeid, db_conn):
         """
         Initialize EventTableCheck class
         the header_check and dtype_check also called when the class is initialized
@@ -28,6 +28,7 @@ class EventValidation(object):
 
         self.column_details = column_details  # Dictionary containing req col names and dtypes
         self.lrs_network = lrs_network  # Specified LRS Network feature class in SDE database
+        self.lrs_routeid = lrs_routeid  # The LRS Network RouteID column
         self.sde_connection = db_conn  # The specifier gdb connection incl db version and username
 
         self.error_list = []  # List for storing the error message for all checks
@@ -274,13 +275,12 @@ class EventValidation(object):
         groupby_cols = [route_col, from_m_col, to_m_col]
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
-            route_list = df[route_col].unique().tolist()
+            pass
         else:
             df = self.selected_route_df(df, routes)
-            route_list = df[route_col].unique().tolist()
 
         # Iterate over valid row in the input table
-        for route in route_list:
+        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
             # Create a route DataFrame
             df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col, lane_code]]
             df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
@@ -289,7 +289,20 @@ class EventValidation(object):
             # Sort the DataFrame based on the RouteId and FromMeasure
             df_groupped.sort_values(by=[route_col, from_m_col, to_m_col], inplace=True)
             df_groupped.reset_index(drop=True)
+
+            # Get the LRS Network route length
+            lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).length/1000
+            max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
+            max_to_meas = df_groupped.at[max_to_ind, to_m_col]/100  # The largest To Measure value
+            # If the largest To Measure value is less than the LRS Network route length then there is a gap at the end
+            if max_to_meas < lrs_route_len:
+                # Create an error message
+                error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
+                    format(route, max_to_meas, lrs_route_len)
+                self.error_list.append(error_message)
+
             for index, row in df_groupped.iterrows():
+
                 if index == 0:  # Initialize the from_m and to_m value with the first row of a route
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
@@ -573,3 +586,26 @@ class EventValidation(object):
                     return_list.append(route_lane_tuple)  # Append the tuple object
 
         return return_list  # Return a list containing the (route, lane) tuple
+
+    @staticmethod
+    def route_geometry(route, lrs_network, lrs_routeid):
+        """
+        This static method return a Polyline object geometry from the LRS Network.
+        :param route: The requested route.
+        :param lrs_network: LRS Network feature class.
+        :param lrs_routeid: The LRS Network feature class RouteID column.
+        :return: Arcpy Polyline geometry object if the requested route exist in the LRS Network, if the requested route
+        does not exist in the LRS Network then the function will return None.
+        """
+        where_statement = "{0}='{1}'".format(lrs_routeid, route)  # The where statement for SearchCursor
+        route_exist = False  # Variable for determining if the requested route exist in LRS Network
+
+        with da.SearchCursor(lrs_network, "SHAPE@", where_clause=where_statement) as cursor:
+            for row in cursor:
+                route_exist = True
+                route_geom = row[0]  # The Polyline geometry object
+
+        if route_exist:
+            return route_geom
+        if not route_exist:
+            return None

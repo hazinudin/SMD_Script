@@ -51,7 +51,7 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, dbConnection)
+EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 
 # If the header check and data type check returns None, the process can continue
 if EventCheck.header_check_result is None:
