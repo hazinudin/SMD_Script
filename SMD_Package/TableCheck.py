@@ -229,8 +229,11 @@ class EventValidation(object):
 
                 df_route_lane = df.loc[(df[lane_code] == lane) & (df[route_col] == route)]
                 max_to_ind = df_route_lane[to_m_col].idxmax()
-                last_segment_len = df_route_lane.at[max_to_ind, 'diff']
-                last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]
+                last_segment_len = df_route_lane.at[max_to_ind, 'diff']  # The last segment real length
+                last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]  # The last segment stated len
+                last_from = df_route_lane.at[max_to_ind, from_m_col]*100  # Last segment from measure in Decameters
+                last_to = df_route_lane.at[max_to_ind, to_m_col]*100  # Last segment to measure in Decameters
+                last_interval = '{0}-{1}'.format(last_from, last_to)  # The interval value in string
 
                 # Find the row with segment len error, find the index
                 error_i = df_route_lane.loc[~(np.isclose(df_route_lane['diff'], df_route_lane[length_col], rtol=0.001) &
@@ -256,8 +259,8 @@ class EventValidation(object):
                 # Check whether the stated length for the last segment match the actual length
                 if not np.isclose(last_segment_len, last_segment_statedlen, rtol=0.001):
                     # Create error message
-                    error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang berbeda dengan yang tertera pada kolom {2}'.\
-                        format(route, lane, length_col)
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3}'.\
+                        format(last_interval, route, lane, length_col)
                     self.error_list.append(error_message)
 
         return self
@@ -431,13 +434,13 @@ class EventValidation(object):
                 if check_unique.all():  # Check whether the result only contain True
                     pass  # This means OK
                 elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                    error_message = '{0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
+                    error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
                     self.error_list.append(error_message)
                 else:  # If not entirely False then give the segment which has the faulty measurement
-                    faulty_index = np.where(monotonic_check == False)
-                    faulty_segment = df_lane.loc[faulty_index]
+                    faulty_index = np.where(monotonic_check is False)  # Get the index of the faulty segment
+                    faulty_segment = df_lane.loc[faulty_index]  # DataFrame of all faulty segment
 
-                    for index, row in faulty_segment.iterrows():
+                    for index, row in faulty_segment.iterrows():  # Iterate for all available faulty segment
                         from_meas = row[from_m_col]
                         to_meas = row[to_m_col]
                         error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
