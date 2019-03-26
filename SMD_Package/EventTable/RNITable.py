@@ -43,9 +43,9 @@ def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field,
                 if len(segment_index_list) == 1:
                     from_measure = rni_groupped.at[from_index, from_m_field]
                     to_measure = rni_groupped.at[from_index, to_m_field]
+                    from_to_measurement = [from_measure, to_measure]
 
-                    dissolved_segment[group].append(from_measure)
-                    dissolved_segment[group].append(to_measure)
+                    dissolved_segment[group].append(from_to_measurement)
                     reset_sequence = True
 
             else:
