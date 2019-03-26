@@ -80,12 +80,11 @@ class GetRoutes(object):
         else:
             for code in req_balai:
                 if code in self.balai_route_dict.keys():
-                    route_list += self.balai_rotue_dict[code]
+                    route_list += self.balai_route_dict[code]
                 else:
                     pass
 
         return route_list
-
 
     @staticmethod
     def results_output(status, type, results):

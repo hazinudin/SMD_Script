@@ -11,7 +11,7 @@ import json
 import pandas as pd
 import zipfile
 sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve
+from SMD_Package import rni_segment_dissolve, GetRoutes
 
 
 def results_output(status, results):
@@ -88,11 +88,8 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
 def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, orderby='FROMMEASURE'):
     """Create a Pandas dataframe from ArcGIS feature class/table."""
 
-    rows = []
     table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause="LINKID IN ({0})".format(route_selection),
                                                sql_clause=(None, 'ORDER BY {0}, {1}'.format(route_identifier, orderby)))
-    # for row in table_search:
-    #     rows.append(row)
 
     # Creating dataframe from the extracted data from RNI Tables in geodatabase
     df = pd.DataFrame(table_search)
@@ -297,11 +294,10 @@ os.chdir('E:/SMD_Script')
 
 # Get the script parameter
 inputJSON = GetParameterAsText(0)
-getAllRouteResult = GetParameterAsText(1)
 
 # Load the input JSON, result from GetAllRoute and config JSON
 input_details = json.loads(inputJSON)
-allRouteQueryResult = json.loads(getAllRouteResult)
+
 with open('smd_config.json') as config_f:
     config = json.load(config_f)
 
@@ -309,23 +305,28 @@ with open('smd_config.json') as config_f:
 env.workspace = config['smd_database']['instance']
 env.overwriteOutput = True
 
-# Define variable
-requestedRoutes = input_details['routes']
-outputSHPName = 'Routes'
-allResults = allRouteQueryResult['results']
-allRouteResultsKey_code = 'code'
-allRouteResultsKey_routes = 'routes'
-
 # Tabel and column used in this script
 lrsNetwork = config['table_names']['lrs_network']
 lrsNetwork_RouteID = config['table_fields']['lrs_network']['route_id']
 lrsNetwork_RouteName = config['table_fields']['lrs_network']['route_name']
+
+balaiTable = config['table_names']['balai_table']
 
 rniTable = config['table_names']['rni']
 rniSearchField = ['LINKID', 'FROMMEASURE', 'TOMEASURE', 'LANE_CODE']
 rniGroupbyField = ['LINKID', 'FROMMEASURE', 'TOMEASURE']
 rniCodeLane = config['table_fields']['rni']['lane_code']
 rniRouteID = config['table_fields']['rni']['route_id']
+
+getAllRouteResult = GetRoutes("balai", input_details["codes"], lrsNetwork, balaiTable).create_json_output()
+allRouteQueryResult = json.loads(getAllRouteResult)
+
+# Define variable
+requestedRoutes = input_details['routes']
+outputSHPName = 'Routes'
+allResults = allRouteQueryResult['results']
+allRouteResultsKey_code = 'code'
+allRouteResultsKey_routes = 'routes'
 
 # Checking the existence of all required table
 ConnectionCheck = SDE_TableConnection(env.workspace, [rniTable, lrsNetwork])
@@ -338,7 +339,6 @@ if ConnectionCheck.all_connected:
         # Create a Pandas dataframe from the RNI table in geodatabase
         RNI_DataFrame = fc_to_dataframe(rniTable, rniSearchField, RequestCheckResult, rniRouteID)
         DissolvedSegmentDict = rni_segment_dissolve(RNI_DataFrame, rniGroupbyField, rniCodeLane, rniRouteID)
-        AddMessage(DissolvedSegmentDict)
 
         # Create the shapefile from the segment created by the dissolve segment function
         RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
@@ -346,19 +346,19 @@ if ConnectionCheck.all_connected:
         RouteGeometries.create_segment_polyline()  # Create the polyline shapefile
         RouteGeometries.create_start_end_point()  # Create the point shapefile
 
-        SetParameter(2, RouteGeometries.polyline_output)
-        SetParameter(3, RouteGeometries.point_output)
-        SetParameterAsText(4, RouteGeometries.output_message())
-        SetParameter(5, RouteGeometries.create_zipfile().zip_output)
+        SetParameter(1, RouteGeometries.polyline_output)
+        SetParameter(2, RouteGeometries.point_output)
+        SetParameterAsText(3, RouteGeometries.output_message())
+        SetParameter(4, RouteGeometries.create_zipfile().zip_output)
 
     elif RequestCheckResult is None:
+        SetParameter(1, None)
         SetParameter(2, None)
-        SetParameter(3, None)
-        SetParameterAsText(4, results_output("Failed", None))
-        SetParameter(5, None)
+        SetParameterAsText(3, results_output("Failed", None))
+        SetParameter(4, None)
 
 else:
+    SetParameter(1, None)
     SetParameter(2, None)
-    SetParameter(3, None)
-    SetParameterAsText(4, results_output("Required table are missing.{0}".format(ConnectionCheck.missing_table), None))
-    SetParameter(5, None)
+    SetParameterAsText(3, results_output("Required table are missing.{0}".format(ConnectionCheck.missing_table), None))
+    SetParameter(4, None)
