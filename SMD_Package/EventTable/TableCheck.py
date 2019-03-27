@@ -1,6 +1,7 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
+from SMD_Package.FCtoDataFrame import fc_to_dataframe
 
 
 class EventValidation(object):
@@ -476,10 +477,10 @@ class EventValidation(object):
         # Iterate over all requested routes
         for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
             df_route = df.loc[df[route_col] == route]  # Create a DataFrame containing only selected routes
-            # Create a numpy array from RNI Table containing only row from the selected routes
-            rni_np = da.FeatureClassToNumPyArray(rni_table, [rni_route_col, rni_from_col, rni_to_col, rni_lane_code],
-                                                 where_clause="{0}='{1}'".format(rni_route_col, route))
-            df_rni = pd.DataFrame(rni_np)  # The DataFrame of RNI
+
+            # The RNI DataFrame
+            search_field = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
+            df_rni = fc_to_dataframe(rni_table, search_field, route, rni_route_col, self.sde_connection, orderby=None)
             df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).round(2).astype(int)
             df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).round(2).astype(int)
 

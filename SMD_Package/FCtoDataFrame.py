@@ -24,7 +24,7 @@ def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, 
         elif type(route_selection) == list:  # If its a list then the strip the square bracket
             route_selection = str(route_selection).strip('[]')
 
-        where_clause = "{0} IN ({1})".format(route_identifier, route_selection)
+        where_clause = "{0} IN ('{1}')".format(route_identifier, route_selection)
 
     # Create the sql_clause for DataAccess module
     if orderby is None:
