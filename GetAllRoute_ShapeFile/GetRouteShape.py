@@ -8,10 +8,9 @@ from arcpy import env, GetParameterAsText, SetParameter, da, CreateFeatureclass_
 import os
 import sys
 import json
-import pandas as pd
 import zipfile
 sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve, GetRoutes
+from SMD_Package import rni_segment_dissolve, GetRoutes, fc_to_dataframe
 
 
 def results_output(status, results):
@@ -83,18 +82,6 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
     else:
         route_interection_list = list(route_intersection)
         return str(route_interection_list).strip('[]')
-
-
-def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, orderby='FROMMEASURE'):
-    """Create a Pandas dataframe from ArcGIS feature class/table."""
-
-    table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause="LINKID IN ({0})".format(route_selection),
-                                               sql_clause=(None, 'ORDER BY {0}, {1}'.format(route_identifier, orderby)))
-
-    # Creating dataframe from the extracted data from RNI Tables in geodatabase
-    df = pd.DataFrame(table_search)
-
-    return df
 
 
 class DictionaryToFeatureClass(object):
@@ -301,9 +288,6 @@ input_details = json.loads(inputJSON)
 with open('smd_config.json') as config_f:
     config = json.load(config_f)
 
-# Set the environment workspace
-env.workspace = config['smd_database']['instance']
-env.overwriteOutput = True
 
 # Tabel and column used in this script
 lrsNetwork = config['table_names']['lrs_network']
@@ -317,6 +301,11 @@ rniSearchField = ['LINKID', 'FROMMEASURE', 'TOMEASURE', 'LANE_CODE']
 rniGroupbyField = ['LINKID', 'FROMMEASURE', 'TOMEASURE']
 rniCodeLane = config['table_fields']['rni']['lane_code']
 rniRouteID = config['table_fields']['rni']['route_id']
+dbConnection = config['smd_database']['instance']
+
+# Set the environment workspace
+env.workspace = dbConnection
+env.overwriteOutput = True
 
 getAllRouteResult = GetRoutes("balai", input_details["codes"], lrsNetwork, balaiTable).create_json_output()
 allRouteQueryResult = json.loads(getAllRouteResult)
@@ -337,7 +326,7 @@ if ConnectionCheck.all_connected:
     if RequestCheckResult is not None:
 
         # Create a Pandas dataframe from the RNI table in geodatabase
-        RNI_DataFrame = fc_to_dataframe(rniTable, rniSearchField, RequestCheckResult, rniRouteID)
+        RNI_DataFrame = fc_to_dataframe(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection)
         DissolvedSegmentDict = rni_segment_dissolve(RNI_DataFrame, rniGroupbyField, rniCodeLane, rniRouteID)
 
         # Create the shapefile from the segment created by the dissolve segment function

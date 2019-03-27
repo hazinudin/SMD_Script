@@ -1,7 +1,8 @@
-from arcpy import da
+from arcpy import da, env
 from pandas import DataFrame
 
-def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, orderby='FROMMEASURE'):
+
+def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, sde_connection, orderby='FROMMEASURE'):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
@@ -9,8 +10,10 @@ def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, 
     :param route_selection: The selected route to be included in the Pandas DataFrame.
     :param route_identifier: The RouteID column in the GeoDataBase table or FeatureClass.
     :param orderby: The column which the table will be sorted.
+    :param sde_connection: The SDE Instance for accessing the FeatureClass
     :return df = this function will return a Pandas DataFrame
     """
+    env.workspace = sde_connection  # The workspace for accessing the SDE Feature Class
 
     # Create the where_clause for DataAccess module
     if route_selection == 'ALL':  # If the requested route is 'ALL' then there is no where_clause
