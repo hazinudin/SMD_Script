@@ -157,7 +157,7 @@ class EventValidation(object):
 
         return self
 
-    def route_domain(self, balai_code, balai_route_domain, routeid_col='LINKID'):
+    def route_domain(self, balai_code, balai_route_list, routeid_col='LINKID'):
         """
         This function check if the route id submitted in the input table is in the domain of balai submitted
         :param routeid_col:
@@ -168,7 +168,7 @@ class EventValidation(object):
         input_routes = df[routeid_col].unique().tolist()  # All Route included in the input table
 
         for route in input_routes:
-            if route not in balai_route_domain:
+            if route not in balai_route_list:
                 self.missing_route.append(route)  # Append route which does not exist in the balai route domain
             else:
                 self.valid_route.append(route)  # Append route which exist in the balai route domain

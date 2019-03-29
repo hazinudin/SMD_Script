@@ -58,11 +58,12 @@ if EventCheck.header_check_result is None:
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
+    valid_routes = EventCheck.valid_route
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
-    EventCheck.segment_len_check(routes=EventCheck.valid_route)  # Check the segment length validity
-    EventCheck.measurement_check(routes=EventCheck.valid_route)  # Check the from-to measurement
-    EventCheck.coordinate_check(routes=EventCheck.valid_route, threshold=SearchRadius, at_start=False)
-    EventCheck.lane_code_check(RNIEventTable, routes=EventCheck.valid_route,
+    EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
+    EventCheck.measurement_check(routes=valid_routes)  # Check the from-to measurement
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
+    EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
