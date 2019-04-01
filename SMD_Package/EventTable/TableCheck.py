@@ -722,6 +722,7 @@ class Kemantapan(object):
         """
         input_group_col = [route_col, from_m_col, to_m_col]  # The column used for input groupby
         rni_group_col = [rni_route_col, rni_from_col, rni_to_col]  # The column used for the RNI groupby
+        df_rni[surftype_col] = pd.Series(df_rni[surftype_col].astype(int))  # Convert the surftype to integer type
 
         # GroupBy the input event DataFrame to make summarize the value used for grading from all lane.
         input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
@@ -735,6 +736,5 @@ class Kemantapan(object):
                             indicator=True, suffixes=['_INPUT', '_RNI'])
 
         df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
-        AddMessage(df_match.head())
         return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 
