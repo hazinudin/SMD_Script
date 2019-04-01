@@ -569,24 +569,41 @@ class EventValidation(object):
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, routes='ALL', route_col='LINKID',
                            lane_codes='CODE_LANE', from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID',
                            rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE'):
-        df = self.copy_valid_df()
+        """
+        This class method will compare the Kemantapan between the inputted data and previous year data, if the
+        difference exceed the 5% absolute tolerance then the data will undergo further inspection.
+        :param rni_table:
+        :param surftype_col:
+        :param grading_col:
+        :param routes:
+        :param route_col:
+        :param lane_codes:
+        :param from_m_col:
+        :param to_m_col:
+        :param rni_route_col:
+        :param rni_from_col:
+        :param rni_to_col:
+        :return:
+        """
+        df = self.copy_valid_df()  # Create the valid DataFrame copy
 
-        if routes == 'ALL':
+        if routes == 'ALL':  # Check for route request
             pass
         else:
-            df = self.selected_route_df(df, routes)
+            df = self.selected_route_df(df, routes)  # Create a DataFrame with selected route
 
-        route_list = self.route_lane_tuple(df, route_col, lane_codes, route_only=True)
+        route_list = self.route_lane_tuple(df, route_col, lane_codes, route_only=True)  # Create a route list
+        for route in route_list:  # Iterate over all available route
+            df_route = df.loc[df[route_col] == route]  # The DataFrame with only selected route
 
-        for route in route_list:
-            df_route = df.loc[df[route_col] == route]
-
-            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]
+            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
+            # Create the RNI Table DataFrame
             df_rni = fc_to_dataframe(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
                                      orderby=None)
 
-            kemantapan_calc = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col, rni_route_col,
-                                         rni_from_col, rni_to_col, surftype_col=surftype_col)
+            # Current year Kemantapan
+            kemantapan_current = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
+                                            rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
 
     def copy_valid_df(self, dropna=True):
         """
@@ -678,6 +695,9 @@ class Kemantapan(object):
         :param grading_col: The value used for grading
         :param surftype_col: The column which store the surface type value in the RNI Table
         """
+        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
+        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
+
         # The input and RNI DataFrame merge result
         self.merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
                                             rni_route_col, rni_from_col, rni_to_col, surftype_col)
@@ -715,5 +735,6 @@ class Kemantapan(object):
                             indicator=True, suffixes=['_INPUT', '_RNI'])
 
         df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
+        AddMessage(df_match.head())
         return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 

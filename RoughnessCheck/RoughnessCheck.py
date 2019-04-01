@@ -66,7 +66,7 @@ if EventCheck.header_check_result is None:
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
-    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn)  # Check the kemantapan
+    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, routes=valid_routes)
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
