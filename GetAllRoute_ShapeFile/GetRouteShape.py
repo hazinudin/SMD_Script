@@ -81,7 +81,7 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
         return None  # If there is no intersection between the Get All Result and the requested routes, then return None
     else:
         route_interection_list = list(route_intersection)
-        return str(route_interection_list).strip('[]')
+        return route_interection_list
 
 
 class DictionaryToFeatureClass(object):
