@@ -20,9 +20,10 @@ class Kemantapan(object):
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
 
         # The input and RNI DataFrame merge result
-        self.merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
+        merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
                                             rni_route_col, rni_from_col, rni_to_col, surftype_col)
-        self.graded_df = self.grading(self.merge_df, surftype_col, grading_col, group_details)
+        self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details)
+        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
@@ -102,6 +103,26 @@ class Kemantapan(object):
             df_merge.loc[index, grading_result] = grade
 
         return df_merge
+
+    @staticmethod
+    def kemantapan_percentage(df_graded, route_col, from_m_col, to_m_col, grade_result_col='_grade',
+                              kemantapan_col='_kemantapan'):
+        """
+        This function will find the length percentage of every route with 'Mantap' dan 'Tidak Mantap' status.
+        :param df_graded: The event DataFrame which already being graded.
+        :param grade_result_col: The column which store the grade statue for every segment.
+        :param kemantapan_col: The newly added column which store the kemantapan status.
+        :return: DataFrame with '_kemantapan' column.
+        """
+        df_graded.loc[:, '_len_diff'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
+        df_graded.loc[df_graded[grade_result_col].isin(['baik', 'sedang']), kemantapan_col] = 'mantap'
+        df_graded.loc[df_graded[grade_result_col].isin(['rusak ringan', 'rusak berat']), kemantapan_col] = 'tidak mantap'
+
+        kemantapan_len = df_graded.groupby(by=[route_col, kemantapan_col]).agg({'_len_diff': 'sum'})
+        kemantapan_prcnt = kemantapan_len.groupby(level=0).apply(lambda x: 100*x/float(x.sum())).reset_index()
+
+        return kemantapan_prcnt
+
 
 
 
