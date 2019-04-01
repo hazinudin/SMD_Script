@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import json
 
 
 class Kemantapan(object):
@@ -11,12 +13,16 @@ class Kemantapan(object):
         :param grading_col: The value used for grading
         :param surftype_col: The column which store the surface type value in the RNI Table
         """
+        with open('SMD_Package/EventTable/surftype_group.json') as group_json:
+            group_details = json.load(group_json)  # Load the surface type group JSON
+
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
 
         # The input and RNI DataFrame merge result
         self.merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
                                             rni_route_col, rni_from_col, rni_to_col, surftype_col)
+        self.graded_df = self.grading(self.merge_df, surftype_col, grading_col, group_details)
 
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
@@ -53,4 +59,50 @@ class Kemantapan(object):
 
         df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
         return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
+
+    @staticmethod
+    def grading(df_merge, surftype_col, grading_col, group_details, grading_result='_grade'):
+        """
+        This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan", "rusak_berat")
+        based on the segment surface type group and value in the grading column.
+        :param df_merge: The merge result of event DataFrame and the RNI DataFrame.
+        :param surftype_col: The surface type column in the merge result.
+        :param grading_col: The value used in the grading process.
+        :param grading_result: The new column used to store the grading result.
+        :return: The df_merge with new column which store the grading result.
+        """
+        # Iterate over all row in the df_merge
+        for index, row in df_merge.iterrows():
+            group_not_found = True
+
+            while group_not_found:  # Iterate until a group is found
+
+                for group in group_details:
+                    if row[surftype_col] in group_details[group]['group']:  # If the group was found
+                        group_not_found = False  # group not found is False
+                        surface_group = str(group)  # surface group
+                        range = np.array(group_details[group]['range'])  # group's range in np.array
+
+            lower_bound = np.amin(range)  # The lower bound
+            upper_bound = np.amax(range)  # The upper bound
+            mid = range[1]  # The mid value
+
+            df_merge.loc[index, '_surf_group'] = surface_group  # Write the surface group name in '_surf_group'
+
+            # Start the grading process
+            if row[grading_col] <= lower_bound:
+                grade = 'baik'
+            if (row[grading_col] > lower_bound) & (row[grading_col] <= mid):
+                grade = 'sedang'
+            if (row[grading_col] > mid) & (row[grading_col] <= upper_bound):
+                grade = 'rusak ringan'
+            if row[grading_col] > upper_bound:
+                grade = 'rusak berat'
+
+            df_merge.loc[index, grading_result] = grade
+
+        return df_merge
+
+
+
 
