@@ -570,8 +570,23 @@ class EventValidation(object):
                            lane_codes='CODE_LANE', from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID',
                            rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE'):
         df = self.copy_valid_df()
-        kemantapan_calc = Kemantapan(rni_table, df, route_col, from_m_col, to_m_col, grading_col, rni_route_col,
-                                     rni_from_col, rni_to_col, surftype_col=surftype_col)
+
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        route_list = self.route_lane_tuple(df, route_col, lane_codes, route_only=True)
+
+        for route in route_list:
+            df_route = df.loc[df[route_col] == route]
+
+            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]
+            df_rni = fc_to_dataframe(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
+                                     orderby=None)
+
+            kemantapan_calc = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col, rni_route_col,
+                                         rni_from_col, rni_to_col, surftype_col=surftype_col)
 
     def copy_valid_df(self, dropna=True):
         """
@@ -692,12 +707,13 @@ class Kemantapan(object):
         input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
 
         # GroupBy the RNI Table to get the summary of surface type from all lane in a segment.
-        rni_groupped = df_rni.groupby(by=rni_group_col)[surftype_col].agg(pd.Series.mode).reset_index()
+        rni_groupped = df_rni.groupby(by=rni_group_col)[surftype_col].\
+            agg(lambda x: x.value_counts().index[0]).reset_index()
 
         # Merge the RNI DataFrame and the event DataFrame
         df_merge = pd.merge(input_groupped, rni_groupped, how='outer', left_on=input_group_col, right_on=rni_group_col,
                             indicator=True, suffixes=['_INPUT', '_RNI'])
 
-        df_match = df_merge.lco[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
+        df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
         return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 

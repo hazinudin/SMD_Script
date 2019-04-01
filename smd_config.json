@@ -25,7 +25,8 @@
       "route_id":"LINKID",
       "lane_code":"LANE_CODE",
       "from_measure":"FROMMEASURE",
-      "to_measure":"TOMEASURE"
+      "to_measure":"TOMEASURE",
+      "surface_type":"SURFTYPE"
     },
     "balai_table":{
       "prov_code":"NO_PROV",

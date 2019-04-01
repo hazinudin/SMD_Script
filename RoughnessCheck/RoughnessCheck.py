@@ -24,6 +24,7 @@ RNIRouteID = smd_config['table_fields']['rni']['route_id']
 RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
 RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 RNILaneCode = smd_config['table_fields']['rni']['lane_code']
+RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 
 BalaiTable = smd_config['table_names']['balai_table']
 dbConnection = smd_config['smd_database']['instance']
@@ -65,6 +66,7 @@ if EventCheck.header_check_result is None:
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
+    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn)  # Check the kemantapan
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
