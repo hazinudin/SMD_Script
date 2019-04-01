@@ -78,13 +78,3 @@ def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field,
 
     # Return the result
     return dissolved_segment
-
-
-def rni_surface_classification(df_rni, surftype_col):
-    """
-    This function classify the surftype in the RNI table based on the reference JSON.
-    :param df_rni: The RNI DataFrame.
-    :param surftype_col:  A column in the RNI Table which stores the surftype value.
-    :return: Add a '_surfclass' column to the RNI Table which stores the segment surface type classification.
-    """
-    pass
