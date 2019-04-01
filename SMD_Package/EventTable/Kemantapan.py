@@ -114,11 +114,11 @@ class Kemantapan(object):
         :param kemantapan_col: The newly added column which store the kemantapan status.
         :return: DataFrame with '_kemantapan' column.
         """
-        df_graded.loc[:, '_len_diff'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
+        df_graded.loc[:, '_len'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
         df_graded.loc[df_graded[grade_result_col].isin(['baik', 'sedang']), kemantapan_col] = 'mantap'
         df_graded.loc[df_graded[grade_result_col].isin(['rusak ringan', 'rusak berat']), kemantapan_col] = 'tidak mantap'
 
-        kemantapan_len = df_graded.groupby(by=[route_col, kemantapan_col]).agg({'_len_diff': 'sum'})
+        kemantapan_len = df_graded.groupby(by=[route_col, kemantapan_col]).agg({'_len': 'sum'})
         kemantapan_prcnt = kemantapan_len.groupby(level=0).apply(lambda x: 100*x/float(x.sum())).reset_index()
 
         return kemantapan_prcnt
