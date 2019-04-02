@@ -46,6 +46,13 @@ LowerBound = roughness_config['lower_bound']
 SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
 
+# All the details about comparison table
+CompTable = roughness_config['compare_table']['table_name']
+CompRouteID = roughness_config['compare_table']['route_id']
+CompFromMeasure = roughness_config['compare_table']['from_measure']
+CompToMeasure = roughness_config['compare_table']['to_measure']
+CompIRI = roughness_config['compare_table']['iri']
+
 # GetAllRoute result containing all route from a Balai
 env.workspace = dbConnection
 routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
@@ -66,7 +73,8 @@ if EventCheck.header_check_result is None:
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
-    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, routes=valid_routes)
+    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure, CompToMeasure,
+                                  CompRouteID, CompIRI,routes=valid_routes)
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 

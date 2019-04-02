@@ -16,5 +16,12 @@
     "LONGITUDE":{"dtype":"double"},
     "LATITUDE":{"dtype":"double"},
     "ALTITUDE":{"dtype":"double"}
+  },
+  "compare_table":{
+    "table_name":"ELRS.Roughness_National_REV",
+    "route_id":"LINKID",
+    "from_measure":"FROMMEASURE",
+    "to_measure":"TOMEASURE",
+    "iri":"IRI"
   }
 }

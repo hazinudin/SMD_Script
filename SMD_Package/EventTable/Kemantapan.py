@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+from SMD_Package.FCtoDataFrame import fc_to_dataframe
 
 
 class Kemantapan(object):
@@ -18,12 +19,44 @@ class Kemantapan(object):
 
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
+        self.df_rni = df_rni
+        self.rni_route_col = rni_route_col
+        self.rni_from_col = rni_from_col
+        self.rni_to_col = rni_to_col
+        self.surftype_col = surftype_col
+
+        self.group_details = group_details
 
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
-                                            rni_route_col, rni_from_col, rni_to_col, surftype_col)
+                                       rni_route_col, rni_from_col, rni_to_col, surftype_col)
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
+
+    def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
+        """
+        Compare the Kemantapan percentage from the event table and the compare table.
+        :param compare_table:
+        :param grading_col:
+        :param route_col:
+        :param from_m_col:
+        :param to_m_col:
+        :param route:
+        :param sde_connection:
+        :return:
+        """
+        # Create the compare_table DataFrame
+        comp_df = fc_to_dataframe(compare_table, [route_col, from_m_col, to_m_col, grading_col], route, route_col,
+                                  sde_connection, orderby=None)
+        comp_df[from_m_col] = pd.Series(comp_df[from_m_col]*100)
+        comp_df[to_m_col] = pd.Series(comp_df[to_m_col]*100)
+
+        merge_comp = self.rni_table_join(self.df_rni, comp_df, route_col, from_m_col, to_m_col, grading_col,
+                                         self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col)
+        graded_comp = self.grading(merge_comp, self.surftype_col, grading_col, self.group_details)
+        mantap_comp = self.kemantapan_percentage(graded_comp, route_col, from_m_col, to_m_col)
+
+        return mantap_comp
 
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,

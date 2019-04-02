@@ -567,9 +567,10 @@ class EventValidation(object):
 
         return self
 
-    def compare_kemantapan(self, rni_table, surftype_col, grading_col, routes='ALL', route_col='LINKID',
-                           lane_codes='CODE_LANE', from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID',
-                           rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE'):
+    def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
+                           comp_route_col, comp_grading_col, routes='ALL', route_col='LINKID', lane_codes='CODE_LANE',
+                           from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE',
+                           rni_to_col='TOMEASURE'):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -603,8 +604,13 @@ class EventValidation(object):
                                      orderby=None)
 
             # Current year Kemantapan
-            kemantapan_current = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
-                                            rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
+            kemantapan = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
+                                    rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
+            kemantapan_current = kemantapan.mantap_percent
+            kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
+                                                       comp_to_col, route, self.sde_connection)
+            AddMessage(kemantapan_current)
+            AddMessage(kemantapan_current)
 
     def copy_valid_df(self, dropna=True):
         """
