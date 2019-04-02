@@ -613,7 +613,7 @@ class EventValidation(object):
             # Compare the kemantapan percentage between current data and previous data
             atol = kemantapan_compare*threshold  # The absolute tolerance
             kemantapan_diff = kemantapan_compare-kemantapan_current  # The difference between the current and comparison
-            if (kemantapan_current < kemantapan_compare) & (kemantapan_diff <= atol):
+            if (kemantapan_current >= kemantapan_compare) & (kemantapan_diff <= atol):
                 pass  # If true then pass
             else:
                 # Create the error message
