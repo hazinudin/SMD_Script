@@ -574,17 +574,22 @@ class EventValidation(object):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
-        :param rni_table:
-        :param surftype_col:
-        :param grading_col:
-        :param routes:
-        :param route_col:
-        :param lane_codes:
-        :param from_m_col:
-        :param to_m_col:
-        :param rni_route_col:
-        :param rni_from_col:
-        :param rni_to_col:
+        :param rni_table: The RNI Feature Class Table
+        :param surftype_col: The surface type column in the RNI Feature Class
+        :param grading_col: The column in the input event DataFrame used for grading.
+        :param comp_fc: The feature class used for kemantapan status comparison
+        :param comp_from_col: The column in the comparison feature class which store the from measure
+        :param comp_to_col: The column in the comparison feature class which store the to measure
+        :param comp_route_col: The column in the comparison feature class which store the Route ID
+        :param comp_grading_col: The column in the comparison feature class which store the grading column
+        :param routes: The route selections
+        :param route_col: The RouteID column in the event DataFrame
+        :param lane_codes: The lane code column in the event DataFrame
+        :param from_m_col: The from measure column in the event DataFrame
+        :param to_m_col: The to measure column in the event DataFrame
+        :param rni_route_col: The RouteID column in the RNI Table
+        :param rni_from_col: The from measure column in the RNI Table
+        :param rni_to_col: The to measure column in the RNI Table
         :return:
         """
         df = self.copy_valid_df()  # Create the valid DataFrame copy
