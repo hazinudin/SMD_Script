@@ -74,7 +74,7 @@ if EventCheck.header_check_result is None:
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
     EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure, CompToMeasure,
-                                  CompRouteID, CompIRI,routes=valid_routes)
+                                  CompRouteID, CompIRI, routes=valid_routes)
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 

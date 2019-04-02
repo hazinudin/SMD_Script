@@ -153,6 +153,7 @@ class Kemantapan(object):
 
         kemantapan_len = df_graded.groupby(by=[route_col, kemantapan_col]).agg({'_len': 'sum'})
         kemantapan_prcnt = kemantapan_len.groupby(level=0).apply(lambda x: 100*x/float(x.sum())).reset_index()
+        kemantapan_prcnt.set_index(kemantapan_col, inplace=True)
 
         return kemantapan_prcnt
 

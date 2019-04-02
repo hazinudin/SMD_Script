@@ -570,7 +570,7 @@ class EventValidation(object):
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', route_col='LINKID', lane_codes='CODE_LANE',
                            from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE',
-                           rni_to_col='TOMEASURE'):
+                           rni_to_col='TOMEASURE', threshold=0.05):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -606,11 +606,18 @@ class EventValidation(object):
             # Current year Kemantapan
             kemantapan = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
                                     rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
-            kemantapan_current = kemantapan.mantap_percent
+            kemantapan_current = kemantapan.mantap_percent.at['mantap', '_len']
             kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
-                                                       comp_to_col, route, self.sde_connection)
-            AddMessage(kemantapan_current)
-            AddMessage(kemantapan_current)
+                                                       comp_to_col, route, self.sde_connection).at['mantap', '_len']
+
+            # Compare the kemantapan percentage between current data and previous data
+            if np.isclose(kemantapan_compare, kemantapan_current, atol=(kemantapan_compare*threshold)):
+                pass  # If true then pass
+            else:
+                # Create the error message
+                error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
+                    format(route, (100*threshold))
+                self.error_list.append(error_message)
 
     def copy_valid_df(self, dropna=True):
         """
