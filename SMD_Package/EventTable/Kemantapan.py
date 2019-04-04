@@ -36,13 +36,13 @@ class Kemantapan(object):
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
         """
         Compare the Kemantapan percentage from the event table and the compare table.
-        :param compare_table:
-        :param grading_col:
-        :param route_col:
-        :param from_m_col:
-        :param to_m_col:
-        :param route:
-        :param sde_connection:
+        :param compare_table: The Feature Class used for comparing the kemantapan status.
+        :param grading_col: The column in the compare_table used for grading.
+        :param route_col: The RouteID column in the compare_table
+        :param from_m_col: The from measure column in the compare_table
+        :param to_m_col: The to measure column in the compare_table
+        :param route: Route selection for compare_table
+        :param sde_connection: The SDE connection for accessing compare_table
         :return:
         """
         # Create the compare_table DataFrame
