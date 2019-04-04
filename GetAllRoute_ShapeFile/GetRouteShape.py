@@ -326,7 +326,8 @@ if ConnectionCheck.all_connected:
     if RequestCheckResult is not None:
 
         # Create a Pandas dataframe from the RNI table in geodatabase
-        RNI_DataFrame = event_fc_to_df(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection)
+        RNI_DataFrame = event_fc_to_df(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection,
+                                       is_table=True)
         DissolvedSegmentDict = rni_segment_dissolve(RNI_DataFrame, rniGroupbyField, rniCodeLane, rniRouteID)
 
         # Create the shapefile from the segment created by the dissolve segment function
