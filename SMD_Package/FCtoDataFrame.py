@@ -1,8 +1,9 @@
-from arcpy import da, env
+from arcpy import da, env, AddMessage
 from pandas import DataFrame
 
 
-def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, sde_connection, orderby='FROMMEASURE'):
+def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
+                   include_all=False, orderby='FROMMEASURE'):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
@@ -11,21 +12,29 @@ def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, 
     :param route_identifier: The RouteID column in the GeoDataBase table or FeatureClass.
     :param orderby: The column which the table will be sorted.
     :param sde_connection: The SDE Instance for accessing the FeatureClass
-    :return df = this function will return a Pandas DataFrame
+    :param is_table: If True then the requested table are a table without geometry.
+    :param include_all: If True then the method will return all features including features with null geometry, if False
+    then the method will only return features with geometry.
+    :param orderby: The column used for sorting the feature in the DataFrame.
+    :return df = this function will return a Pandas DataFrame.
     """
     env.workspace = sde_connection  # The workspace for accessing the SDE Feature Class
 
     # Create the where_clause for DataAccess module
     if route_selection == 'ALL':  # If the requested route is 'ALL' then there is no where_clause
         where_clause = None
-
     elif route_selection != 'ALL':
         if type(route_selection) == str:  # If its a string then its only one route
-            where_clause = "{0} IN ('{1}')".format(route_identifier, route_selection)
-
+            where_clause = "({0} IN ('{1}'))".format(route_identifier, route_selection)
         elif type(route_selection) == list:  # If its a list then the strip the square bracket
             route_selection = str(route_selection).strip('[]')
-            where_clause = "{0} IN ({1})".format(route_identifier, route_selection)
+            where_clause = "({0} IN ({1}))".format(route_identifier, route_selection)
+
+    # Modify the where_clause to prevent null event row with null segment to be included
+    if is_table:
+        pass
+    elif not include_all:
+        where_clause += "AND (SHAPE.LEN IS NOT NULL)"
 
     # Create the sql_clause for DataAccess module
     if orderby is None:
@@ -39,7 +48,8 @@ def fc_to_dataframe(gdb_table, search_field, route_selection, route_identifier, 
         sql_clause = (None, 'ORDER BY {0}'.format(orderby))
 
     # Create the numpy array of the requested table or feature class from GeoDataBase
-    table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause, sql_clause=sql_clause)
+    table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause,
+                                               sql_clause=sql_clause)
 
     # Creating DataFrame from the numpy array
     df = DataFrame(table_search)

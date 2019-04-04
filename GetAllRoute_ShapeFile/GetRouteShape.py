@@ -10,7 +10,7 @@ import sys
 import json
 import zipfile
 sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve, GetRoutes, fc_to_dataframe
+from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df
 
 
 def results_output(status, results):
@@ -326,7 +326,7 @@ if ConnectionCheck.all_connected:
     if RequestCheckResult is not None:
 
         # Create a Pandas dataframe from the RNI table in geodatabase
-        RNI_DataFrame = fc_to_dataframe(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection)
+        RNI_DataFrame = event_fc_to_df(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection)
         DissolvedSegmentDict = rni_segment_dissolve(RNI_DataFrame, rniGroupbyField, rniCodeLane, rniRouteID)
 
         # Create the shapefile from the segment created by the dissolve segment function

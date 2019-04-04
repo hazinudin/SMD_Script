@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
-from SMD_Package.FCtoDataFrame import fc_to_dataframe
+from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 
 class Kemantapan(object):
@@ -46,8 +46,8 @@ class Kemantapan(object):
         :return:
         """
         # Create the compare_table DataFrame
-        comp_df = fc_to_dataframe(compare_table, [route_col, from_m_col, to_m_col, grading_col], route, route_col,
-                                  sde_connection, orderby=None)
+        comp_df = event_fc_to_df(compare_table, [route_col, from_m_col, to_m_col, grading_col], route, route_col,
+                                 sde_connection, orderby=None)
         comp_df[from_m_col] = pd.Series(comp_df[from_m_col]*100)
         comp_df[to_m_col] = pd.Series(comp_df[to_m_col]*100)
 

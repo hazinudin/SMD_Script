@@ -1,7 +1,7 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
-from SMD_Package.FCtoDataFrame import fc_to_dataframe
+from SMD_Package.FCtoDataFrame import event_fc_to_df
 from Kemantapan import Kemantapan
 
 
@@ -481,7 +481,8 @@ class EventValidation(object):
 
             # The RNI DataFrame
             search_field = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
-            df_rni = fc_to_dataframe(rni_table, search_field, route, rni_route_col, self.sde_connection, orderby=None)
+            df_rni = event_fc_to_df(rni_table, search_field, route, rni_route_col, self.sde_connection, is_table=True,
+                                    orderby=None)
             df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).round(2).astype(int)
             df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).round(2).astype(int)
 
@@ -605,8 +606,8 @@ class EventValidation(object):
 
             rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
             # Create the RNI Table DataFrame
-            df_rni = fc_to_dataframe(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
-                                     orderby=None)
+            df_rni = event_fc_to_df(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
+                                    is_table=True, orderby=None)
 
             # Current year Kemantapan
             kemantapan = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
