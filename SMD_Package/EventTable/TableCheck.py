@@ -616,9 +616,7 @@ class EventValidation(object):
                                                        comp_to_col, route, self.sde_connection).at['mantap', '_len']
 
             # Compare the kemantapan percentage between current data and previous data
-            atol = kemantapan_compare*threshold  # The absolute tolerance
-            kemantapan_diff = kemantapan_compare-kemantapan_current  # The difference between the current and comparison
-            if (kemantapan_current >= kemantapan_compare) & (kemantapan_diff <= atol):
+            if np.isclose(kemantapan_compare, kemantapan_current, atol=(kemantapan_compare*threshold)):
                 pass  # If true then pass
             else:
                 # Create the error message
