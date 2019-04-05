@@ -1,4 +1,4 @@
-from arcpy import da, env, AddMessage
+from arcpy import da, env
 from pandas import DataFrame
 
 
@@ -31,7 +31,7 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
             where_clause = "({0} IN ({1}))".format(route_identifier, route_selection)
 
     # Modify the where_clause to prevent null event row with null segment to be included
-    if is_table:
+    if is_table:  # If the inputted is an SDE Table without geometry then include all records
         pass
     elif not include_all:
         where_clause += "AND (SHAPE.LEN IS NOT NULL)"
