@@ -459,7 +459,7 @@ class EventValidation(object):
 
     def lane_code_check(self, rni_table, routes='ALL', routeid_col='LINKID', lane_code='CODE_LANE', from_m_col='STA_FR',
                         to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
-                        rni_lane_code='LANE_CODE'):
+                        rni_lane_code='LANE_CODE', find_no_match=False):
         """
         This function checks the lane code combination for all segment in the input table, the segment interval value
         has to be the same with interval value in the RNI Table.
@@ -510,7 +510,7 @@ class EventValidation(object):
                 df_both = df_merge.loc[df_merge['_merge'] == 'both']  # Interval found on both input table and RNI
                 df_input_only = df_merge.loc[df_merge['_merge'] == 'left_only']  # Interval found only on the input
 
-                if len(df_input_only) != 0:
+                if len(df_input_only) != 0 and find_no_match:
                     missing_segments = df_input_only.groupby(by=[from_m_col, to_m_col]).groups.keys()
                     str_segment = [str(x).replace(', ', '-') for x in missing_segments]
                     error_message = "Segmen di rute {0} pada interval {1} tidak memiliki pasangan pada table RNI.".\
