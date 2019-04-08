@@ -520,15 +520,18 @@ class EventValidation(object):
                 # Create a column containing intersection count of lane code combination
                 # between the input table and RNI Table
                 df_both.loc[:, 'lane_intersect_count'] = pd.Series([len(set(a).intersection(b)) for a, b in
-                                                                    zip(df_both[lane_code], df_both[rni_lane_code])])
+                                                                    zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                                   index=df_both.index)
 
                 # Create a column containing the lane diff of Input - RNI
                 df_both.loc[:, 'input-RNI'] = pd.Series([np.setdiff1d(a, b) for a, b in
-                                                         zip(df_both[lane_code], df_both[rni_lane_code])])
+                                                         zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                        index=df_both.index)
 
                 # Create a column containing the lane diff of RNI - Input
                 df_both.loc[:, 'RNI-input'] = pd.Series([np.setdiff1d(b, a) for a, b in
-                                                         zip(df_both[lane_code], df_both[rni_lane_code])])
+                                                         zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                        index=df_both.index)
 
                 df_both[from_m_col] = pd.Series(df_both[from_m_col]).astype(str)
                 df_both[to_m_col] = pd.Series(df_both[to_m_col]).astype(str)
