@@ -204,7 +204,7 @@ class EventValidation(object):
 
         return self
 
-    def segment_len_check(self, routes='ALL', segment_len=0.1, route_col='LINKID', from_m_col='STA_FR',
+    def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FR',
                           to_m_col='STA_TO', lane_code='CODE_LANE', length_col='LENGTH'):
         """
         This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
@@ -225,11 +225,11 @@ class EventValidation(object):
         if routes == 'ALL':
             pass
         else:
-            df = self.selected_route_df(df, routes, route_col=route_col)
+            df = self.selected_route_df(df, routes, routeid_col=routeid_col)
 
-        for route, lane in self.route_lane_tuple(df, route_col, lane_code):  # Iterate over all route and lane
+        for route, lane in self.route_lane_tuple(df, routeid_col, lane_code):  # Iterate over all route and lane
 
-                df_route_lane = df.loc[(df[lane_code] == lane) & (df[route_col] == route)]
+                df_route_lane = df.loc[(df[lane_code] == lane) & (df[routeid_col] == route)]
                 max_to_ind = df_route_lane[to_m_col].idxmax()
                 last_segment_len = df_route_lane.at[max_to_ind, 'diff']  # The last segment real length
                 last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]  # The last segment stated len
@@ -267,7 +267,7 @@ class EventValidation(object):
 
         return self
 
-    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', route_col='LINKID',
+    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', routeid_col='LINKID',
                           lane_code='CODE_LANE'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
@@ -276,7 +276,7 @@ class EventValidation(object):
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a valid DataFrame with matching DataType with requirement
-        groupby_cols = [route_col, from_m_col, to_m_col]
+        groupby_cols = [routeid_col, from_m_col, to_m_col]
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -284,14 +284,14 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes)
 
         # Iterate over valid row in the input table
-        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
+        for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a route DataFrame
-            df_route = df.loc[df[route_col] == route, [route_col, from_m_col, to_m_col, lane_code]]
+            df_route = df.loc[df[routeid_col] == route, [routeid_col, from_m_col, to_m_col, lane_code]]
             df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
                 reset_index()  # Group the route df
 
             # Sort the DataFrame based on the RouteId and FromMeasure
-            df_groupped.sort_values(by=[route_col, from_m_col, to_m_col], inplace=True)
+            df_groupped.sort_values(by=[routeid_col, from_m_col, to_m_col], inplace=True)
             df_groupped.reset_index(drop=True)
 
             # Get the LRS Network route length
@@ -351,14 +351,14 @@ class EventValidation(object):
 
         return self
 
-    def coordinate_check(self, routes='ALL', route_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
+    def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
                          from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
                          threshold=30, at_start=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
         :param routes: The requested routes
-        :param route_col: Column in the input table which contain the route id
+        :param routeid_col: Column in the input table which contain the route id
         :param long_col: Column in the input table which contain the longitude value
         :param lat_col: Column in the input table which contain the latitude value
         :param from_m_col: Column in the input table which contain the from measure value of a segment
@@ -377,9 +377,9 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes)
 
         # Iterate for every requested routes
-        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
+        for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
-            df_route = df.loc[df[route_col] == route, [route_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
+            df_route = df.loc[df[routeid_col] == route, [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
 
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
             route_spat_ref = route_geom.spatialReference
@@ -451,7 +451,7 @@ class EventValidation(object):
 
         return self
 
-    def lane_code_check(self, rni_table, routes='ALL', route_col='LINKID', lane_code='CODE_LANE', from_m_col='STA_FR',
+    def lane_code_check(self, rni_table, routes='ALL', routeid_col='LINKID', lane_code='CODE_LANE', from_m_col='STA_FR',
                         to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
                         rni_lane_code='LANE_CODE'):
         """
@@ -476,8 +476,8 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes)
 
         # Iterate over all requested routes
-        for route in self.route_lane_tuple(df, route_col, lane_code, route_only=True):
-            df_route = df.loc[df[route_col] == route]  # Create a DataFrame containing only selected routes
+        for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
+            df_route = df.loc[df[routeid_col] == route]  # Create a DataFrame containing only selected routes
 
             # The RNI DataFrame
             search_field = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
@@ -491,7 +491,7 @@ class EventValidation(object):
                 self.error_list.append(error_message)
             else:
                 # Create the join key for both DataFrame
-                input_merge_key = [route_col, from_m_col, to_m_col]
+                input_merge_key = [routeid_col, from_m_col, to_m_col]
                 rni_merge_key = [rni_route_col, rni_from_col, rni_to_col]
 
                 # Create a groupby DataFrame
@@ -569,7 +569,7 @@ class EventValidation(object):
         return self
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
-                           comp_route_col, comp_grading_col, routes='ALL', route_col='LINKID', lane_codes='CODE_LANE',
+                           comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
                            from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE',
                            rni_to_col='TOMEASURE', threshold=0.05):
         """
@@ -584,7 +584,7 @@ class EventValidation(object):
         :param comp_route_col: The column in the comparison feature class which store the Route ID
         :param comp_grading_col: The column in the comparison feature class which store the grading column
         :param routes: The route selections
-        :param route_col: The RouteID column in the event DataFrame
+        :param routeid_col: The RouteID column in the event DataFrame
         :param lane_codes: The lane code column in the event DataFrame
         :param from_m_col: The from measure column in the event DataFrame
         :param to_m_col: The to measure column in the event DataFrame
@@ -600,9 +600,9 @@ class EventValidation(object):
         else:
             df = self.selected_route_df(df, routes)  # Create a DataFrame with selected route
 
-        route_list = self.route_lane_tuple(df, route_col, lane_codes, route_only=True)  # Create a route list
+        route_list = self.route_lane_tuple(df, routeid_col, lane_codes, route_only=True)  # Create a route list
         for route in route_list:  # Iterate over all available route
-            df_route = df.loc[df[route_col] == route]  # The DataFrame with only selected route
+            df_route = df.loc[df[routeid_col] == route]  # The DataFrame with only selected route
 
             rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
             # Create the RNI Table DataFrame
@@ -610,7 +610,7 @@ class EventValidation(object):
                                     is_table=True, orderby=None)
 
             # Current year Kemantapan
-            kemantapan = Kemantapan(df_rni, df_route, grading_col, route_col, from_m_col, to_m_col,
+            kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col,
                                     rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
             kemantapan_current = kemantapan.mantap_percent.at['mantap', '_len']
             kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
@@ -641,12 +641,12 @@ class EventValidation(object):
         return df.copy(deep=True)
 
     @staticmethod
-    def selected_route_df(df, routes, route_col="LINKID"):
+    def selected_route_df(df, routes, routeid_col="LINKID"):
         """
         This static method selects only route which is defined in the routes parameter
         :param df: Input table DataFrame
         :param routes: The requested routes
-        :param route_col: RouteId column of the input table
+        :param routeid_col: RouteId column of the input table
         :return:
         """
         route_list = []  # List for storing all requested routes
@@ -655,15 +655,15 @@ class EventValidation(object):
         else:
             route_list = routes  # If the requested routes is in list format
 
-        df = df.loc[df[route_col].isin(route_list)]
+        df = df.loc[df[routeid_col].isin(route_list)]
         return df  # Return the DataFrame with dropped invalid route
 
     @staticmethod
-    def route_lane_tuple(df, route_col, lane_code, route_only=False):
+    def route_lane_tuple(df, routeid_col, lane_code, route_only=False):
         """
         This static method return a list containing tuple (route, lane) to be iterated to df_route_lane
         :param df: Input table DataFrame
-        :param route_col: RouteID column of the input table
+        :param routeid_col: RouteID column of the input table
         :param lane_code: Lane Code column of the input table
         :param route_only: If route only is False then the function returns (route, lane), if True then the function
         returns a list containing route.
@@ -671,11 +671,11 @@ class EventValidation(object):
         """
         return_list = []  # Empty list for storing route, lane tuple
 
-        for route in df[route_col].unique().tolist():  # Iterate for every available route
+        for route in df[routeid_col].unique().tolist():  # Iterate for every available route
             if route_only:  # if route only
                 return_list.append(str(route))
             if not route_only:
-                for lane in df.loc[df[route_col] == route, lane_code].unique().tolist():  # Iterate for every lane
+                for lane in df.loc[df[routeid_col] == route, lane_code].unique().tolist():  # Iterate for every lane
                     route_lane_tuple = (str(route), lane)  # Create tuple object
                     return_list.append(route_lane_tuple)  # Append the tuple object
 
