@@ -79,7 +79,7 @@ class EventValidation(object):
 
         If there is a value which does not comply to the stated data type, then input table will be rejected and a
         message stating which row is the row with error.
-        :return:
+        :return: self
         """
         error_list = []
 
@@ -140,7 +140,9 @@ class EventValidation(object):
         This function check if the inputted data year and semester in JSON match with the data in input table
         :param year_input: The input year mentioned in the input JSON.
         :param semester_input: The input semester mentioned in the the input JSON.
-        :return: the excel row index which has a mismatch year or semester data
+        :param year_col: The year column in the input table.
+        :param sem_col: The semester column in the input table.
+        :return: self
         """
         df = self.copy_valid_df()
 
@@ -161,9 +163,10 @@ class EventValidation(object):
     def route_domain(self, balai_code, balai_route_list, routeid_col='LINKID'):
         """
         This function check if the route id submitted in the input table is in the domain of balai submitted
-        :param routeid_col:
-        :param balai_route:
-        :return:
+        :param balai_code: The balai code in the input JSON.
+        :param balai_route_list: The balai route domain.
+        :param routeid_col: The Route ID column in the input table.
+        :return: self
         """
         df = self.df_string
         input_routes = df[routeid_col].unique().tolist()  # All Route included in the input table
@@ -188,7 +191,7 @@ class EventValidation(object):
         :param lower: Allowed lower bound
         :param upper: Allowed upper bound
         :param d_column: Specified data column to be checked
-        :return:
+        :return: self
         """
         df = self.copy_valid_df()
 
@@ -207,13 +210,16 @@ class EventValidation(object):
     def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FR',
                           to_m_col='STA_TO', lane_code='CODE_LANE', length_col='LENGTH'):
         """
-        This function check for every segment length. The segment lenght has to be 100 meters, and stated segment length
-        has to match the stated From Measure and To Measure
-        :param segment_len: Required semgent legnth, the default value is 100 meters
+        This function check for every segment length. The segment length has to be 100 meters, and stated segment length
+        has to match the stated From Measure and To Measure.
+        :param segment_len: Required segment length, the default value is 100 meters
         :param from_m_col: From Measure column
         :param to_m_col: To Measure column
         :param length_col: Segment length column
-        :return:
+        :param routes: The specified routes to be processed, if 'ALL' then all route in the input table will be processed.
+        :param routeid_col: The Route ID column in the input table.
+        :param lane_code: The lane code column in the input table.
+        :return: self
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a copy of the valid DataFrame
