@@ -4,6 +4,7 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer
+from pprint import pprint
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -86,7 +87,8 @@ if EventCheck.header_check_result is None:
         for error_message in ErrorMessageList:
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
-        SetParameterAsText(1, output_message("Rejected", ErrorMessageList))
+        AddMessage(EventCheck.route_results)
+        SetParameterAsText(1, output_message("Rejected", EventCheck.route_results))
     else:  # If there is no error
         gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
         SetParameterAsText(1, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String

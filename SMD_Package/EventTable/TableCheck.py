@@ -33,6 +33,7 @@ class EventValidation(object):
         self.sde_connection = db_conn  # The specifier gdb connection incl db version and username
 
         self.error_list = []  # List for storing the error message for all checks
+        self.route_results = {}
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
         self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
@@ -73,7 +74,7 @@ class EventValidation(object):
         else:
             return error_list
 
-    def dtype_check(self, write_error=False):
+    def dtype_check(self, routeid_col='LINKID', write_error=True):
         """
         This function check the input table column data type and the data contained in that row.
 
@@ -97,7 +98,8 @@ class EventValidation(object):
                     # Convert the column to numeric
                     # If the column contain non numerical value, then change that value to Null
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
-                    error_i = df.loc[df[col_name].isnull()].index.tolist()  # Find the index of the null
+                    error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
+                    error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
                     if len(error_i) != 0:
@@ -105,7 +107,13 @@ class EventValidation(object):
                         error_message = '{0} memiliki nilai non-numeric pada baris{1}.'\
                             .format(col_name, str(excel_i))
                         error_list.append(error_message)
+
                         if write_error:
+                            for index, row in error_row.iterrows():
+                                result = 'Rute {0} pada kolom {1} memiliki nilai non-numeric pada baris {2}.'. \
+                                    format(row[routeid_col], col_name, index + 2)
+                                self.insert_route_message(row[routeid_col], "error", result)
+
                             self.error_list.append(error_message)
 
                 elif col_dtype == 'date':  # Check for date column
@@ -113,7 +121,8 @@ class EventValidation(object):
                     # Convert the column to a date data type
                     # If the column contain an invalid date format, then change that value to Null
                     df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='d%/m%/%y')
-                    error_i = df.loc[df[col_name].isnull()].index.tolist()  # Find the index of the null
+                    error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
+                    error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
                     if len(error_i) != 0:
@@ -121,7 +130,13 @@ class EventValidation(object):
                         error_message = '{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.'\
                             .format(col_name, str(excel_i))
                         error_list.append(error_message)
+
                         if write_error:
+                            for index, row in error_row.iterrows():
+                                result = 'Rute {0} pada kolom {1} memiliki tanggal yang tidak sesuai dengan format baris{2}.'. \
+                                    format(row[routeid_col], col_name, index + 2)
+                                self.insert_route_message(row[routeid_col], "error", result)
+
                             self.error_list.append(error_message)
 
             self.df_valid = df  # Assign the df (the check result) as self.df_valid
@@ -641,7 +656,8 @@ class EventValidation(object):
         required DataType
         :return:
         """
-        if self.dtype_check() is None:  # If there is a problem with the data type check then return the df_string
+        # If there is a problem with the data type check then return the df_string
+        if self.dtype_check(write_error=False) is None:
             df = self.df_valid
         elif dropna:
             df = self.df_valid.dropna()
@@ -713,3 +729,20 @@ class EventValidation(object):
             return route_geom
         if not route_exist:
             return None
+
+    def insert_route_message(self, route, message_type, message):
+        """
+        This static method will insert a result message for specified route
+        :param result_dict:
+        :param route:
+        :param message_type:
+        :param message:
+        :return:
+        """
+        if route not in self.route_results:
+            self.route_results[route] = {
+                "error":[],
+                "warning":[]
+            }
+
+        self.route_results[route][message_type].append(message)
