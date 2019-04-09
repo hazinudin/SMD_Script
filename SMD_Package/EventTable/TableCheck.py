@@ -179,7 +179,8 @@ class EventValidation(object):
 
         if len(self.missing_route) != 0:
             # Create error message
-            error_message = '{0} tidak ada pada domain rute balai {1}.'.format(self.missing_route, balai_code)
+            string_routes = str(self.missing_route).strip('[]')
+            error_message = '{0} tidak ada pada domain rute balai {1}.'.format(string_routes, balai_code)
             self.error_list.append(error_message)  # Append error message
 
         return self
