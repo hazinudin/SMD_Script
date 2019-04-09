@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -46,6 +46,9 @@ LowerBound = roughness_config['lower_bound']
 SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
 
+# The GDB table which store all the valid table row
+OutputGDBTable = roughness_config['output_table']
+
 # All the details about comparison table
 CompTable = roughness_config['compare_table']['table_name']
 CompRouteID = roughness_config['compare_table']['route_id']
@@ -85,6 +88,7 @@ if EventCheck.header_check_result is None:
             msg_count += 1
         SetParameterAsText(1, output_message("Rejected", ErrorMessageList))
     else:  # If there is no error
+        gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
         SetParameterAsText(1, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
 
 else:

@@ -23,5 +23,6 @@
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
     "iri":"IRI"
-  }
+  },
+  "output_table": "ELRS.roughness_2_2018_DEV"
 }
