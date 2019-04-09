@@ -6,11 +6,12 @@ env.overwriteOutput = True
 def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=False):
     """
     This function writes input DataFrame as geodatabase event table
-    :param workspace:
-    :param dataframe:
-    :param new_table:
-    :param table_name:
-    :param cols_dtype:
+    :param workspace: The workspace for target database table
+    :param dataframe: The input DataFrame
+    :param new_table: If true then a new table will be created
+    :param table_name: The target table name
+    :param cols_dtype: The colums of target table name, if new 'new_table' is True then the column will be used to
+    create new column in the newly created table.
     :return:
     """
 
