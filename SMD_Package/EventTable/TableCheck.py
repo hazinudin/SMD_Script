@@ -241,7 +241,7 @@ class EventValidation(object):
             self.error_list.append(error_message)  # Append to the error message
 
             for index, row in error_row.iterrows():
-                result = "Rute {0} memiliki nilai {1} yang beradad di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}".\
+                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}".\
                     format(row[routeid_col], d_column, lower, upper, row[from_m_col], row[to_m_col], row[lane_code])
                 self.insert_route_message(row[routeid_col], 'error', result)
 
