@@ -206,32 +206,43 @@ class EventValidation(object):
             string_routes = str(self.missing_route).strip('[]')
             error_message = '{0} tidak ada pada domain rute balai {1}.'.format(string_routes, balai_code)
             self.error_list.append(error_message)  # Append error message
+
             for missing_route in self.missing_route:
                 result = "Rute {0} tidak ada pada domain rute balai {1}.".format(missing_route, balai_code)
                 self.insert_route_message(missing_route, 'error', result)
 
         return self
 
-    def value_range_check(self, lower, upper, d_column):
+    def value_range_check(self, lower, upper, d_column, routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO',
+                          lane_code='CODE_LANE'):
         """
         This function checks every value in a specified data column, to match the specified range value defined by
         parameter upper and lower (lower < [value] < upper).
         :param lower: Allowed lower bound
         :param upper: Allowed upper bound
         :param d_column: Specified data column to be checked
+        :param routeid_col: The Route ID column in the input table.
+        :param from_m_col: The From Measure column in the input table.
+        :param to_m_col: The To Measure column in the input table.
+        :param lane_code: The lane code column in the input table.
         :return: self
         """
         df = self.copy_valid_df()
 
         # Get all the row with invalid value
-        error_i = df.loc[(df[d_column] < lower) | (df[d_column] > upper)].index.tolist()
-        excel_i = [x+2 for x in error_i]  # Create row for excel file index
+        error_row = df.loc[(df[d_column] < lower) | (df[d_column] > upper)]
 
-        if len(error_i) != 0:
+        if len(error_row) != 0:
             # Create error message
+            excel_i = [x + 2 for x in error_row.index.tolist()]  # Create row for excel file index
             error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
                 format(d_column, lower, upper, excel_i)
             self.error_list.append(error_message)  # Append to the error message
+
+            for index, row in error_row.iterrows():
+                result = "Rute {0} memiliki nilai {1} yang beradad di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}".\
+                    format(row[routeid_col], d_column, lower, upper, row[from_m_col], row[to_m_col], row[lane_code])
+                self.insert_route_message(row[routeid_col], 'error', result)
 
         return self
 
