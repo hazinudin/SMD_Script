@@ -352,6 +352,7 @@ class EventValidation(object):
                 error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
                     format(route, max_to_meas, lrs_route_len)
                 self.error_list.append(error_message)
+                self.insert_route_message(route, 'error', error_message)
 
             for index, row in df_groupped.iterrows():
 
@@ -361,6 +362,7 @@ class EventValidation(object):
                     if from_m != 0:
                         error_message = 'Data survey pada rute {0} tidak dimulai dari 0.'.format(route)
                         self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
                 else:
                     # Make sure the from measure is smaller than to measure, and
                     # the next row from measure is the same as previous row to measure (no gaps).
@@ -375,6 +377,7 @@ class EventValidation(object):
                         error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
                             format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
                         self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
                         # Rewrite the To Measure and From Measure variable
                         to_m = row[from_m_col]
                         from_m = row[to_m_col]
@@ -385,6 +388,7 @@ class EventValidation(object):
                             error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
                                 format(route, to_m/100, row[from_m_col]/100)
                             self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
                             # Rewrite the To Measure and From Measure variable
 
                         if to_m > row[from_m_col]:
@@ -392,6 +396,7 @@ class EventValidation(object):
                             error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'.\
                                 format(from_m, to_m, row[from_m_col], row[to_m_col], route)
                             self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
 
                         # Rewrite the To Measure and From Measure variable
                         from_m = row[from_m_col]
