@@ -549,6 +549,7 @@ class EventValidation(object):
             if len(df_rni) == 0:  # Check if the route exist in the RNI Table
                 error_message = "Ruas {0} tidak terdapat pada table RNI.".format(route)  # Create an error message
                 self.error_list.append(error_message)
+                self.insert_route_message(route, 'error', error_message)
             else:
                 # Create the join key for both DataFrame
                 input_merge_key = [routeid_col, from_m_col, to_m_col]
@@ -570,6 +571,7 @@ class EventValidation(object):
                     error_message = "Segmen di rute {0} pada interval {1} tidak memiliki pasangan pada table RNI.".\
                         format(route, str(str_segment).strip('[]'))
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
                 # Create a column containing intersection count of lane code combination
                 # between the input table and RNI Table
@@ -598,6 +600,7 @@ class EventValidation(object):
                     error_message = 'Segmen {0} pada rute {1} memiliki kombinasi lane yang tidak cocok dengan RNI.'.\
                         format(i, route)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
                 # 1st partial match case is where there is a partial match and input have excess lane
                 # and also missing lane
@@ -608,6 +611,7 @@ class EventValidation(object):
                     error_message = 'Segmen {0} pada rute {1} memiliki kombinasi lane yang tidak sepenuhnya cocok dengan RNI.'.\
                         format(i, route)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
                 # 2nd partial match case is where there is a partial match and input have excess lane
                 partial_2nd = df_both.loc[(df_both['lane_intersect_count'] != 0) &
@@ -618,6 +622,7 @@ class EventValidation(object):
                     error_message = 'Lane {0} pada segmen {1} di rute {2} tidak terdapat pada tabel RNI.'.\
                         format(excess_lane, i, route)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
                 # 3rd partial match case is where there is a partial match and input have a missing lane
                 partial_3rd = df_both.loc[(df_both['lane_intersect_count'] != 0) &
@@ -628,6 +633,7 @@ class EventValidation(object):
                     error_message = 'Segmen {0} pada rute {1} tidak memiliki lane {2}.'. \
                         format(i, route, missing_lane)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
