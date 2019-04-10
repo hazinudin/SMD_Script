@@ -414,9 +414,12 @@ class EventValidation(object):
         :param routeid_col: Column in the input table which contain the route id
         :param long_col: Column in the input table which contain the longitude value
         :param lat_col: Column in the input table which contain the latitude value
-        :param from_m_col: Column in the input table which contain the from measure value of a segment
+        :param from_m_col: The From Measure column in the input table.
+        :param to_m_col: The To Measure column in the input table.
+        :param lane_code: The lane code column in the input table.
         :param input_projection: The coordinate system used to project the lat and long value from the input table
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
+        :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -474,11 +477,13 @@ class EventValidation(object):
                             error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
                                 format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
                             self.error_list.append(error_message)
+                            self.insert_route_message(row[routeid_col], 'error', error_message)
 
                         if not at_start:
                             error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'.\
                                 format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
                             self.error_list.append(error_message)
+                            self.insert_route_message(row[routeid_col], 'error', error_message)
 
             for lane in df_route[lane_code].unique().tolist():
                 df_lane = df_route.loc[df_route[lane_code] == lane]  # Create a DataFrame for every available lane
@@ -491,6 +496,7 @@ class EventValidation(object):
                 elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
                     error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
                 else:  # If not entirely False then give the segment which has the faulty measurement
                     faulty_index = np.where(monotonic_check is False)  # Get the index of the faulty segment
                     faulty_segment = df_lane.loc[faulty_index]  # DataFrame of all faulty segment
@@ -501,6 +507,7 @@ class EventValidation(object):
                         error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
                             format(from_meas, to_meas, lane, route)
                         self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
 
         return self
 
