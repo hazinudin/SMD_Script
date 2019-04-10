@@ -295,6 +295,7 @@ class EventValidation(object):
                     error_message = 'Segmen pada baris {2} tidak memiliki panjang = {3}km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
                         format(from_m_col, to_m_col, excel_i, segment_len)
                     self.error_list.append(error_message)  # Append the error message
+                    self.insert_route_message(route, 'error', error_message)
 
                 # Check whether the last segment fulfill the check criteria (length should not exceed 'segment_len')
                 if last_segment_len > segment_len:
@@ -302,6 +303,7 @@ class EventValidation(object):
                     error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang lebih dari {2}km'.\
                         format(route, lane, last_segment_statedlen)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
                 # Check whether the stated length for the last segment match the actual length
                 if not np.isclose(last_segment_len, last_segment_statedlen, rtol=0.001):
@@ -309,6 +311,7 @@ class EventValidation(object):
                     error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3}'.\
                         format(last_interval, route, lane, length_col)
                     self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
