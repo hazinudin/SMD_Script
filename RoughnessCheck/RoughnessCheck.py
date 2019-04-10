@@ -46,6 +46,7 @@ UpperBound = roughness_config['upper_bound']
 LowerBound = roughness_config['lower_bound']
 SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
+RouteIDCol = 'LINKID'
 
 # The GDB table which store all the valid table row
 OutputGDBTable = roughness_config['output_table']
@@ -85,16 +86,20 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
-    if len(ErrorMessageList) != 0:  # if there is an  error in any validation process after header and dType check
-        msg_count = 1
-        for error_message in ErrorMessageList:
+    failed_routes = EventCheck.route_results.keys()
+    valid_df = EventCheck.copy_valid_df()
+    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
+
+    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+        gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
+
+    msg_count = 1
+    for route in failed_routes:
+        for error_message in EventCheck.route_results[route]['error']:
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
-        AddMessage(EventCheck.route_results)
-        SetParameterAsText(1, output_message("Rejected", EventCheck.route_results))
-    else:  # If there is no error
-        gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
-        SetParameterAsText(1, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
+
+    SetParameterAsText(1, output_message("Checked", EventCheck.route_results))
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
