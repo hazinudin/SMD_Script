@@ -64,13 +64,16 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 # Create a EventTableCheck class object
 # The __init__ already include header check
 EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
+header_check_result = EventCheck.header_check_result
+dtype_check_result = EventCheck.dtype_check_result
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, Semester)
 
-# If the header check and data type check returns None, the process can continue
-if (EventCheck.header_check_result is None) & (EventCheck.dtype_check_result is None):
+# If the header check, data type check and year semester check returns None, the process can continue
+if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
 
-    EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
+
     EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
     EventCheck.measurement_check(routes=valid_routes)  # Check the from-to measurement
@@ -93,6 +96,15 @@ if (EventCheck.header_check_result is None) & (EventCheck.dtype_check_result is 
         gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
         SetParameterAsText(1, output_message("Success", "Tidak ditemui error."))  # Should return a success JSON String
 
+elif dtype_check_result is None:
+    # There must be an error with semester and year check
+    SetParameterAsText(1, output_message("Rejected", year_sem_check_result))
+
+elif year_sem_check_result is None:
+    # There must be an error with dtype check or header check
+    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+
 else:
-    # There must be an error with the dType check
-    SetParameterAsText(1, output_message("Rejected", EventCheck.dtype_check_result))
+    # There is an error with dtype check and year sem check
+    dtype_check_result.append(year_sem_check_result)
+    SetParameterAsText(1, output_message("Rejected", dtype_check_result))

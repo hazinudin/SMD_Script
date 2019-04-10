@@ -174,7 +174,6 @@ class EventValidation(object):
             excel_i = [x + 2 for x in error_row.index.tolist()]
             error_message = '{0} atau {1} tidak sesuai dengan input ({3}/{4}) pada baris{2}.'.\
                 format(year_col, sem_col, excel_i, year_input, semester_input)
-            self.error_list.append(error_message)
 
             for index, row in error_row.iterrows():
                 result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}.".\
@@ -182,7 +181,9 @@ class EventValidation(object):
                            row[to_m_col], row[lane_code])
                 self.insert_route_message(row[routeid_col], 'error', result)
 
-        return self
+            return error_message  # If there is an error
+        else:
+            return None  # If there is no error
 
     def route_domain(self, balai_code, balai_route_list, routeid_col='LINKID'):
         """
