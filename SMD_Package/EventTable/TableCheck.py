@@ -99,11 +99,10 @@ class EventValidation(object):
                     # If the column contain non numerical value, then change that value to Null
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
                     error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
-                    error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
-                    if len(error_i) != 0:
-                        excel_i = [x + 2 for x in error_i]
+                    if len(error_row) != 0:
+                        excel_i = [x + 2 for x in error_row.index.tolist()]
                         error_message = '{0} memiliki nilai non-numeric pada baris{1}.'\
                             .format(col_name, str(excel_i))
                         error_list.append(error_message)
@@ -150,7 +149,8 @@ class EventValidation(object):
         else:
             return self.header_check_result
 
-    def year_and_semester_check(self, year_input, semester_input, year_col='YEAR', sem_col='SEMESTER'):
+    def year_and_semester_check(self, year_input, semester_input, year_col='YEAR', sem_col='SEMESTER',
+                                routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE'):
         """
         This function check if the inputted data year and semester in JSON match with the data in input table
         :param year_input: The input year mentioned in the input JSON.
@@ -162,16 +162,20 @@ class EventValidation(object):
         df = self.copy_valid_df()
 
         # the index of row with bad val
-        error_i = df.loc[
-            (df[year_col] != year_input) | (df[sem_col] != semester_input)].index.tolist()
+        error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input)]
 
         # If  there is an error
-        if len(error_i) != 0:
-            excel_i = [x + 2 for x in error_i]
+        if len(error_row) != 0:
+            excel_i = [x + 2 for x in error_row.index.tolist()]
             error_message = '{0} atau {1} tidak sesuai dengan input ({3}/{4}) pada baris{2}.'.\
                 format(year_col, sem_col, excel_i, year_input, semester_input)
-
             self.error_list.append(error_message)
+
+            for index, row in error_row.iterrows():
+                result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}".\
+                    format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
+                           row[to_m_col], row[lane_code])
+                self.insert_route_message(row[routeid_col], 'error', result)
 
         return self
 
