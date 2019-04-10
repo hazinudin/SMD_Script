@@ -693,6 +693,7 @@ class EventValidation(object):
                 error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
                     format(route, (100*threshold))
                 self.error_list.append(error_message)
+                self.insert_route_message(route, 'warning', error_message)
 
     def copy_valid_df(self, dropna=True):
         """
