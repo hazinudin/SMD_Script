@@ -779,7 +779,6 @@ class EventValidation(object):
     def insert_route_message(self, route, message_type, message):
         """
         This static method will insert a result message for specified route
-        :param result_dict:
         :param route:
         :param message_type:
         :param message:
@@ -792,3 +791,26 @@ class EventValidation(object):
             }
 
         self.route_results[route][message_type].append(message)
+
+    def altered_route_result(self, message_type='error'):
+        """
+        This method will alter route_result dictionary from {'route':['msg', 'msg',...]} to [{'route: 'msg'},
+        {'route':'msg'},...]
+        :param message_type: The message type will be passed to dictionary object
+        :return:
+        """
+        result_list = []  # The list object to store the dictionary
+
+        for route in self.route_results:
+            messages = self.route_results[route][message_type]
+            for msg in messages:
+                # The dictionary object
+                dict_object = {
+                    "linkid": route,
+                    "error": msg
+                }
+
+                result_list.append(dict_object)  # Append the dictionary object
+
+        return result_list
+

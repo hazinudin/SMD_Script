@@ -99,7 +99,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
             AddMessage(str(msg_count)+'. '+error_message)
             msg_count += 1
 
-    SetParameterAsText(1, output_message("Checked", EventCheck.route_results))
+    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
