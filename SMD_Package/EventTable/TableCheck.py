@@ -80,6 +80,7 @@ class EventValidation(object):
 
         If there is a value which does not comply to the stated data type, then input table will be rejected and a
         message stating which row is the row with error.
+        :param routeid_col: The Route ID column in the input table.
         :return: self
         """
         error_list = []
@@ -157,6 +158,10 @@ class EventValidation(object):
         :param semester_input: The input semester mentioned in the the input JSON.
         :param year_col: The year column in the input table.
         :param sem_col: The semester column in the input table.
+        :param routeid_col: The Route ID column in the input table.
+        :param from_m_col: The From Measure column in the input table.
+        :param to_m_col: The To Measure column in the input table.
+        :param lane_code: The lane code column in the input table.
         :return: self
         """
         df = self.copy_valid_df()
@@ -172,7 +177,7 @@ class EventValidation(object):
             self.error_list.append(error_message)
 
             for index, row in error_row.iterrows():
-                result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}".\
+                result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}.".\
                     format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
                            row[to_m_col], row[lane_code])
                 self.insert_route_message(row[routeid_col], 'error', result)
@@ -201,6 +206,9 @@ class EventValidation(object):
             string_routes = str(self.missing_route).strip('[]')
             error_message = '{0} tidak ada pada domain rute balai {1}.'.format(string_routes, balai_code)
             self.error_list.append(error_message)  # Append error message
+            for missing_route in self.missing_route:
+                result = "Rute {0} tidak ada pada domain rute balai {1}.".format(missing_route, balai_code)
+                self.insert_route_message(missing_route, 'error', result)
 
         return self
 
