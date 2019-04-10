@@ -1,5 +1,6 @@
 import json
 
+
 def output_message(status, message):
     """
     This function will create a string with a JSON format containing a sucess or failed message

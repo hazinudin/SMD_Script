@@ -66,7 +66,7 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 
 # If the header check and data type check returns None, the process can continue
-if EventCheck.header_check_result is None:
+if (EventCheck.header_check_result is None) & (EventCheck.dtype_check_result is None):
 
     EventCheck.year_and_semester_check(DataYear, Semester)  # Check the year/semester value
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
@@ -95,4 +95,4 @@ if EventCheck.header_check_result is None:
 
 else:
     # There must be an error with the dType check
-    SetParameterAsText(1, output_message("Rejected", EventCheck.header_check_result))
+    SetParameterAsText(1, output_message("Rejected", EventCheck.dtype_check_result))

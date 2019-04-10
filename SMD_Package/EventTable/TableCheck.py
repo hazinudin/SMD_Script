@@ -145,7 +145,7 @@ class EventValidation(object):
             if len(error_list) == 0:
                 return None
             else:
-                return False
+                return error_list
 
         else:
             return self.header_check_result
