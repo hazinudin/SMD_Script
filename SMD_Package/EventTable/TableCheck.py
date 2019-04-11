@@ -81,6 +81,7 @@ class EventValidation(object):
         If there is a value which does not comply to the stated data type, then input table will be rejected and a
         message stating which row is the row with error.
         :param routeid_col: The Route ID column in the input table.
+        :param write_error: If True then this method will write error message to class attribute.
         :return: self
         """
         error_list = []
@@ -256,7 +257,8 @@ class EventValidation(object):
         :param from_m_col: From Measure column
         :param to_m_col: To Measure column
         :param length_col: Segment length column
-        :param routes: The specified routes to be processed, if 'ALL' then all route in the input table will be processed.
+        :param routes: The specified routes to be processed, if 'ALL' then all route in the input table
+        will be processed.
         :param routeid_col: The Route ID column in the input table.
         :param lane_code: The lane code column in the input table.
         :return: self
@@ -521,8 +523,15 @@ class EventValidation(object):
         :param rni_table: RNI event table
         :param routes: requested routes, if 'ALL' then all routes in the input table will be processed
         :param lane_code: lane code column in the input table
-        :param from_m_col: Column in the input table which contain the From Measurement value
-        :param to_m_col: Column in the input table which  contain the To Measurement value
+        :param routeid_col: The Route ID column in the input table.
+        :param from_m_col: Column in the input table which contain the From Measurement value.
+        :param to_m_col: Column in the input table which  contain the To Measurement value.
+        :param rni_route_col: The Route ID column in the RNI Table.
+        :param rni_from_col: The From Measure column in the RNI Table.
+        :param rni_to_col: The To Measure column in the RNI Table.
+        :param rni_lane_code: The lane code column in the RNI Table.
+        :param find_no_match: If True this method will create an error message if there is unmatched interval in the
+        input table.
         :return:
         """
         df = self.copy_valid_df()  # Get a copy of valid DataFrame
@@ -606,8 +615,8 @@ class EventValidation(object):
                 # 1st partial match case is where there is a partial match and input have excess lane
                 # and also missing lane
                 partial_1st = df_both.loc[(df_both['lane_intersect_count'] != 0) &
-                                              (df_both['RNI-input'].str.len() != 0) &
-                                              (df_both['input-RNI'].str.len() != 0)].index.tolist()
+                                          (df_both['RNI-input'].str.len() != 0) &
+                                          (df_both['input-RNI'].str.len() != 0)].index.tolist()
                 for i in partial_1st:
                     error_message = 'Segmen {0} pada rute {1} memiliki kombinasi lane yang tidak sepenuhnya cocok dengan RNI.'.\
                         format(i, route)
@@ -616,8 +625,8 @@ class EventValidation(object):
 
                 # 2nd partial match case is where there is a partial match and input have excess lane
                 partial_2nd = df_both.loc[(df_both['lane_intersect_count'] != 0) &
-                                              (df_both['RNI-input'].str.len() == 0) &
-                                              (df_both['input-RNI'].str.len() != 0)].index.tolist()
+                                          (df_both['RNI-input'].str.len() == 0) &
+                                          (df_both['input-RNI'].str.len() != 0)].index.tolist()
                 for i in partial_2nd:
                     excess_lane = [str(x) for x in df_both.at[i, 'input-RNI']]
                     error_message = 'Lane {0} pada segmen {1} di rute {2} tidak terdapat pada tabel RNI.'.\
@@ -661,6 +670,7 @@ class EventValidation(object):
         :param rni_route_col: The RouteID column in the RNI Table
         :param rni_from_col: The from measure column in the RNI Table
         :param rni_to_col: The to measure column in the RNI Table
+        :param threshold: The threshold for Kemantapan changes.
         :return:
         """
         df = self.copy_valid_df()  # Create the valid DataFrame copy
@@ -786,8 +796,8 @@ class EventValidation(object):
         """
         if route not in self.route_results:
             self.route_results[route] = {
-                "error":[],
-                "warning":[]
+                "error": [],
+                "warning": []
             }
 
         self.route_results[route][message_type].append(message)
@@ -817,4 +827,3 @@ class EventValidation(object):
                     result_list.append(msg)  # Append the message directly to list object
 
         return result_list
-
