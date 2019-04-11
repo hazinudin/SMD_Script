@@ -94,10 +94,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
 
     msg_count = 1
-    for route in failed_routes:
-        for error_message in EventCheck.route_results[route]['error']:
-            AddMessage(str(msg_count)+'. '+error_message)
-            msg_count += 1
+    for error_message in EventCheck.altered_route_result('error', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message)
+        msg_count += 1
 
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 

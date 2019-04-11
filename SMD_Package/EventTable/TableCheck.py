@@ -792,25 +792,29 @@ class EventValidation(object):
 
         self.route_results[route][message_type].append(message)
 
-    def altered_route_result(self, message_type='error'):
+    def altered_route_result(self, message_type='error', dict_output=True):
         """
         This method will alter route_result dictionary from {'route':['msg', 'msg',...]} to [{'route: 'msg'},
         {'route':'msg'},...]
         :param message_type: The message type will be passed to dictionary object
+        :param dict_output: If True then this function will return [{'route: 'msg'}, {'route':'msg'},...] if false
         :return:
         """
         result_list = []  # The list object to store the dictionary
 
         for route in self.route_results:
             messages = self.route_results[route][message_type]
-            for msg in messages:
-                # The dictionary object
-                dict_object = {
-                    "linkid": route,
-                    "error": msg
-                }
 
-                result_list.append(dict_object)  # Append the dictionary object
+            for msg in messages:
+                if dict_output:
+                    # The dictionary object
+                    dict_object = {
+                        "linkid": route,
+                        "error": msg
+                    }
+                    result_list.append(dict_object)  # Append the dictionary object
+                else:
+                    result_list.append(msg)  # Append the message directly to list object
 
         return result_list
 
