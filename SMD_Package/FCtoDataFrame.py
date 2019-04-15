@@ -24,7 +24,7 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
     if route_selection == 'ALL':  # If the requested route is 'ALL' then there is no where_clause
         where_clause = None
     elif route_selection != 'ALL':
-        if type(route_selection) == str:  # If its a string then its only one route
+        if type(route_selection) == str or type(route_selection) == unicode:  # If its a string then its only one route
             where_clause = "({0} IN ('{1}'))".format(route_identifier, route_selection)
         elif type(route_selection) == list:  # If its a list then the strip the square bracket
             route_selection = str(route_selection).strip('[]')
