@@ -24,7 +24,7 @@ with open('smd_config.json') as config_f:
 # Load the input JSON string as dictionary
 # input JSON loaded as input_details
 try:
-    input_details = json.loads(inputJSON)
+    input_details = json.loads(inputJSON.decode('string_escape'))
 except TypeError:
     message = "Cannot load input string JSON, incorrect JSON format"
     SetParameterAsText(1, output_message("Failed", message))
