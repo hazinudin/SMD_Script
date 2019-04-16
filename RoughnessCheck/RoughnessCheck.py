@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check
 from pprint import pprint
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
@@ -31,10 +31,10 @@ BalaiTable = smd_config['table_names']['balai_table']
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
-input_JSON = GetParameterAsText(0)
+inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = json.loads(input_JSON)
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 Semester = InputDetails['semester']
