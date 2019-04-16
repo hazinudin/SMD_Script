@@ -75,5 +75,5 @@ for table in [balaiTable, lrsNetwork]:
 
 # Creating the route query request object
 route_query = GetRoutes(queryType, queryValue, lrsNetwork, balaiTable, lrs_routeid=lrs_RID,
-                       lrs_prov_code=lrs_provcode, balai_code=balaiTableBalaiCode, balai_prov=balaiTableProvCode)
+                        lrs_prov_code=lrs_provcode, balai_code=balaiTableBalaiCode, balai_prov=balaiTableProvCode)
 SetParameterAsText(1, route_query.create_json_output())
