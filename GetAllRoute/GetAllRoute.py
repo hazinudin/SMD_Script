@@ -8,7 +8,7 @@ import json
 import os
 import sys
 sys.path.append('E:\SMD_Script')
-from SMD_Package import GetRoutes, output_message
+from SMD_Package import GetRoutes, output_message, input_json_check
 
 
 # Change the directory to the SMD Script root folder
@@ -23,24 +23,7 @@ with open('smd_config.json') as config_f:
 
 # Load the input JSON string as dictionary
 # input JSON loaded as input_details
-try:
-    input_details = json.loads(inputJSON.decode('string_escape'))
-except TypeError:
-    message = "Cannot load input string JSON, incorrect JSON format"
-    SetParameterAsText(1, output_message("Failed", message))
-    sys.exit(0)
-except ValueError:
-    message = "No JSON object could be decoded"
-    SetParameterAsText(1, output_message("Failed", message))
-    sys.exit(0)
-
-# Check if the input has all the required keys
-reqKeys = ['type', 'codes']
-for req_key in reqKeys:
-    if req_key not in input_details:
-        message = "Required key is missing from the input JSON. Missing key=[{0}]".format(req_key)
-        SetParameterAsText(1, output_message("Failed", message))
-        sys.exit(0)
+input_details = input_json_check(inputJSON, 1, escape_str=True, req_keys=['type', 'codes'])
 
 # Define variable
 queryType = input_details['type']
