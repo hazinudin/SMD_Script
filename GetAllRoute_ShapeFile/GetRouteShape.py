@@ -10,17 +10,7 @@ import sys
 import json
 import zipfile
 sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df
-
-
-def results_output(status, results):
-    """Create the results of the query."""
-    results_dict = {
-        "message": status,
-        "results": results
-    }
-
-    return json.dumps(results_dict)
+from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df, input_json_check, output_message
 
 
 class SDE_TableConnection(object):
@@ -249,9 +239,9 @@ class DictionaryToFeatureClass(object):
                   "point_count": self.point_feature_count}
 
         if self.polyline_count == 0 or self.point_feature_count == 0:
-            output_json_string = results_output("Empty output", result)
+            output_json_string = output_message("Empty output", result)
         else:
-            output_json_string = results_output("Succeeded", result)
+            output_json_string = output_message("Succeeded", result)
 
         return output_json_string
 
@@ -283,7 +273,7 @@ os.chdir('E:/SMD_Script')
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON, result from GetAllRoute and config JSON
-input_details = json.loads(inputJSON)
+input_details = input_json_check(inputJSON, 1, req_keys=['type', 'codes', 'routes'])
 
 with open('smd_config.json') as config_f:
     config = json.load(config_f)
@@ -314,8 +304,6 @@ allRouteQueryResult = json.loads(getAllRouteResult)
 requestedRoutes = input_details['routes']
 outputSHPName = 'Routes'
 allResults = allRouteQueryResult['results']
-allRouteResultsKey_code = 'code'
-allRouteResultsKey_routes = 'routes'
 
 # Checking the existence of all required table
 ConnectionCheck = SDE_TableConnection(env.workspace, [rniTable, lrsNetwork])
@@ -336,19 +324,11 @@ if ConnectionCheck.all_connected:
         RouteGeometries.create_segment_polyline()  # Create the polyline shapefile
         RouteGeometries.create_start_end_point()  # Create the point shapefile
 
-        SetParameter(1, RouteGeometries.polyline_output)
-        SetParameter(2, RouteGeometries.point_output)
-        SetParameterAsText(3, RouteGeometries.output_message())
-        SetParameter(4, RouteGeometries.create_zipfile().zip_output)
+        SetParameterAsText(1, RouteGeometries.output_message())
+        SetParameter(2, RouteGeometries.create_zipfile().zip_output)
 
     elif RequestCheckResult is None:
-        SetParameter(1, None)
-        SetParameter(2, None)
-        SetParameterAsText(3, results_output("Failed", None))
-        SetParameter(4, None)
+        SetParameterAsText(1, output_message("Failed", "The requested route/s are not valid"))
 
 else:
-    SetParameter(1, None)
-    SetParameter(2, None)
-    SetParameterAsText(3, results_output("Required table are missing.{0}".format(ConnectionCheck.missing_table), None))
-    SetParameter(4, None)
+    SetParameterAsText(1, output_message("Failed", "Required table are missing.{0}".format(ConnectionCheck.missing_table)))
