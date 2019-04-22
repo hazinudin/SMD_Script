@@ -258,7 +258,7 @@ class DictionaryToFeatureClass(object):
             for fc_name in [self.polyline_fc_name, self.point_fc_name]:  # Iterate over the ShapeFile output
                 fc_name = fc_name.replace('.shp', '')
                 # Iterate for every file component of the ShapeFile
-                for file_extension in ['.cpg', '.dbf', '.shp', '.shx', '.prj', '.shp.xml']:
+                for file_extension in ['.cpg', '.dbf', '.shp', '.shx', '.prj']:
                     # Insert every file component to the archive
                     newzip.write('{0}/{1}'.format(self.outpath, fc_name+file_extension), fc_name+file_extension)
 
