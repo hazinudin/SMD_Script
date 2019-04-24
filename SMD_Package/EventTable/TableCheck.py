@@ -215,14 +215,11 @@ class EventValidation(object):
 
         return self
 
-    def value_range_check(self, lower, upper, d_column, routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO',
-                          lane_code='CODE_LANE'):
+    def range_domain_check(self, routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO',
+                           lane_code='CODE_LANE'):
         """
         This function checks every value in a specified data column, to match the specified range value defined by
         parameter upper and lower (lower < [value] < upper).
-        :param lower: Allowed lower bound
-        :param upper: Allowed upper bound
-        :param d_column: Specified data column to be checked
         :param routeid_col: The Route ID column in the input table.
         :param from_m_col: The From Measure column in the input table.
         :param to_m_col: The To Measure column in the input table.
@@ -231,20 +228,35 @@ class EventValidation(object):
         """
         df = self.copy_valid_df()
 
-        # Get all the row with invalid value
-        error_row = df.loc[(df[d_column] < lower) | (df[d_column] > upper)]
+        for column in self.column_details.keys():
+            if 'range' in self.column_details[column].keys():
+                val_range = self.column_details[column]['range']
+                upper_bound = val_range[1]
+                lower_bound = val_range[0]
+                error_row = df.loc[(df[column] < lower_bound) | (df[column] > upper_bound)]
 
-        if len(error_row) != 0:
-            # Create error message
-            excel_i = [x + 2 for x in error_row.index.tolist()]  # Create row for excel file index
-            error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'.\
-                format(d_column, lower, upper, excel_i)
-            self.error_list.append(error_message)  # Append to the error message
+                if len(error_row) != 0:
+                    # Create error message
+                    excel_i = [x + 2 for x in error_row.index.tolist()]  # Create row for excel file index
+                    error_message = '{0} memiliki nilai yang berada di luar rentang ({1}<{0}<{2}), pada baris {3}'. \
+                        format(column, lower_bound, upper_bound, excel_i)
+                    self.error_list.append(error_message)  # Append to the error message
 
-            for index, row in error_row.iterrows():
-                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}".\
-                    format(row[routeid_col], d_column, lower, upper, row[from_m_col], row[to_m_col], row[lane_code])
-                self.insert_route_message(row[routeid_col], 'error', result)
+                    for index, row in error_row.iterrows():
+                        result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}". \
+                            format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col], row[to_m_col],
+                                   row[lane_code])
+                        self.insert_route_message(row[routeid_col], 'error', result)
+
+            if 'domain' in self.column_details[column].keys():
+                val_domain = self.column_details[column]['domain']
+                error_row = df.loc[~df[column].isin(val_domain)]
+
+                if len(error_row) != 0:
+                    for index, row in error_row.iterrows():
+                        result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada segmen {2}-{3} {4}.".\
+                            format(row[routeid_col], column, row[from_m_col], row[to_m_col], row[lane_code])
+                        self.insert_route_message(row[routeid_col], 'error', result)
 
         return self
 
