@@ -1,6 +1,4 @@
 {
-  "lower_bound": 1,
-  "upper_bound": 25,
   "search_radius":30,
   "column_details":{
     "LINKID":{"dtype":"string"},
@@ -8,10 +6,10 @@
     "STA_TO":{"dtype":"integer"},
     "LENGTH":{"dtype":"double"},
     "CODE_LANE":{"dtype":"string"},
-    "IRI":{"dtype":"double"},
+    "IRI":{"dtype":"double", "range":[1, 25]},
     "YEAR":{"dtype":"integer"},
     "SEMESTER":{"dtype":"integer"},
-    "DIRECTION":{"dtype":"string"},
+    "DIRECTION":{"dtype":"string", "domain":["O", "N"]},
     "SURV_DATE":{"dtype":"date"},
     "LONGITUDE":{"dtype":"double"},
     "LATITUDE":{"dtype":"double"},
