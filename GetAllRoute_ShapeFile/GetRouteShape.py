@@ -297,7 +297,7 @@ dbConnection = config['smd_database']['instance']
 env.workspace = dbConnection
 env.overwriteOutput = True
 
-getAllRouteResult = GetRoutes("balai", input_details["codes"], lrsNetwork, balaiTable).create_json_output()
+getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable).create_json_output()
 allRouteQueryResult = json.loads(getAllRouteResult)
 
 # Define variable
