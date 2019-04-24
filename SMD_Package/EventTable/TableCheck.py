@@ -729,12 +729,15 @@ class EventValidation(object):
         # If there is a problem with the data type check then return the df_string
         if self.dtype_check(write_error=False) is None:
             df = self.df_valid
-        elif dropna:
+            return df.copy(deep=True)
+        elif dropna and self.df_valid is not None:
             df = self.df_valid.dropna()
+            return df.copy(deep=True)
         elif not dropna:
             df = self.df_string
-
-        return df.copy(deep=True)
+            return df.copy(deep=True)
+        else:
+            return None
 
     @staticmethod
     def selected_route_df(df, routes, routeid_col="LINKID"):
