@@ -167,6 +167,9 @@ class EventValidation(object):
         """
         df = self.copy_valid_df()
 
+        if df is None:  # This means no rows passed the data type check
+            return None  # Return None
+
         # the index of row with bad val
         error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input)]
 
