@@ -30,5 +30,28 @@
     "ALTITUDE":{"dtype":"double"}
   },
   "output_table":"ELRS.RAW_RNI_2018_2",
-  "search_radius":30
+  "search_radius":30,
+  "surftype_details":{
+    "1":{"lane_count":2, "direction":1, "median":false},
+    "2":{"lane_count":2, "direction":2, "median":false},
+    "3":{"lane_count":4, "direction":2, "median":false},
+    "4":{"lane_count":4, "direction":2, "median":true},
+    "5":{"lane_count":2, "direction":1, "median":true},
+    "6":{"lane_count":3, "direction":1, "median":false},
+    "7":{"lane_count":3, "direction":2, "median":false},
+    "8":{"lane_count":3, "direction":2, "median":true},
+    "9":{"lane_count":4, "direction":1, "median":false},
+    "10":{"lane_count":4, "direction":1, "median":true},
+    "11":{"lane_count":5, "direction":1, "median":false},
+    "12":{"lane_count":5, "direction":1, "median":true},
+    "13":{"lane_count":5, "direction":2, "median":true},
+    "14":{"lane_count":6, "direction":1, "median":false},
+    "15":{"lane_count":6, "direction":1, "median":true},
+    "16":{"lane_count":7, "direction":1, "median":false},
+    "17":{"lane_count":7, "direction":1, "median":true},
+    "18":{"lane_count":7, "direction":2, "median":false},
+    "19":{"lane_count":7, "direction":2, "median":true},
+    "20":{"lane_count":8, "direction":2, "median":true},
+    "21":{"lane_count":10, "direction":2, "median":true}
+  }
 }
