@@ -57,7 +57,7 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
 
     # Start checking the request
     if route_request_type == 'ALL':
-        return str_routes
+        return all_routes_str
     else:
         if type(route_request_type) == unicode:
             requested_routes = [(str(route_request_type))]
