@@ -91,7 +91,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
-        gdb_table_writer(dbConnection, EventCheck.copy_valid_df(), OutputGDBTable, ColumnDetails, new_table=False)
+        gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     msg_count = 1
     for error_message in EventCheck.altered_route_result('error', dict_output=False):
