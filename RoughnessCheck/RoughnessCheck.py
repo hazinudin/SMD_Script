@@ -42,8 +42,6 @@ KodeBalai = InputDetails["balai"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = roughness_config['column_details']  # Load the roughness column details dictionary
-UpperBound = roughness_config['upper_bound']
-LowerBound = roughness_config['lower_bound']
 SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
 RouteIDCol = 'LINKID'
@@ -75,7 +73,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
-    EventCheck.value_range_check(LowerBound, UpperBound, IRIColumn)  # Check the IRI value range
+    EventCheck.range_domain_check()  # Check the IRI value range
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
     EventCheck.measurement_check(routes=valid_routes)  # Check the from-to measurement
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
