@@ -64,7 +64,8 @@ class EventValidation(object):
 
             # Check if the amount of header is the same as the requirement
             if len(table_header) != len(self.column_details.keys()):
-                error_list.append('Table input memiliki jumlah kolom yang berlebih.')
+                excess_cols = set(table_header).difference(set(self.column_details.keys()))
+                error_list.append('Table input memiliki jumlah kolom yang berlebih {0}.'.format(excess_cols))
 
         else:
             error_list.append('Tabel input tidak berformat .xls atau .xlsx.')
@@ -152,7 +153,8 @@ class EventValidation(object):
             return self.header_check_result
 
     def year_and_semester_check(self, year_input, semester_input, year_col='YEAR', sem_col='SEMESTER',
-                                routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE'):
+                                routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE',
+                                year_check_only=False):
         """
         This function check if the inputted data year and semester in JSON match with the data in input table
         :param year_input: The input year mentioned in the input JSON.
@@ -171,7 +173,10 @@ class EventValidation(object):
             return None  # Return None
 
         # the index of row with bad val
-        error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input)]
+        if year_check_only:
+            error_row = df.loc[(df[year_col] != year_input)]
+        else:
+            error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input)]
 
         # If  there is an error
         if len(error_row) != 0:
@@ -663,6 +668,56 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', error_message)
 
         return self
+
+    def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_codes='LANE_CODE',
+                           median_col='MEDWIDTH', road_type_col='ROAD_TYPE'):
+        """
+        This class method will check the consistency of stated roadtype code with other details such as the lane count,
+        the median information, and the segment direction.
+        :param road_type_details: The details about all available road type in RNI.
+        :param from_m_col: The from measure column in the RNI DataFrame.
+        :param to_m_col: The to measure column in the RNI DataFrame.
+        :param lane_codes: The lane code column in the RNI DataFrame.
+        :param median_col: The median column in the RNI DataFrame.
+        :param road_type_col: The road type column in the RNI DataFrame.
+        :return:
+        """
+        df = self.copy_valid_df()
+
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)  # Create the DataFrame with only requested routes
+
+        # The groupped DataFrame by RouteID, FromMeasure, and ToMeasure
+        df_groupped = df.groupby(by=[routeid_col, from_m_col, to_m_col]).\
+            agg({lane_codes: ['nunique', 'unique'], median_col: 'sum'}).reset_index()
+
+        for index, row in df_groupped.iterrows():
+            road_type_code = str(row[road_type_col])
+            lane_count = road_type_details[road_type_code]['lane_count']  # The required lane count for specified type
+            direction = road_type_details[road_type_code]['direction']  # The direction required
+            median_exist = road_type_details[road_type_code]['median']  # The median existence requirement
+
+            input_lane_count = row[lane_codes]['nunique']
+            input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))
+            input_median = row[median_col]['sum']
+
+            if input_lane_count != lane_count:
+                result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane)".\
+                    format(row[routeid_col], row[from_m_col], row[to_m_col], input_lane_count, road_type_code, lane_count)
+                self.insert_route_message(row[routeid_col], 'error', result)
+
+            if input_direction != direction:
+                result = "Rute {0} pada segmen {1}-{2} arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
+                    format(row[routeid_col], row[from_m_col], row[to_m_col], input_direction, road_type_code, direction)
+                self.insert_route_message(row[routeid_col], 'error', result)
+
+            if median_exist and (input_median != 0):
+                result = "Rute {0} pada segmen {1}-{2} memiliki median yang tidak sesuai dengan road type {4}.".\
+                    format(row[routeid_col], row[from_m_col], row[to_m_col], road_type_code)
+                self.insert_route_message(row[routeid_col], 'error', result)
+
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
