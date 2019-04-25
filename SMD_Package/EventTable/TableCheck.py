@@ -691,33 +691,46 @@ class EventValidation(object):
 
         # The groupped DataFrame by RouteID, FromMeasure, and ToMeasure
         df_groupped = df.groupby(by=[routeid_col, from_m_col, to_m_col]).\
-            agg({lane_codes: ['nunique', 'unique'], median_col: 'sum'}).reset_index()
+            agg({lane_codes: ['nunique', 'unique'], median_col: 'sum', road_type_col: 'unique'}).reset_index()
 
         for index, row in df_groupped.iterrows():
-            road_type_code = str(row[road_type_col])
-            lane_count = road_type_details[road_type_code]['lane_count']  # The required lane count for specified type
-            direction = road_type_details[road_type_code]['direction']  # The direction required
-            median_exist = road_type_details[road_type_code]['median']  # The median existence requirement
+            route = str(row[routeid_col][0])
+            from_m = str(row[from_m_col][0])
+            to_m = str(row[to_m_col][0])
+            road_type_code_list = row[road_type_col]['unique']  # Get the road type list
 
-            input_lane_count = row[lane_codes]['nunique']  # The lane count from the input
-            input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))  # The direction from input 1 or 2 dir
-            input_median = row[median_col]['sum']  # The total median from the input
+            # If the road type is more than one in a single segment then give error message
+            if len(road_type_code_list) == 1:
 
-            if input_lane_count != lane_count:
-                result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane)".\
-                    format(row[routeid_col], row[from_m_col], row[to_m_col], input_lane_count, road_type_code, lane_count)
-                self.insert_route_message(row[routeid_col], 'error', result)
+                road_type_code = str(road_type_code_list[0])  # The road type in string
+                lane_count = road_type_details[road_type_code]['lane_count']  # The required lane count for specified type
+                direction = road_type_details[road_type_code]['direction']  # The direction required
+                median_exist = road_type_details[road_type_code]['median']  # The median existence requirement
 
-            if input_direction != direction:
-                result = "Rute {0} pada segmen {1}-{2} arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
-                    format(row[routeid_col], row[from_m_col], row[to_m_col], input_direction, road_type_code, direction)
-                self.insert_route_message(row[routeid_col], 'error', result)
+                input_lane_count = row[lane_codes]['nunique']  # The lane count from the input
+                input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))  # The direction from input 1 or 2 dir
+                input_median = row[median_col]['sum']  # The total median from the input
 
-            if median_exist and (input_median != 0):
-                result = "Rute {0} pada segmen {1}-{2} memiliki median yang tidak sesuai dengan road type {4}.".\
-                    format(row[routeid_col], row[from_m_col], row[to_m_col], road_type_code)
-                self.insert_route_message(row[routeid_col], 'error', result)
+                if input_lane_count != lane_count:
+                    result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane)".\
+                        format(route, from_m, to_m, input_lane_count, road_type_code, lane_count)
+                    self.insert_route_message(route, 'error', result)
 
+                if input_direction != direction:
+                    result = "Rute {0} pada segmen {1}-{2} arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
+                        format(route, from_m, to_m, input_direction, road_type_code, direction)
+                    self.insert_route_message(route, 'error', result)
+
+                if (median_exist and (input_median == 0)) or (not median_exist and (input_median != 0)):
+                    result = "Rute {0} pada segmen {1}-{2} memiliki median yang tidak sesuai dengan road type {3}.".\
+                        format(route, from_m, to_m, road_type_code)
+                    self.insert_route_message(route, 'error', result)
+            else:
+                result = "Rute {0} pada segmen {1}-{2} memiliki road type yang tidak konsisten {3}".\
+                    format(route, from_m, to_m, road_type_code_list)
+                self.insert_route_message(route, 'error', result)
+
+        return self
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
