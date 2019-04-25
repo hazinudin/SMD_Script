@@ -36,6 +36,7 @@ KodeBalai = InputDetails["balai"]
 ColumnDetails = rni_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rni_config['search_radius']
 OutputGDBTable = rni_config['output_table']  # The GDB table which store all the valid table row
+RoadTypeDetails = rni_config['roadtype_details']
 RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
@@ -47,7 +48,7 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True)
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True, lane_code='LANE_CODE')
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
@@ -55,10 +56,11 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check()
-    EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
-    EventCheck.measurement_check(routes=valid_routes)  # Check the from-to measurement
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
+    EventCheck.range_domain_check(lane_code='LANE_CODE')
+    EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
+    EventCheck.measurement_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
+    EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     failed_routes = EventCheck.route_results.keys()
