@@ -239,9 +239,9 @@ class EventValidation(object):
         for column in self.column_details.keys():
             if 'range' in self.column_details[column].keys():
                 val_range = self.column_details[column]['range']
-                upper_bound = val_range[1]
-                lower_bound = val_range[0]
-                error_row = df.loc[(df[column] < lower_bound) | (df[column] > upper_bound)]
+                upper_bound = val_range[1]  # The range upper bound
+                lower_bound = val_range[0]  # The range lower bound
+                error_row = df.loc[(df[column] < lower_bound) | (df[column] > upper_bound)]  # Find the faulty row
 
                 if len(error_row) != 0:
                     # Create error message
@@ -257,8 +257,8 @@ class EventValidation(object):
                         self.insert_route_message(row[routeid_col], 'error', result)
 
             if 'domain' in self.column_details[column].keys():
-                val_domain = self.column_details[column]['domain']
-                error_row = df.loc[~df[column].isin(val_domain)]
+                val_domain = self.column_details[column]['domain']  # The domain list
+                error_row = df.loc[~df[column].isin(val_domain)]  # Find the faulty row
 
                 if len(error_row) != 0:
                     for index, row in error_row.iterrows():
@@ -699,9 +699,9 @@ class EventValidation(object):
             direction = road_type_details[road_type_code]['direction']  # The direction required
             median_exist = road_type_details[road_type_code]['median']  # The median existence requirement
 
-            input_lane_count = row[lane_codes]['nunique']
-            input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))
-            input_median = row[median_col]['sum']
+            input_lane_count = row[lane_codes]['nunique']  # The lane count from the input
+            input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))  # The direction from input 1 or 2 dir
+            input_median = row[median_col]['sum']  # The total median from the input
 
             if input_lane_count != lane_count:
                 result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane)".\
