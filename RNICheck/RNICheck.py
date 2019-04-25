@@ -47,7 +47,7 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester)
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True)
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
