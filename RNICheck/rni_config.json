@@ -31,7 +31,7 @@
   },
   "output_table":"ELRS.RAW_RNI_2018_2",
   "search_radius":30,
-  "surftype_details":{
+  "roadtype_details":{
     "1":{"lane_count":2, "direction":1, "median":false},
     "2":{"lane_count":2, "direction":2, "median":false},
     "3":{"lane_count":4, "direction":2, "median":false},
