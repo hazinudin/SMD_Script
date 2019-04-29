@@ -1,0 +1,24 @@
+{
+  "column_details":{
+    "LINKID":{"dtype":"string"},
+    "DIRECTION":{"dtype":"string"},
+    "DATE":{"dtype":"date"},
+    "HOURS":{"dtype":"integer"},
+    "MINUTE":{"dtype":"integer"},
+    "VEH1":{"dtype":"integer"},
+    "VEH2":{"dtype":"integer"},
+    "VEH3":{"dtype":"integer"},
+    "VEH4":{"dtype":"integer"},
+    "VEH5A":{"dtype":"integer"},
+    "VEH5B":{"dtype":"integer"},
+    "VEH6A":{"dtype":"integer"},
+    "VEH6B":{"dtype":"integer"},
+    "VEH7A":{"dtype":"integer"},
+    "VEH7B":{"dtype":"integer"},
+    "VEH7C":{"dtype":"integer"},
+    "VEH8":{"dtype":"integer"},
+    "X":{"dtype":"double"},
+    "Y":{"dtype":"double"}
+  },
+  "search_radius":30
+}
