@@ -1,6 +1,7 @@
 from arcpy import env, da, Point, PointGeometry, AddMessage
 import numpy as np
 import pandas as pd
+from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from Kemantapan import Kemantapan
 
@@ -122,7 +123,7 @@ class EventValidation(object):
 
                     # Convert the column to a date data type
                     # If the column contain an invalid date format, then change that value to Null
-                    df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='d%/m%/%y')
+                    df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='%d/%m/%Y')
                     error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
                     error_i = error_row.index.tolist()  # Find the index of the null
 
@@ -732,6 +733,101 @@ class EventValidation(object):
 
         return self
 
+    def rtc_duration_check(self, duration=3, routes='ALL', routeid_col='LINKID', surv_date_col='DATE', hours_col='HOURS',
+                           minute_col='MINUTE', direction_col='DIRECTION', interval=15):
+        """
+        This class method will check the RTC survey direction for every available route in the input table.
+        :param duration: The survey duration (in days), the default is 3 days.
+        :param routes: The selected routes to be processed.
+        :param routeid_col: The RouteID column in the event DataFrame.
+        :param surv_date_col: The survey date column in the event DataFrame.
+        :param hours_col: The hours column in the event DataFrame.
+        :param minute_col: The minute column in the event DataFrame.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create a copy of input table DataFrame
+
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)  # If there is a route request then only process the selected route
+
+        for route, direction in self.route_lane_tuple(df, routeid_col, direction_col):  # Iterate over all available route
+            df_route_dir = df.loc[(df[routeid_col] == route) & (df[direction_col] == direction)].reset_index()  # Create a route and lane DataFrame
+
+            survey_start_index = df_route_dir[surv_date_col].idxmin()  # The survey start row index
+            survey_start_date = df_route_dir.at[survey_start_index, surv_date_col]  # The survey start date
+            survey_start_hour = df_route_dir.at[survey_start_index, hours_col]  # The survey start hours
+            survey_start_minutes = df_route_dir.at[survey_start_index, minute_col] - interval  # The survey start minutes
+            start_timestamp = self.rtc_time_stamp(survey_start_date, survey_start_hour, survey_start_minutes)
+
+            survey_end_index = df_route_dir[surv_date_col].idxmax()  # The survey end row index
+            survey_end_date = df_route_dir.at[survey_end_index, surv_date_col]  # The survey end date
+            survey_end_hour = df_route_dir.at[survey_end_index, hours_col]  # The survey end hours
+            survey_end_minutes = df_route_dir.at[survey_end_index, minute_col]  # The survey end minutes
+            end_timestamp = self.rtc_time_stamp(survey_end_date, survey_end_hour, survey_end_minutes)
+
+            required_delta = timedelta(minutes=duration*24*60)  # The required survey duration
+
+            if end_timestamp < (required_delta+start_timestamp):
+                actual_delta = (end_timestamp-(required_delta+start_timestamp)).seconds/60  # The actual survey duration in minutes
+                duration_in_h = duration*24  # The required survey duration in hours
+                result = "Rute {0} pada arah {1} memiliki kekurangan durasi survey RTC sebanyak {2} menit dari total {3} jam yang harus dilakukan.".\
+                    format(route, direction, actual_delta, duration_in_h)
+                self.insert_route_message(route, 'error', result)
+
+        return self
+
+    def rtc_time_interval_check(self, interval=15, routes='ALL', routeid_col='LINKID', surv_date_col='DATE',
+                                hours_col='HOURS', minute_col='MINUTE', direction_col='DIRECTION'):
+        """
+        This class method will check the RTC survey time interval.
+        :param interval: The survey interval time (in minutes), the default value is 15 minutes.
+        :param routeid_col: The RouteID column in the event DataFrame.
+        :param surv_date_col: The survey date column in the event DataFrame.
+        :param hours_col: The hours column in the event DataFrame.
+        :param minute_col: The minute column in the event DataFrame.
+        :param direction_col: The direction column in the event DataFrame.
+        :return:
+        """
+        df = self.copy_valid_df()
+
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)  # If there is a route request then only process the selected route
+
+        for route, direction in self.route_lane_tuple(df, routeid_col, direction_col):  # Iterate over all available route
+            df_route_dir = df.loc[(df[routeid_col] == route) & (df[direction_col] == direction)]
+            df_route_dir.reset_index(inplace=True)  # Reset the index
+
+            for index, row in df_route_dir.iterrows():
+                row_timestamp = self.rtc_time_stamp(row[surv_date_col], row[hours_col], row[minute_col])
+                date_timestamp_isof = row[surv_date_col].date().isoformat()
+                row_timestamp_isof = row_timestamp.date().isoformat()
+
+                if index == 0:
+                    # The survey start time
+                    start_timestamp = row_timestamp
+                else:
+                    delta_start_end = (row_timestamp - start_timestamp).seconds/60  # Interval in minutes
+
+                    if delta_start_end != interval:  # If the delta does not match the requirement
+                        end_time_str = row_timestamp.strftime('%d/%m/%Y %H:%M')  # Start time in string format
+                        start_time_str = start_timestamp.strftime('%d/%m/%Y %H:%M')  # End time in string format
+                        result = "Survey RTC di rute {0} pada arah {1} di interval survey {2} - {3} tidak berjarak {4} menit.".\
+                            format(route, direction, start_time_str, end_time_str, interval)
+                        self.insert_route_message(route, 'error', result)
+
+                if date_timestamp_isof != row_timestamp_isof:  # Find the date which does not match with the hours
+                    result = "Waktu survey RTC di rute {0} {1} pada tanggal {2} jam {3} menit {4} seharusnya memiliki tanggal {5}.".\
+                        format(route, direction, date_timestamp_isof, row[hours_col], row[minute_col], row_timestamp_isof)
+                    self.insert_route_message(route, 'error', result)
+
+                start_timestamp = row_timestamp
+
+        return self
+
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
                            from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE',
@@ -873,6 +969,25 @@ class EventValidation(object):
             return route_geom
         if not route_exist:
             return None
+
+    @staticmethod
+    def rtc_time_stamp(date_time_stamp, hours, minutes):
+        """
+        This static method return a timestamp created from survey date TimeStamp + delta(hours and minutes), to create
+        the survey TimeStamp which contain hours and minutes.
+        :param date_time_stamp: Survey date TimeStamp.
+        :param hours: Row hours value, the survey hours.
+        :param minutes: Row minutes value, the sruvey minutes.
+        :return: TimeStamp
+        """
+        if (type(hours) == np.int64) or (type(minutes) == np.int64):
+            hours = hours.item()
+            minutes = minutes.item()
+        date = date_time_stamp  # The survey date
+        hours_minutes = timedelta(hours=hours, minutes=minutes)  # Timedelta from survey hours and minutes
+        timestamp = date + hours_minutes  # The new timestamp with hours and minutes
+
+        return timestamp  # Return the new timestamp
 
     def insert_route_message(self, route, message_type, message):
         """
