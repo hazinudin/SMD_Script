@@ -34,6 +34,7 @@ KodeBalai = InputDetails["balai"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = pci_config['column_details']  # Load the roughness column details dictionary
+OutputTable = pci_config['output_table']
 RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
@@ -64,7 +65,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
-        pass
+        gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails)
 
     msg_count = 1
     for error_message in EventCheck.altered_route_result('error', dict_output=False):
