@@ -1,7 +1,7 @@
 {
   "column_details":{
     "LINKID":{"dtype":"string"},
-    "DIRECTION":{"dtype":"string"},
+    "DIRECTION":{"dtype":"string", "domain":["O", "N"]},
     "DATE":{"dtype":"date"},
     "HOURS":{"dtype":"integer"},
     "MINUTE":{"dtype":"integer"},
@@ -20,5 +20,6 @@
     "X":{"dtype":"double"},
     "Y":{"dtype":"double"}
   },
-  "search_radius":30
+  "search_radius":30,
+  "output_table":"ELRS.DEV_RTC_2_2018"
 }

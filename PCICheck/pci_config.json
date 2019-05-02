@@ -1,4 +1,5 @@
 {
+  "output_table":"ELRS.DEV_PCI_2_2018",
   "column_details":{
     "LINKID":{"dtype":"string"},
     "STA_FR":{"dtype":"integer"},

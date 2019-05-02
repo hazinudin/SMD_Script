@@ -22,5 +22,5 @@
     "to_measure":"TOMEASURE",
     "iri":"IRI"
   },
-  "output_table": "ELRS.roughness_2_2018_DEV"
+  "output_table": "ELRS.DEV_ROUGHNESS_2_2018"
 }
