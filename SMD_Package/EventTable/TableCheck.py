@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from Kemantapan import Kemantapan
+from RNITable import RNISurfaceTypeLength
 
 
 class EventValidation(object):
@@ -827,6 +828,47 @@ class EventValidation(object):
                 start_timestamp = row_timestamp
 
         return self
+
+    def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
+                                 rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
+                                 rni_surftype_col='SURFTYPE'):
+
+        df = self.copy_valid_df()  # Create a copy of valid DataFrame
+        routes = self.route_lane_tuple(df, rni_route_col, None, True)  # List of all route in the input DataFrame.
+        # Create the Surface Type calculation object
+        input_surftype_len = RNISurfaceTypeLength(df, rni_route_col, rni_from_col, rni_to_col, rni_surftype_col)
+
+        for route in routes:
+            df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_surftype_col], route,
+                                     comp_route_col, self.sde_connection, include_all=True, orderby=None)
+
+            if len(df_comp) == 0:
+                # If the route does not exist in the comparison table
+                result = 'Rute {0} tidak terdapat pada data tahun {1}.'.format(route, year_comp)
+                self.insert_route_message(route, 'error', result)
+                return self
+
+            comp_surftype_len = RNISurfaceTypeLength(df_comp, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col)
+
+            input_percent = input_surftype_len.surftype_percentage(route)  # The input DataFrame surftype group length
+            comp_percent = comp_surftype_len.surftype_percentage(route)  # The Comparison surftype group legnth
+
+            # Join the surface type DataFrame from the input and the comparison table.
+            merge = pd.merge(input_percent, comp_percent, how='outer', on='index', indicator=True)
+            merge_input_only = merge.loc[merge['_merge'] == 'left_only']  # Surface type only on the input
+            merge_comp_only = merge.loc[merge['_merge'] == 'right_only']  # Surface type only on the comparison table
+
+            if len(merge_input_only) != 0:
+                input_only_surftype = merge_input_only['index'].tolist()
+                result = 'Rute {0} memiliki {1} yang tidak terdapat pada data tahun {2}. {1}-{3}'.\
+                    format(route, rni_surftype_col, year_comp, input_only_surftype)
+                self.insert_route_message(route, 'error', result)
+
+            if len(merge_comp_only) != 0:
+                comp_only_surftype = merge_comp_only['index'].tolist()
+                result = 'Rute {0} tidak memiliki tipe {1} yang terdapat pada data tahun {2}. {1}-{3}'.\
+                    format(route, rni_surftype_col, year_comp, comp_only_surftype)
+                self.insert_route_message(route, 'error', result)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
