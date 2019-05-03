@@ -1,3 +1,41 @@
+class RNISurfaceTypeLength(object):
+    def __init__(self, df_rni, rni_routeid, rni_from_measure, rni_to_measure, rni_surface_type):
+        """
+        This object will calculate the length of each surface type for every route in the input DataFrame.
+        :param df_rni: The input RNI DataFrame.
+        :param rni_routeid: RNI RouteID column
+        :param rni_from_measure:
+        :param rni_to_measure:
+        :param rni_surface_type:
+        """
+        groupby_cols = [rni_routeid, rni_from_measure, rni_to_measure]
+        self.route_surf_segment = rni_segment_dissolve(df_rni, groupby_cols, rni_surface_type, rni_routeid)
+
+    def route_surf_type(self, route):
+        """
+        This class method will calculate surface type group length in the requested route.
+        :param route:
+        :return:
+        """
+        output = {}  # The output dictionary
+        for group in self.route_surf_segment:
+            group_route = group[0]  # The group RouteID
+            group_surface = group[1]  # The group surface type
+
+            if (group_route == route) or (group_route in route):
+                segments = self.route_surf_segment[group]
+                # Iterate over all segments in the group
+                surface_group_len = 0
+                for segment in segments:
+                    segment_sta = segment[0]  # Segment from measure
+                    segment_end = segment[1]  # Segment to measure
+                    surface_group_len += (segment_end-segment_sta)  # Length accumulation from every segments.
+
+                output[group_surface] = surface_group_len
+
+        return output
+
+
 def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field, from_m_field='FROMMEASURE',
                          to_m_field='TOMEASURE'):
     """
