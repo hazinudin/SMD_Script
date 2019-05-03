@@ -1,3 +1,6 @@
+import json
+from pandas import Series, DataFrame
+
 class RNISurfaceTypeLength(object):
     def __init__(self, df_rni, rni_routeid, rni_from_measure, rni_to_measure, rni_surface_type):
         """
@@ -9,18 +12,24 @@ class RNISurfaceTypeLength(object):
         :param rni_surface_type:
         """
         groupby_cols = [rni_routeid, rni_from_measure, rni_to_measure]
-        self.route_surf_segment = rni_segment_dissolve(df_rni, groupby_cols, rni_surface_type, rni_routeid)
+        self.route_surf_segment = rni_segment_dissolve(df_rni, groupby_cols, rni_surface_type, rni_routeid,
+                                                       from_m_field=rni_from_measure, to_m_field=rni_to_measure)
 
-    def route_surf_type(self, route):
+    def surftype_percentage(self, route):
         """
         This class method will calculate surface type group length in the requested route.
         :param route:
         :return:
         """
-        output = {}  # The output dictionary
+        surface_len = {}  # The output dictionary
         for group in self.route_surf_segment:
             group_route = group[0]  # The group RouteID
-            group_surface = group[1]  # The group surface type
+            group_surface = json.loads(group[1])  # The group surface type
+
+            if len(group_surface) == 1:
+                group_surface = str(group_surface[0])  # If there is only one surface type in an interval.
+            else:
+                group_surface = str(group_surface).strip('[]')  # If there are multiple surface type.
 
             if (group_route == route) or (group_route in route):
                 segments = self.route_surf_segment[group]
@@ -31,9 +40,13 @@ class RNISurfaceTypeLength(object):
                     segment_end = segment[1]  # Segment to measure
                     surface_group_len += (segment_end-segment_sta)  # Length accumulation from every segments.
 
-                output[group_surface] = surface_group_len
+                surface_len[group_surface] = surface_group_len
 
-        return output
+        total_length = Series(surface_len).sum()
+        length_percentage = DataFrame(Series(surface_len).
+                                      apply(lambda x: (x/total_length)*100), columns=['a']).reset_index()
+
+        return length_percentage
 
 
 def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field, from_m_field='FROMMEASURE',
