@@ -34,6 +34,13 @@
     "ALTITUDE":{"dtype":"double"}
   },
   "output_table":"ELRS.DEV_RNI_2_2018",
+  "compare_table":{
+    "table_name":"ELRS.RNI_National",
+    "route_id":"ROUTEID",
+    "from_measure":"FROMMEASURE",
+    "to_measure":"TOMEASURE",
+    "surface_type":"SURFTYPE"
+  },
   "search_radius":30,
   "roadtype_details":{
     "1":{"lane_count":2, "direction":1, "median":false},
