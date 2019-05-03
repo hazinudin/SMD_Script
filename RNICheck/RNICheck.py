@@ -37,6 +37,11 @@ ColumnDetails = rni_config['column_details']  # Load the roughness column detail
 SearchRadius = rni_config['search_radius']
 OutputGDBTable = rni_config['output_table']  # The GDB table which store all the valid table row
 RoadTypeDetails = rni_config['roadtype_details']
+ComparisonTable = rni_config['compare_table']['table_name']
+CompRouteID = rni_config['compare_table']['route_id']
+CompFromM = rni_config['compare_table']['from_measure']
+CompToM = rni_config['compare_table']['to_measure']
+CompSurfaceType = rni_config['compare_table']['surface_type']
 RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
@@ -61,6 +66,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.measurement_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
+    EventCheck.rni_compare_surftype_len(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType, 2018)
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     failed_routes = EventCheck.route_results.keys()
