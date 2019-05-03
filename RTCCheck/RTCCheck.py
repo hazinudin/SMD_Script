@@ -35,6 +35,7 @@ KodeBalai = InputDetails["balai"]
 # All the column details in the roughness_config.json
 ColumnDetails = rtc_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rtc_config['search_radius']
+OutputTable = rtc_config['output_table']
 RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
@@ -62,7 +63,7 @@ if (header_check_result is None) & (dtype_check_result is None):
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
-        #  gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+        gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails, new_table=False)
         pass
 
     msg_count = 1
