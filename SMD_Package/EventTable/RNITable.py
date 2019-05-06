@@ -50,7 +50,7 @@ class RNISurfaceTypeLength(object):
         return length_percentage
 
 
-def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field, from_m_field='FROMMEASURE',
+def rni_segment_dissolve(df_rni, groupby_field, agg_field, route_id_field, from_m_field='FROMMEASURE',
                          to_m_field='TOMEASURE', agg='unique'):
     """
     Dissolve the segment in RNI table if the segment has a same lane code combination with the
@@ -66,16 +66,15 @@ def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field,
 
     # Groupped the RNI DataFrame based on groupby_field
     if agg == 'sum':  # If the aggregation method is 'sum' type.
-        rni_groupped = df_rni.groupby(by=groupby_field)[code_lane_field].unique().reset_index()
+        rni_groupped = df_rni.groupby(by=groupby_field)[agg_field].sum().reset_index()
     elif agg == 'unique':  # If the aggregation method is 'unique' type.
-        rni_groupped = df_rni.groupby(by=groupby_field)[code_lane_field].sum().reset_index()
-
-    # Sort the list value in the Lane Code column
-    rni_groupped[code_lane_field] = rni_groupped[code_lane_field].apply(lambda x: sorted(x))
-    rni_groupped[code_lane_field] = rni_groupped[code_lane_field].astype(str)
+        rni_groupped = df_rni.groupby(by=groupby_field)[agg_field].unique().reset_index()
+        # Sort the list value in the Lane Code column
+        rni_groupped[agg_field] = rni_groupped[agg_field].apply(lambda x: sorted(x))
+        rni_groupped[agg_field] = rni_groupped[agg_field].astype(str)
 
     # Basically do another groupby to the result of the first groupby, to get the group of segment with same lane code
-    lane_code_combination_groups = rni_groupped.groupby(by=[route_id_field, code_lane_field]).groups
+    lane_code_combination_groups = rni_groupped.groupby(by=[route_id_field, agg_field]).groups
 
     # Dictionary for storing the result
     dissolved_segment = {}
