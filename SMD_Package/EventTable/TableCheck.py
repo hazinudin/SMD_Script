@@ -340,8 +340,8 @@ class EventValidation(object):
 
         return self
 
-    def measurement_check(self, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO', routeid_col='LINKID',
-                          lane_code='CODE_LANE'):
+    def measurement_check(self, rni_table, rni_routeid, rni_to_m, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO',
+                          routeid_col='LINKID', lane_code='CODE_LANE', compare_to='RNI'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -368,14 +368,24 @@ class EventValidation(object):
             df_groupped.reset_index(drop=True)
 
             # Get the LRS Network route length
+            rni_df = event_fc_to_df(rni_table, [rni_routeid, rni_to_m], route, rni_routeid, self.sde_connection,
+                                    is_table=False, include_all=True, orderby=None)  # The RNI DataFrame
+            rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
             lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
             max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
             max_to_meas = df_groupped.at[max_to_ind, to_m_col]/100  # The largest To Measure value
-            # If the largest To Measure value is less than the LRS Network route length then there is a gap at the end
-            if max_to_meas < lrs_route_len:
+
+            # Comparison based on the 'compare_to' parameter
+            if compare_to == 'RNI':
+                comparison = rni_max_m
+            if compare_to == 'LRS':
+                comparison = lrs_route_len
+
+            # If the largest To Measure value is less than the selected comparison then there is a gap at the end
+            if max_to_meas < comparison:
                 # Create an error message
                 error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
-                    format(route, max_to_meas, lrs_route_len)
+                    format(route, max_to_meas, comparison)
                 self.error_list.append(error_message)
                 self.insert_route_message(route, 'error', error_message)
 
@@ -857,6 +867,7 @@ class EventValidation(object):
             merge = pd.merge(input_percent, comp_percent, how='outer', on='index', indicator=True)
             merge_input_only = merge.loc[merge['_merge'] == 'left_only']  # Surface type only on the input
             merge_comp_only = merge.loc[merge['_merge'] == 'right_only']  # Surface type only on the comparison table
+            both = merge.loc[merge['_merge'] == 'both']
 
             if len(merge_input_only) != 0:
                 input_only_surftype = merge_input_only['index'].tolist()
@@ -869,6 +880,9 @@ class EventValidation(object):
                 result = 'Rute {0} tidak memiliki tipe {1} yang terdapat pada data tahun {2}. {1}-{3}'.\
                     format(route, rni_surftype_col, year_comp, comp_only_surftype)
                 self.insert_route_message(route, 'error', result)
+
+            if ((len(merge_input_only != 0)) or (len(merge_comp_only) != 0)) and (len(both) != 0):
+                AddMessage(both)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
