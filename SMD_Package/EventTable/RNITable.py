@@ -1,6 +1,7 @@
 import json
 from pandas import Series, DataFrame
 
+
 class RNISurfaceTypeLength(object):
     def __init__(self, df_rni, rni_routeid, rni_from_measure, rni_to_measure, rni_surface_type):
         """
@@ -44,13 +45,13 @@ class RNISurfaceTypeLength(object):
 
         total_length = Series(surface_len).sum()
         length_percentage = DataFrame(Series(surface_len).
-                                      apply(lambda x: (x/total_length)*100), columns=['a']).reset_index()
+                                      apply(lambda x: (x/total_length)*100), columns=['percentage']).reset_index()
 
         return length_percentage
 
 
 def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field, from_m_field='FROMMEASURE',
-                         to_m_field='TOMEASURE'):
+                         to_m_field='TOMEASURE', agg='unique'):
     """
     Dissolve the segment in RNI table if the segment has a same lane code combination with the
     next segment in single route. This function return a dictionary with a groupby group as a key=(route_id, code_lane)
@@ -63,8 +64,11 @@ def rni_segment_dissolve(df_rni, groupby_field, code_lane_field, route_id_field,
     The pattern end at 7682 because that row contains different lane code combination.
     """
 
-    # Groupped the RNI dataframe based on groupby_field
-    rni_groupped = df_rni.groupby(by=groupby_field)[code_lane_field].unique().reset_index()
+    # Groupped the RNI DataFrame based on groupby_field
+    if agg == 'sum':  # If the aggregation method is 'sum' type.
+        rni_groupped = df_rni.groupby(by=groupby_field)[code_lane_field].unique().reset_index()
+    elif agg == 'unique':  # If the aggregation method is 'unique' type.
+        rni_groupped = df_rni.groupby(by=groupby_field)[code_lane_field].sum().reset_index()
 
     # Sort the list value in the Lane Code column
     rni_groupped[code_lane_field] = rni_groupped[code_lane_field].apply(lambda x: sorted(x))
