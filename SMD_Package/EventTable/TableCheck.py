@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from Kemantapan import Kemantapan
-from RNITable import RNISurfaceTypeLength
+from RNITable import RNIRouteDetails
 
 
 class EventValidation(object):
@@ -844,9 +844,9 @@ class EventValidation(object):
                                  rni_surftype_col='SURFTYPE', rni_lane_code='LANE_CODE', routes='ALL'):
 
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a copy of valid DataFrame
-        routes = self.route_lane_tuple(df, rni_route_col, None, True)  # List of all route in the input DataFrame.
+        route_list = self.route_lane_tuple(df, rni_route_col, None, True)  # List of all route in the input DataFrame.
 
-        for route in routes:
+        for route in route_list:
             df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, comp_lane_code],
                                      route, comp_route_col, self.sde_connection, include_all=True, orderby=None)
             df_route = self.selected_route_df(df, route)  # The input selected route DataFrame
@@ -867,11 +867,11 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', result)
                     continue
 
-                comp_surftype_len = RNISurfaceTypeLength(df_comp_lane, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col)
-                input_surftype_len = RNISurfaceTypeLength(df_route_lane, rni_route_col, rni_from_col, rni_to_col, rni_surftype_col)
+                comp_surftype_len = RNIRouteDetails(df_comp_lane, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col)
+                input_surftype_len = RNIRouteDetails(df_route_lane, rni_route_col, rni_from_col, rni_to_col, rni_surftype_col)
 
-                input_percent = input_surftype_len.surftype_percentage(route)  # The input DataFrame surftype group
-                comp_percent = comp_surftype_len.surftype_percentage(route)  # The Comparison surftype group
+                input_percent = input_surftype_len.details_percentage(route)  # The input DataFrame surftype group
+                comp_percent = comp_surftype_len.details_percentage(route)  # The Comparison surftype group
 
                 # Join the surface type DataFrame from the input and the comparison table.
                 merge = pd.merge(input_percent, comp_percent, how='outer', on='index', indicator=True)
@@ -883,16 +883,58 @@ class EventValidation(object):
                     input_only_surftype = merge_input_only['index'].tolist()
                     result = 'Rute {0} pada lane {4} memiliki {1} yang tidak terdapat pada data tahun {2}. {1}-{3}'.\
                         format(route, rni_surftype_col, year_comp, input_only_surftype, lane)
-                    self.insert_route_message(route, 'error', result)
+                    self.insert_route_message(route, 'warning', result)
 
                 if len(merge_comp_only) != 0:
                     comp_only_surftype = merge_comp_only['index'].tolist()
                     result = 'Rute {0} pada lane {4} tidak memiliki tipe {1} yang terdapat pada data tahun {2}. {1}-{3}'.\
                         format(route, rni_surftype_col, year_comp, comp_only_surftype, lane)
-                    self.insert_route_message(route, 'error', result)
+                    self.insert_route_message(route, 'warning', result)
 
                 if ((len(merge_input_only) != 0) or (len(merge_comp_only) != 0)) and (len(both) != 0):
                     pass
+
+    def rni_compare_surfwidth(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_lane_width, year_comp,
+                              rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
+                              rni_lane_width='LANE_WIDTH', routes='ALL'):
+        df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a valid DataFrame copy
+        route_list = self.route_lane_tuple(df, rni_route_col, None, True)
+
+        for route in route_list:  # Iterate over all available route in the input table.
+            df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_lane_width], route,
+                                     comp_route_col, self.sde_connection, is_table=False, include_all=True, orderby=None)
+            df_route = self.selected_route_df(df, route)
+
+            if len(df_comp) == 0:
+                result = 'Rute {0} tidak terdapat pada data tahun {1}.'.format(route, year_comp)
+                self.insert_route_message(route, 'error', result)
+                continue
+
+            input_surfwidth = RNIRouteDetails(df_route, rni_route_col, rni_from_col, rni_to_col, rni_lane_width,
+                                              agg_type='sum')
+            comp_surfwidth = RNIRouteDetails(df_comp, comp_route_col, comp_from_col, comp_to_col, comp_lane_width,
+                                             agg_type='sum')
+
+            input_percentage = input_surfwidth.details_percentage(route)
+            comp_percentage = comp_surfwidth.details_percentage(route)
+
+            merge = pd.merge(input_percentage, comp_percentage, how='outer', on='index', indicator=True)
+            merge_input_only = merge.loc[merge['_merge'] == 'left_only']
+            merge_comp_only = merge.loc[merge['_merge'] == 'right_only']
+            both_comp_only = merge.loc[merge['_merge'] == 'both']
+            AddMessage(merge)
+
+            if len(merge_input_only) != 0:
+                width_list = merge_input_only['index'].unique().tolist()
+                result = "Rute {0} memiliki segmen dengan lebar jalan {1} yang berbeda dari tahun {2}".\
+                    format(route, width_list, year_comp)
+                self.insert_route_message(route, 'warning', result)
+
+            if len(merge_comp_only) != 0:
+                width_list = merge_comp_only['index'].unique().tolist()
+                result = "Rute {0} pada tahun {1} memiliki segmen dengan lebar {2}.".\
+                    format(route, year_comp, width_list)
+                self.insert_route_message(route, 'warning', result)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
