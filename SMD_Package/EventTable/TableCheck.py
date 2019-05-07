@@ -842,7 +842,24 @@ class EventValidation(object):
     def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
                                  comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
                                  rni_surftype_col='SURFTYPE', rni_lane_code='LANE_CODE', routes='ALL'):
-
+        """
+        This class method will compare the surface type length of a route to previous year data. If there is a
+        difference in the surface type length of a route, then an error message will be written.
+        :param comp_fc: Feature Class used for comparison.
+        :param comp_route_col: RouteID field in the comparison feature class.
+        :param comp_from_col: From Measure field in the comparison feature class.
+        :param comp_to_col: To Measure field in the comparison feature class.
+        :param comp_surftype_col: Surface Type field in the comparison feature class.
+        :param year_comp: The year of comparison feature class.
+        :param comp_lane_code: Lane Code field in the comparison feature class.
+        :param rni_route_col: The input RNI route id column.
+        :param rni_from_col: The input RNI From Measure column.
+        :param rni_to_col: The input RNI To Measure column.
+        :param rni_surftype_col: The input RNI Surface type column.
+        :param rni_lane_code: The input RNI Lane Code column.
+        :param routes: The requested routes
+        :return:
+        """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a copy of valid DataFrame
         route_list = self.route_lane_tuple(df, rni_route_col, None, True)  # List of all route in the input DataFrame.
 
@@ -897,6 +914,22 @@ class EventValidation(object):
     def rni_compare_surfwidth(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_lane_width, year_comp,
                               rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
                               rni_lane_width='LANE_WIDTH', routes='ALL'):
+        """
+        This class method will compare the road width to a comparison feature class, if there is a difference in the
+        road width percentage in the requested routes, then an error message will be written.
+        :param comp_fc: Feature Class used for comparison.
+        :param comp_route_col: RouteID field in the comparison feature class.
+        :param comp_from_col: From Measure field in the comparison feature class.
+        :param comp_to_col: To Measure field in the ocmparison feature class.
+        :param comp_lane_width: Lane Width in the comparison feature class.
+        :param year_comp: The year of comparison feature class.
+        :param rni_route_col: The input RNI RouteID field.
+        :param rni_from_col: The input RNI From Measure field.
+        :param rni_to_col: The input RNI To Measure field.
+        :param rni_lane_width: The input RNI Lane Width field.
+        :param routes: The requested routes.
+        :return:
+        """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a valid DataFrame copy
         route_list = self.route_lane_tuple(df, rni_route_col, None, True)
 
@@ -922,7 +955,6 @@ class EventValidation(object):
             merge_input_only = merge.loc[merge['_merge'] == 'left_only']
             merge_comp_only = merge.loc[merge['_merge'] == 'right_only']
             both_comp_only = merge.loc[merge['_merge'] == 'both']
-            AddMessage(merge)
 
             if len(merge_input_only) != 0:
                 width_list = merge_input_only['index'].unique().tolist()
