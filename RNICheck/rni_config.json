@@ -35,8 +35,8 @@
   },
   "output_table":"ELRS.DEV_RNI_2_2018",
   "compare_table":{
-    "table_name":"ELRS.RNI_National",
-    "route_id":"ROUTEID",
+    "table_name":"ELRS.RNI_National_2",
+    "route_id":"LINKID",
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
     "surface_type":"SURFTYPE"

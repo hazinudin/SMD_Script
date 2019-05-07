@@ -18,9 +18,14 @@ with open('smd_config.json') as smd_config_f:
 # The smd config JSON details
 LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
-
 BalaiTable = smd_config['table_names']['balai_table']
 dbConnection = smd_config['smd_database']['instance']
+RNIEventTable = smd_config['table_names']['rni']
+RNIRouteID = smd_config['table_fields']['rni']['route_id']
+RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
+RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
+RNILaneCode = smd_config['table_fields']['rni']['lane_code']
+RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -63,10 +68,12 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     EventCheck.range_domain_check(lane_code='LANE_CODE')
     EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
-    EventCheck.measurement_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
+    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes,
+                                 lane_code='LANE_CODE', compare_to='LRS')  # Check the from-to measurement
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
-    EventCheck.rni_compare_surftype_len(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType, 2018)
+    EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
+                                        2018, RNILaneCode, routes=valid_routes)
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     failed_routes = EventCheck.route_results.keys()
