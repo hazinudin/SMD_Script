@@ -13,7 +13,7 @@
   "table_names":{
     "lrs_network":"ELRS.National_Network2018",
     "balai_table":"ELRS.All_Balai_Prov",
-    "rni": "ELRS.RAW_RNI_2018_2"
+    "rni": "ELRS.RNI_National_2"
   },
   "table_fields":{
     "lrs_network":{
@@ -26,7 +26,8 @@
       "lane_code":"LANE_CODE",
       "from_measure":"FROMMEASURE",
       "to_measure":"TOMEASURE",
-      "surface_type":"SURFTYPE"
+      "surface_type":"SURFTYPE",
+      "lane_width":"LANE_WIDTH"
     },
     "balai_table":{
       "prov_code":"NO_PROV",
