@@ -26,6 +26,7 @@ RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
 RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 RNILaneCode = smd_config['table_fields']['rni']['lane_code']
 RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
+RNILaneWidth = smd_config['table_fields']['rni']['lane_width']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -74,6 +75,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
     EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
                                         2018, RNILaneCode, routes=valid_routes)
+    EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
+                                     routes=valid_routes)
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     failed_routes = EventCheck.route_results.keys()
@@ -84,7 +87,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     msg_count = 1
-    for error_message in EventCheck.altered_route_result('error', dict_output=False):
+    for error_message in EventCheck.altered_route_result('warning', dict_output=False):
         AddMessage(str(msg_count)+'. '+error_message)
         msg_count += 1
 
