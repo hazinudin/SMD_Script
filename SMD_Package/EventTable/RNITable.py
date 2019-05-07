@@ -2,21 +2,22 @@ import json
 from pandas import Series, DataFrame
 
 
-class RNISurfaceTypeLength(object):
-    def __init__(self, df_rni, rni_routeid, rni_from_measure, rni_to_measure, rni_surface_type):
+class RNIRouteDetails(object):
+    def __init__(self, df_rni, rni_routeid, rni_from_measure, rni_to_measure, rni_details, agg_type='unique'):
         """
         This object will calculate the length of each surface type for every route in the input DataFrame.
         :param df_rni: The input RNI DataFrame.
         :param rni_routeid: RNI RouteID column
         :param rni_from_measure:
         :param rni_to_measure:
-        :param rni_surface_type:
+        :param rni_details:
         """
         groupby_cols = [rni_routeid, rni_from_measure, rni_to_measure]
-        self.route_surf_segment = rni_segment_dissolve(df_rni, groupby_cols, rni_surface_type, rni_routeid,
-                                                       from_m_field=rni_from_measure, to_m_field=rni_to_measure)
+        self.route_surf_segment = rni_segment_dissolve(df_rni, groupby_cols, rni_details, rni_routeid,
+                                                       from_m_field=rni_from_measure, to_m_field=rni_to_measure,
+                                                       agg=agg_type)
 
-    def surftype_percentage(self, route):
+    def details_percentage(self, route):
         """
         This class method will calculate surface type group length in the requested route.
         :param route:
@@ -25,12 +26,15 @@ class RNISurfaceTypeLength(object):
         surface_len = {}  # The output dictionary
         for group in self.route_surf_segment:
             group_route = group[0]  # The group RouteID
-            group_surface = json.loads(group[1])  # The group surface type
+            if type(group[1]) == 'str':
+                group_surface = json.loads(group[1])  # The group surface type
 
-            if len(group_surface) == 1:
-                group_surface = str(group_surface[0])  # If there is only one surface type in an interval.
+                if len(group_surface) == 1:
+                    group_surface = str(group_surface[0])  # If there is only one surface type in an interval.
+                else:
+                    group_surface = str(group_surface).strip('[]')  # If there are multiple surface type.
             else:
-                group_surface = str(group_surface).strip('[]')  # If there are multiple surface type.
+                group_surface = group[1]
 
             if (group_route == route) or (group_route in route):
                 segments = self.route_surf_segment[group]
