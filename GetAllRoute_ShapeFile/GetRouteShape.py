@@ -115,11 +115,11 @@ class DictionaryToFeatureClass(object):
             'FROM_M': 'DOUBLE',
             'TO_M': 'DOUBLE',
             'LANES': 'TEXT',
-            'PJG_RUAS': 'DOUBLE'
+            'PJG_LRS': 'DOUBLE'
         }
 
         # Insert cursor field
-        insert_field = ['SHAPE@', 'ROUTEID', 'FROM_M', 'TO_M', 'LANES', 'PJG_RUAS']
+        insert_field = ['SHAPE@', 'ROUTEID', 'FROM_M', 'TO_M', 'LANES', 'PJG_LRS']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
@@ -138,8 +138,7 @@ class DictionaryToFeatureClass(object):
 
             # Iterate over the LRS network feature class to get the route shape geometry
             with da.SearchCursor(self.lrs_network, 'SHAPE@',
-                                 where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))\
-                    as search_cursor:
+                                 where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))as search_cursor:
                 for search_row in search_cursor:
 
                     # Get the segment geometry based on the segment from measure and to measure
