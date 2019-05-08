@@ -267,6 +267,8 @@ class DictionaryToFeatureClass(object):
                     # Insert every file component to the archive
                     newzip.write('{0}/{1}'.format(self.outpath, fc_name+file_extension), fc_name+file_extension)
 
+            newzip.write(self.csv_output, 'RNI_table.csv')
+
         self.zip_output = zip_output_path+'.zip'
         return self
 
