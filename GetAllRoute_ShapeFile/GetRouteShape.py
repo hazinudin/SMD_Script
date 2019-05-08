@@ -178,14 +178,12 @@ class DictionaryToFeatureClass(object):
             'ROUTEID': 'TEXT',
             'ROUTE_NAME': 'TEXT',
             'KETERANGAN': 'TEXT',
-            'START_X': 'TEXT',
-            'START_Y': 'TEXT',
-            'END_X': 'TEXT',
-            'END_Y': 'TEXT'
+            'X': 'TEXT',
+            'Y': 'TEXT',
         }
 
         # Insert cursor field
-        insert_field = ['SHAPE@', 'ROUTEID', 'ROUTE_NAME', 'KETERANGAN', 'START_X', 'START_Y', 'END_X', 'END_Y']
+        insert_field = ['SHAPE@', 'ROUTEID', 'ROUTE_NAME', 'KETERANGAN', 'X', 'Y']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
@@ -215,9 +213,9 @@ class DictionaryToFeatureClass(object):
                     route_name = search_row[2]
 
                     if end_point == start_point_geom:
-                        new_row = [end_point, route_id, route_name, 'Awal ruas', x_coord, y_coord, '', '']
+                        new_row = [end_point, route_id, route_name, 'Awal ruas', x_coord, y_coord]
                     else:
-                        new_row = [end_point, route_id, route_name, 'Akhir ruas', '', '', x_coord, y_coord]
+                        new_row = [end_point, route_id, route_name, 'Akhir ruas', x_coord, y_coord]
 
                     insert_cursor.insertRow(new_row)
                     point_feature_count += 1
