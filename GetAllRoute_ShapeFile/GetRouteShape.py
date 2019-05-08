@@ -97,6 +97,7 @@ class DictionaryToFeatureClass(object):
 
         self.polyline_output = None
         self.point_output = None
+        self.csv_output = None
         self.zip_output = None
 
     def create_segment_polyline(self):
@@ -225,6 +226,13 @@ class DictionaryToFeatureClass(object):
         self.point_feature_count = point_feature_count  # Shapefile feature count
         self.point_fc_name = shapefile_name  # Shapefile name
 
+    def create_rni_csv(self, rni_df):
+        df = rni_df  # The RNI DataFrame
+        self.csv_output = "{0}/{1}".format(self.outpath, 'RNITable.csv')
+        df.to_csv(self.csv_output)  # Creating the CSV file from the DataFrame
+
+        return self
+
     def output_message(self):
         """
         This function will create the output message from this class
@@ -320,6 +328,7 @@ if ConnectionCheck.all_connected:
                                                    DissolvedSegmentDict)
         RouteGeometries.create_segment_polyline()  # Create the polyline shapefile
         RouteGeometries.create_start_end_point()  # Create the point shapefile
+        RouteGeometries.create_rni_csv(RNI_DataFrame)  # Create the RNI DataFrame
 
         SetParameterAsText(1, RouteGeometries.output_message())
         SetParameter(2, RouteGeometries.create_zipfile().zip_output)
