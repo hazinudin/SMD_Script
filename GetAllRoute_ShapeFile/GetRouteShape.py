@@ -250,13 +250,13 @@ class DictionaryToFeatureClass(object):
 
         return output_json_string
 
-    def create_zipfile(self):
+    def create_zipfile(self, zipfile_name):
         """
         This class method will create a zipfile within the scratchFolder directory of the class.
         :return:
         """
 
-        zip_output = 'GetRouteResults'  # The zip file name
+        zip_output = zipfile_name  # The zip file name
         zip_output_path = '{0}/{1}'.format(self.outpath, zip_output)  # The zip file target directory
 
         with zipfile.ZipFile(zip_output_path+'.zip', 'w') as newzip:  # Creating new empty zip file
@@ -332,7 +332,7 @@ if ConnectionCheck.all_connected:
         if input_details["type"] == "balai":
             req_type = 'Balai'
         elif input_details["type"] == "no_prov":
-            req_type = "Provinsi"
+            req_type = "Prov"
         else:
             req_type = ""
 
@@ -346,7 +346,7 @@ if ConnectionCheck.all_connected:
         RouteGeometries.create_rni_csv(RNI_DataFrame)  # Create the RNI DataFrame
 
         SetParameterAsText(1, RouteGeometries.output_message())
-        SetParameter(2, RouteGeometries.create_zipfile().zip_output)
+        SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2018".format(req_type, req_codes)).zip_output)
 
     elif RequestCheckResult is None:
         SetParameterAsText(1, output_message("Failed", "The requested route/s are not valid"))
