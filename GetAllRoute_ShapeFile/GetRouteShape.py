@@ -100,12 +100,12 @@ class DictionaryToFeatureClass(object):
         self.csv_output = None
         self.zip_output = None
 
-    def create_segment_polyline(self):
+    def create_segment_polyline(self, feature_class_name):
         """
         This function gets all the shape from every segments from the LRS network feature class, then write it to a
         output shapefile.
         """
-        shapefile_name = 'Segmen_Lane.shp'
+        shapefile_name = "{0}.shp".format(feature_class_name)  # The name of the output feature class (.shp)
         # Create new empty shapefile
         CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
                                       spatial_reference=self.spatial_reference)
@@ -165,11 +165,11 @@ class DictionaryToFeatureClass(object):
         self.polyline_count = polyline_feature_count  # Shapefile feature count
         self.polyline_fc_name = shapefile_name  # Shapefile name
 
-    def create_start_end_point(self):
+    def create_start_end_point(self, feature_class_name):
         """
         This function creates a shapefile containing the start and end point for every requested routes
         """
-        shapefile_name = 'Titik_Awal_Akhir_Ruas.shp'
+        shapefile_name = '{0}.shp'.format(feature_class_name)  # The output feature class name (.shp)
         # Create a new empty shapefile
         CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POINT',
                                       spatial_reference=self.spatial_reference)
@@ -328,8 +328,21 @@ if ConnectionCheck.all_connected:
         # Create the shapefile from the segment created by the dissolve segment function
         RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
                                                    DissolvedSegmentDict)
-        RouteGeometries.create_segment_polyline()  # Create the polyline shapefile
-        RouteGeometries.create_start_end_point()  # Create the point shapefile
+
+        if input_details["type"] == "balai":
+            req_type = 'Balai'
+        elif input_details["type"] == "no_prov":
+            req_type = "Provinsi"
+        else:
+            req_type = ""
+
+        if type(input_details["codes"]) == list:
+            req_codes = str(input_details["codes"]).strip("[]").replace("'", "").replace(', ','_').replace('u', '')
+        else:
+            req_codes = str(input_details["codes"])
+        AddMessage("AwalAkhirRuas_{0}_{1}".format(req_type, req_codes))
+        RouteGeometries.create_segment_polyline("SegmenRuas_2018")  # Create the polyline shapefile
+        RouteGeometries.create_start_end_point("AwalAkhirRuas_2018")  # Create the point shapefile
         RouteGeometries.create_rni_csv(RNI_DataFrame)  # Create the RNI DataFrame
 
         SetParameterAsText(1, RouteGeometries.output_message())
