@@ -87,6 +87,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     msg_count = 1
+    for error_message in EventCheck.altered_route_result('error', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message)
+        msg_count += 1
     for error_message in EventCheck.altered_route_result('warning', dict_output=False):
         AddMessage(str(msg_count)+'. '+error_message)
         msg_count += 1
