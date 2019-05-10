@@ -952,24 +952,22 @@ class EventValidation(object):
             comp_details = comp_surfwidth.details_percentage(route)
 
             merge = pd.merge(input_details, comp_details, how='outer', on='index', indicator=True)
-            merge_input_only = merge.loc[merge['_merge'] == 'left_only']
-            merge_comp_only = merge.loc[merge['_merge'] == 'right_only']
             both = merge.loc[merge['_merge'] == 'both']
 
             # Analyze the 'both'
             if (not(np.allclose(both['percentage_x'], both['percentage_y']))) or (len(both) == 0):  # if percentage at 'both' does not match or there is no 'both'
                 result = "Rute {0} memiliki perbedaan lebar jalan dengan data tahun {1}.".format(route, year_comp)
-                lanew_input = merge.loc[merge['percentage_x'].notnull(), ['index', 'percentage_x']].to_dict('split')
-                lanew_comp = merge.loc[merge['percentage_y'].notnull(), ['index', 'percentage_y']].to_dict('split')
+                lanew_input = merge.loc[merge['percentage_x'].notnull(), ['index', 'percentage_x']].to_dict('split')  # Create the dictionary
+                lanew_comp = merge.loc[merge['percentage_y'].notnull(), ['index', 'percentage_y']].to_dict('split')  # Create the dictionary
 
                 for lanew_combination in [lanew_input, lanew_comp]:
                     lanews = lanew_combination['data']
                     if lanew_combination == lanew_input:
                         msg = ' Data input memiliki lebar jalan '
-                        for lanew_details in lanews:
-                            lanew = lanew_details[0]
-                            lanew_percentage = round(lanew_details[1])
-                            detail = "{0} meter sebanyak {1}%, ".format(lanew, lanew_percentage)
+                        for lanew_details in lanews:  # Iterate over all available lane width in both input and comp
+                            lanew = lanew_details[0]  # The lane width in meters
+                            lanew_percentage = round(lanew_details[1])  # The lane width percentage
+                            detail = "{0} meter sebanyak {1}%, ".format(lanew, lanew_percentage)  # Create the message details
                             msg += detail
 
                         result += msg[:-2]
