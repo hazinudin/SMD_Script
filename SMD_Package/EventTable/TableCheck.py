@@ -948,24 +948,44 @@ class EventValidation(object):
             comp_surfwidth = RNIRouteDetails(df_comp, comp_route_col, comp_from_col, comp_to_col, comp_lane_width,
                                              agg_type='sum')
 
-            input_percentage = input_surfwidth.details_percentage(route)
-            comp_percentage = comp_surfwidth.details_percentage(route)
+            input_details = input_surfwidth.details_percentage(route)
+            comp_details = comp_surfwidth.details_percentage(route)
 
-            merge = pd.merge(input_percentage, comp_percentage, how='outer', on='index', indicator=True)
+            merge = pd.merge(input_details, comp_details, how='outer', on='index', indicator=True)
             merge_input_only = merge.loc[merge['_merge'] == 'left_only']
             merge_comp_only = merge.loc[merge['_merge'] == 'right_only']
-            both_comp_only = merge.loc[merge['_merge'] == 'both']
+            both = merge.loc[merge['_merge'] == 'both']
 
-            if len(merge_input_only) != 0:
-                width_list = merge_input_only['index'].unique().tolist()
-                result = "Rute {0} memiliki segmen dengan lebar jalan {1} yang berbeda dari tahun {2}".\
-                    format(route, width_list, year_comp)
-                self.insert_route_message(route, 'warning', result)
+            # Analyze the 'both'
+            if (not(np.allclose(both['percentage_x'], both['percentage_y']))) or (len(both) == 0):  # if percentage at 'both' does not match or there is no 'both'
+                result = "Rute {0} memiliki perbedaan lebar jalan dengan data tahun {1}.".format(route, year_comp)
+                lanew_input = merge.loc[merge['percentage_x'].notnull(), ['index', 'percentage_x']].to_dict('split')
+                lanew_comp = merge.loc[merge['percentage_y'].notnull(), ['index', 'percentage_y']].to_dict('split')
 
-            if len(merge_comp_only) != 0:
-                width_list = merge_comp_only['index'].unique().tolist()
-                result = "Rute {0} pada tahun {1} memiliki segmen dengan lebar {2}.".\
-                    format(route, year_comp, width_list)
+                for lanew_combination in [lanew_input, lanew_comp]:
+                    lanews = lanew_combination['data']
+                    if lanew_combination == lanew_input:
+                        msg = ' Data input memiliki lebar jalan '
+                        for lanew_details in lanews:
+                            lanew = lanew_details[0]
+                            lanew_percentage = round(lanew_details[1])
+                            detail = "{0} meter sebanyak {1}%, ".format(lanew, lanew_percentage)
+                            msg += detail
+
+                        result += msg[:-2]
+                        result += '.'
+
+                    else:
+                        msg = ' Data {0} memiliki lebar jalan '.format(year_comp)
+                        for lanew_details in lanews:
+                            lanew = lanew_details[0]
+                            lanew_percentage = round(lanew_details[1])
+                            detail = "{0} meter sebanyak {1}%, ".format(lanew, lanew_percentage)
+                            msg += detail
+
+                        result += msg[:-2]
+                        result += '.'
+
                 self.insert_route_message(route, 'warning', result)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
