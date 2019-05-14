@@ -724,6 +724,12 @@ class EventValidation(object):
             if len(road_type_code_list) == 1:
 
                 road_type_code = str(road_type_code_list[0])  # The road type in string
+                if road_type_code not in road_type_details.keys():
+                    result = "Rute {0} pada segmen {1}-{2} memiliki kode {3} yang tidak valid. Kode {4}".\
+                        format(route, from_m, to_m, road_type_col, road_type_code)
+                    self.insert_route_message(route, 'error', result)
+                    continue
+
                 lane_count = road_type_details[road_type_code]['lane_count']  # The required lane count for specified type
                 direction = road_type_details[road_type_code]['direction']  # The direction required
                 median_exist = road_type_details[road_type_code]['median']  # The median existence requirement
