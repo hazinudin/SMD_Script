@@ -382,7 +382,7 @@ class EventValidation(object):
             rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
             lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
             max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
-            max_to_meas = df_groupped.at[max_to_ind, to_m_col]/100  # The largest To Measure value
+            max_to_meas = float(df_groupped.at[max_to_ind, to_m_col])/100  # The largest To Measure value
 
             # Comparison based on the 'compare_to' parameter
             if compare_to == 'RNI':
@@ -393,7 +393,7 @@ class EventValidation(object):
             # If the largest To Measure value is less than the selected comparison then there is a gap at the end
             if max_to_meas < comparison:
                 # Create an error message
-                error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
+                error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
                     format(route, max_to_meas, comparison)
                 self.error_list.append(error_message)
                 self.insert_route_message(route, 'error', error_message)
@@ -429,8 +429,8 @@ class EventValidation(object):
                     elif not np.isclose(to_m, row[from_m_col], rtol=0.01):
                         if to_m < row[from_m_col]:
                             # Create an error message
-                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}.'.\
-                                format(route, to_m/100, row[from_m_col]/100)
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'.\
+                                format(route, float(to_m)/100, float(row[from_m_col])/100)
                             self.error_list.append(error_message)
                             self.insert_route_message(route, 'error', error_message)
                             # Rewrite the To Measure and From Measure variable
