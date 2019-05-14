@@ -391,7 +391,7 @@ class EventValidation(object):
                 comparison = lrs_route_len
 
             # If the largest To Measure value is less than the selected comparison then there is a gap at the end
-            if max_to_meas < comparison:
+            if (max_to_meas < comparison) and not(np.isclose(max_to_meas, comparison, rtol=0.01)):
                 # Create an error message
                 error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
                     format(route, max_to_meas, comparison)
