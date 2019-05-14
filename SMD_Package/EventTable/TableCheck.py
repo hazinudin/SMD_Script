@@ -7,6 +7,27 @@ from Kemantapan import Kemantapan
 from RNITable import RNIRouteDetails
 
 
+def read_input_excel(event_table_path):
+    """
+    This function will read the submitted excel file by the SMD user, the file format has to be '.xls' or '.xlsx', if
+    any other file format is submitted then this function will return None.
+    :param event_table_path: The excel file path.
+    :return: Pandas DataFrame or NoneType.
+    """
+    file_format = str(event_table_path).split('.')[1]
+    if file_format in ['xls', 'xlsx']:
+
+        df_self_dtype = pd.read_excel(event_table_path)
+        s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
+        del df_self_dtype
+
+        df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
+        df_string.columns = df_string.columns.str.upper()
+        return df_string  # df_string is DataFrame which contain all data in string format
+    else:
+        return None
+
+
 class EventValidation(object):
     """
     This class will be used for event table review, consist of table columns review and row by row review.
@@ -16,18 +37,7 @@ class EventValidation(object):
         Initialize EventTableCheck class
         the header_check and dtype_check also called when the class is initialized
         """
-        self.file_format = str(event_table_path).split('.')[1]  # Get the table file format
-        if self.file_format in ['xls', 'xlsx']:
-
-            df_self_dtype = pd.read_excel(event_table_path)
-            s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
-            del df_self_dtype
-
-            df_string = pd.read_excel(event_table_path, converters=s_converter)
-            df_string.columns = df_string.columns.str.upper()
-            self.df_string = df_string  # df_string is dataframe which contain all data in string format
-        else:
-            self.df_string = None
+        self.df_string = read_input_excel(event_table_path)
 
         self.column_details = column_details  # Dictionary containing req col names and dtypes
         self.lrs_network = lrs_network  # Specified LRS Network feature class in SDE database
