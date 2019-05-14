@@ -32,13 +32,12 @@ class EventValidation(object):
     """
     This class will be used for event table review, consist of table columns review and row by row review.
     """
-    def __init__(self, event_table_path, column_details, lrs_network, lrs_routeid, db_conn):
+    def __init__(self, input_df, column_details, lrs_network, lrs_routeid, db_conn):
         """
         Initialize EventTableCheck class
         the header_check and dtype_check also called when the class is initialized
         """
-        self.df_string = read_input_excel(event_table_path)
-
+        self.df_string = input_df
         self.column_details = column_details  # Dictionary containing req col names and dtypes
         self.lrs_network = lrs_network  # Specified LRS Network feature class in SDE database
         self.lrs_routeid = lrs_routeid  # The LRS Network RouteID column
