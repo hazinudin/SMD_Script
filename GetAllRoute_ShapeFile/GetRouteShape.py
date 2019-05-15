@@ -176,12 +176,12 @@ class DictionaryToFeatureClass(object):
             'LINKID': 'TEXT',
             'ROUTE_NAME': 'TEXT',
             'KETERANGAN': 'TEXT',
-            'X': 'TEXT',
-            'Y': 'TEXT',
+            'STA_LAT': 'TEXT',
+            'STA_LONG': 'TEXT',
         }
 
         # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'KETERANGAN', 'X', 'Y']
+        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'KETERANGAN', 'STA_LAT', 'STA_LONG']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
