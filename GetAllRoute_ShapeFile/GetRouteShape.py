@@ -320,6 +320,7 @@ if ConnectionCheck.all_connected:
         # Create a Pandas dataframe from the RNI table in geodatabase
         RNI_DataFrame = event_fc_to_df(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection,
                                        is_table=True)
+        RNI_DataFrame_rename = RNI_DataFrame.rename(columns={'FROMMEASURE': 'STA_FROM', 'TOMEASURE': 'STA_TO'})
         DissolvedSegmentDict = rni_segment_dissolve(RNI_DataFrame, rniGroupbyField, rniCodeLane, rniRouteID)
 
         # Create the shapefile from the segment created by the dissolve segment function
@@ -340,7 +341,7 @@ if ConnectionCheck.all_connected:
         AddMessage("AwalAkhirRuas_{0}_{1}".format(req_type, req_codes))
         RouteGeometries.create_segment_polyline("SegmenRuas_2018")  # Create the polyline shapefile
         RouteGeometries.create_start_end_point("AwalAkhirRuas_2018")  # Create the point shapefile
-        RouteGeometries.create_rni_csv(RNI_DataFrame)  # Create the RNI DataFrame
+        RouteGeometries.create_rni_csv(RNI_DataFrame_rename)  # Create the RNI DataFrame
 
         SetParameterAsText(1, RouteGeometries.output_message())
         SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2018".format(req_type, req_codes)).zip_output)
