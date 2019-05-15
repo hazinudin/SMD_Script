@@ -1,10 +1,11 @@
 import json
 from arcpy import da
+from pandas import DataFrame
 
 
 class GetRoutes(object):
     def __init__(self, query_type, query_value, lrs_network, balai_table, lrs_routeid='ROUTEID', lrs_prov_code='NOPROP',
-                 balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
+                 lrs_route_name='ROUTE_NAME', lrs_lintas='FRCITY', balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
 
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
@@ -17,11 +18,10 @@ class GetRoutes(object):
 
         self.string_json_output = None
 
-        balai_prov_dict = {}  # Create a "prov": "kode_balai" dictionary
+        prov_balai_dict = {}  # Create a "prov": "kode_balai" dictionary
         balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
 
         self.balai_route_dict = {}  # Create a "prov": [list of route_id] dictionary
-        self.results_list = [] # Create a list for storing the route query result for every code
         self.query_type = query_type
 
         # If the query type is based on province code and not all province are requested
@@ -37,30 +37,40 @@ class GetRoutes(object):
         with da.SearchCursor(balai_table, [balai_prov, balai_code], where_clause=sql_statement,
                              sql_clause=('DISTINCT', None)) as search_cursor:
             for row in search_cursor:
-                balai_prov_dict[str(row[0])] = str(row[1])  # Create a "prov":"kode_balai" dictionary
+                prov_balai_dict[str(row[0])] = str(row[1])  # Create a "prov":"kode_balai" dictionary
 
         # Start iterating over the requested province
-        for prov_code in balai_prov_dict:
-            kode_balai = balai_prov_dict[prov_code]
-            with da.SearchCursor(lrs_network, [lrs_routeid],
+        for prov_code in prov_balai_dict:
+            kode_balai = prov_balai_dict[prov_code]
+            with da.SearchCursor(lrs_network, [lrs_routeid, lrs_route_name, lrs_lintas],
                                  where_clause='{0}=({1})'.format(lrs_prov_code, prov_code)) as search_cursor:
                 if kode_balai not in balai_route_dict:
-                    balai_route_dict[kode_balai] = [str(row[0]) for row in search_cursor]
+                    balai_route_dict[kode_balai] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
                 else:
-                    balai_route_dict[kode_balai] += [str(row[0]) for row in search_cursor]
+                    balai_route_dict[kode_balai] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
 
         self.balai_route_dict = balai_route_dict
 
-    def create_json_output(self):
+    def create_json_output(self, detailed=False):
         """
         This funtion create the JSON string to be used as the output of the script
         """
-        for balai in self.balai_route_dict:
-            route_list = self.balai_route_dict[balai]
-            result_object = {"code":str(balai), "routes":route_list}
-            self.results_list.append(result_object)
+        results_list = []
+        for kode_balai in self.balai_route_dict:
+            route_dict = self.balai_route_dict[kode_balai]
+            df = DataFrame.from_dict(route_dict)
+            if not detailed:
+                route_list = df['route_id'].tolist()
+                result_object = {"code": str(kode_balai), "routes": route_list}
+                results_list.append(result_object)
+                string_json_output = self.results_output("Succeeded", self.query_type, results_list)
+            else:
+                df_route_id = df.set_index('route_id')
+                detailed_dict = df_route_id.T.to_dict()
+                result_object = {"code": str(kode_balai), "routes": detailed_dict}
+                results_list.append(result_object)
+                string_json_output = self.results_output("Succeeded", self.query_type, results_list)
 
-        string_json_output = self.results_output("Succeeded", self.query_type, self.results_list)
         return string_json_output
 
     def route_list(self, req_balai='ALL'):
@@ -76,11 +86,15 @@ class GetRoutes(object):
         route_list = []
         if req_balai == 'ALL':
             for balai in self.balai_route_dict:
-                route_list += self.balai_route_dict[balai]
+                df = DataFrame.from_dict(self.balai_route_dict[balai])
+                routes = df['route_id'].tolist()
+                route_list += routes
         else:
             for code in req_balai:
                 if code in self.balai_route_dict.keys():
-                    route_list += self.balai_route_dict[code]
+                    df = DataFrame.from_dict(self.balai_route_dict[code])
+                    routes = df['route_id'].tolist()
+                    route_list += routes
                 else:
                     pass
 
