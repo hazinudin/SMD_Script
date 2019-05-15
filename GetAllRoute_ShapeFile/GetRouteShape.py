@@ -113,14 +113,13 @@ class DictionaryToFeatureClass(object):
         # Define field names and types for the new shapefile
         field_name_and_type = {
             'LINKID': 'TEXT',
-            'FROM_M': 'DOUBLE',
-            'TO_M': 'DOUBLE',
-            'LANE_CODES': 'TEXT',
-            'PJG_LRS': 'DOUBLE'
+            'STA_FROM': 'DOUBLE',
+            'STA_TO': 'DOUBLE',
+            'LANE_CODES': 'TEXT'
         }
 
         # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'FROM_M', 'TO_M', 'LANE_CODES', 'PJG_LRS']
+        insert_field = ['SHAPE@', 'LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODES']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
@@ -150,13 +149,11 @@ class DictionaryToFeatureClass(object):
                         from_m_meter = segment_measurement[0]*1000  # From measure in meters
                         to_m_meter = segment_measurement[1]*1000  # To measure in meters
 
-                        route_length = search_row[0].length  # Route geometry length in meters
-
                         # Geometry object of the segment
                         segment_geom_obj = search_row[0].segmentAlongLine(from_m_meter, to_m_meter)
 
                         # Start inserting new row to the shapefile
-                        new_row = [segment_geom_obj, route_id, from_m_km, to_m_km, lane_codes, route_length]
+                        new_row = [segment_geom_obj, route_id, from_m_km, to_m_km, lane_codes]
                         insert_cursor.insertRow(new_row)
                         polyline_feature_count += 1
 
