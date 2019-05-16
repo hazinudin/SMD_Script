@@ -80,6 +80,11 @@ class Kemantapan(object):
 
         return mantap_comp
 
+    def create_pivot(self):
+        pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
+                                           fill_value=0)
+        return pivot
+
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
                        rni_to_col, surftype_col, match_only=True):
