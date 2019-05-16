@@ -34,9 +34,19 @@ class Kemantapan(object):
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
     def summary_table(self):
-        graded_df = self.graded_df
+        graded_df = self.graded_df  # The grading result.
+        # Create the pivot table
         pivot = graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
                                       fill_value=0)
+
+        surftype_set = set(x for x in pivot.columns.get_level_values(0))  # All the list of surface type
+        for surface in surftype_set:
+            required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
+            surface_grades = np.array(pivot[surface].columns.tolist())
+
+            missing_grade = np.setdiff1d(required_grades, surface_grades)
+            for grade in missing_grade:
+                pivot[surface, grade] = pd.Series(0, index=pivot.index)  # Add the missing grade column
 
         return pivot
 
