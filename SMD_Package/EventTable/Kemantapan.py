@@ -33,6 +33,13 @@ class Kemantapan(object):
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
+    def summary_table(self):
+        graded_df = self.graded_df
+        pivot = graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
+                                      fill_value=0)
+
+        return pivot
+
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
         """
         Compare the Kemantapan percentage from the event table and the compare table.
