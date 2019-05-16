@@ -34,10 +34,8 @@ class Kemantapan(object):
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
     def summary_table(self):
-        graded_df = self.graded_df  # The grading result.
         # Create the pivot table
-        pivot = graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
-                                      fill_value=0)
+        pivot = self.create_pivot()
 
         # Create the Column for Missing Grade in Every Surface Type.
         surftype_set = set(x for x in pivot.columns.get_level_values(0))  # All the list of surface type
@@ -48,6 +46,19 @@ class Kemantapan(object):
             missing_grade = np.setdiff1d(required_grades, surface_grades)
             for grade in missing_grade:
                 pivot[surface, grade] = pd.Series(0, index=pivot.index)  # Add the missing grade column
+
+            surface_df = pivot.loc[:, [surface]]  # Create the DataFrame for a single surface
+            grade_percent = surface_df.div(surface_df.sum(axis=1), axis=0)*100
+            surface_grades = np.array(grade_percent[surface].columns.values)
+            percent_col = pd.Index([x+'_p' for x in surface_grades])
+            grade_percent.columns = percent_col
+
+            upper_col = {}
+            upper_col[surface] = grade_percent
+            grade_percent = pd.concat(upper_col, axis=1)
+            print grade_percent
+
+            pivot = pivot.join(grade_percent*100, how='inner')
 
         # Flatten the Multi Level Columns
         new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot.columns.values])
