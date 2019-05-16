@@ -49,6 +49,10 @@ class Kemantapan(object):
             for grade in missing_grade:
                 pivot[surface, grade] = pd.Series(0, index=pivot.index)  # Add the missing grade column
 
+        # Flatten the Multi Level Columns
+        new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot.columns.values])
+        pivot.columns = new_column
+
         return pivot
 
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
