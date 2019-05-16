@@ -39,6 +39,7 @@ class Kemantapan(object):
         pivot = graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
                                       fill_value=0)
 
+        # Create the Column for Missing Grade in Every Surface Type.
         surftype_set = set(x for x in pivot.columns.get_level_values(0))  # All the list of surface type
         for surface in surftype_set:
             required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
