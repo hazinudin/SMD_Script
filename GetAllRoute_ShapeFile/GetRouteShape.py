@@ -10,6 +10,7 @@ import sys
 import json
 import zipfile
 import numpy as np
+from datetime import datetime
 sys.path.append('E:\SMD_Script')
 from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df, input_json_check, output_message
 
@@ -363,8 +364,9 @@ if ConnectionCheck.all_connected:
         else:
             req_codes = str(input_details["codes"])
 
-        RouteGeometries.create_segment_polyline("SegmenRuas_2018")  # Create the polyline shapefile
-        RouteGeometries.create_start_end_point("AwalAkhirRuas_2018")  # Create the point shapefile
+        current_year = datetime.now().year
+        RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year))  # Create the polyline shapefile
+        RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
         RouteGeometries.create_rni_csv(RNI_df_rename)  # Create the RNI DataFrame
 
         SetParameterAsText(1, RouteGeometries.output_message())
