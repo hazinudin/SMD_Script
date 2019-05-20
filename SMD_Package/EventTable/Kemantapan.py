@@ -56,9 +56,8 @@ class Kemantapan(object):
             upper_col = {}
             upper_col[surface] = grade_percent
             grade_percent = pd.concat(upper_col, axis=1)
-            print grade_percent
 
-            pivot = pivot.join(grade_percent*100, how='inner')
+            pivot = pivot.join(grade_percent, how='inner')
 
         # Flatten the Multi Level Columns
         new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot.columns.values])
@@ -153,13 +152,15 @@ class Kemantapan(object):
                     if row[surftype_col] in group_details[group]['group']:  # If the group was found
                         group_not_found = False  # group not found is False
                         surface_group = str(group)  # surface group
+                        paved_group = group_details[group]['category']
                         range = np.array(group_details[group]['range'])  # group's range in np.array
 
             lower_bound = np.amin(range)  # The lower bound
             upper_bound = np.amax(range)  # The upper bound
             mid = range[1]  # The mid value
 
-            df_merge.loc[index, '_surf_group'] = surface_group  # Write the surface group name in '_surf_group'
+            df_merge.loc[index, '_surf_type'] = surface_group  # Write the surface group name in '_surf_group'
+            df_merge.loc[index, '_surf_group'] = paved_group
 
             # Start the grading process
             if row[grading_col] <= lower_bound:
