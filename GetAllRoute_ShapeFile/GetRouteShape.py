@@ -77,7 +77,8 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
 
 class DictionaryToFeatureClass(object):
 
-    def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict, outpath=env.scratchFolder):
+    def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict, outpath=env.scratchFolder,
+                 missing_route=None):
         """
         Define LRS Network for the geometry shape source
         Segment dictionary from the segment dissolve process
@@ -95,6 +96,7 @@ class DictionaryToFeatureClass(object):
             route_list.append(str(segment[0]))
         self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
         self.route_list = route_list
+        self.missing_route = missing_route
 
         self.polyline_output = None
         self.point_output = None
