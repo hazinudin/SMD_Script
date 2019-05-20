@@ -78,7 +78,7 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
 class DictionaryToFeatureClass(object):
 
     def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict, outpath=env.scratchFolder,
-                 missing_route=None):
+                 missing_route=None, missing_msg='Data RNI tidak ditemukan'):
         """
         Define LRS Network for the geometry shape source
         Segment dictionary from the segment dissolve process
@@ -97,6 +97,7 @@ class DictionaryToFeatureClass(object):
         self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
         self.route_list = route_list
         self.missing_route = missing_route
+        self.missing_msg = missing_msg
 
         self.polyline_output = None
         self.point_output = None
@@ -160,6 +161,14 @@ class DictionaryToFeatureClass(object):
                         insert_cursor.insertRow(new_row)
                         polyline_feature_count += 1
 
+        # Check if there is route with missing data
+        if self.missing_route is not None:
+            for route in self.missing_route:
+                message = self.missing_msg
+                new_row = [None, route, 0, 0, message]
+                insert_cursor.insertRow(new_row)
+                polyline_feature_count += 1
+
         # Return the polyline attribute
         self.polyline_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
         self.polyline_count = polyline_feature_count  # Shapefile feature count
@@ -220,6 +229,14 @@ class DictionaryToFeatureClass(object):
 
                     insert_cursor.insertRow(new_row)
                     point_feature_count += 1
+
+        # Check if there is route with missing data
+        if self.missing_route is not None:
+            for route in self.missing_route:
+                message = self.missing_msg
+                new_row = [None, route, message, message, 0, 0]
+                insert_cursor.insertRow(new_row)
+                point_feature_count += 1
 
         # Return the point attribute
         self.point_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
@@ -332,7 +349,7 @@ if ConnectionCheck.all_connected:
 
         # Create the shapefile from the segment created by the dissolve segment function
         RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
-                                                   DissolvedSegmentDict)
+                                                   DissolvedSegmentDict, missing_route=missing_rni)
 
         if input_details["type"] == "balai":
             req_type = 'Balai'
