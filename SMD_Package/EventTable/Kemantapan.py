@@ -34,6 +34,11 @@ class Kemantapan(object):
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
     def summary(self):
+        """
+        Create a summary DataFrame which contain the length for every road grade and the percentage for every road grade
+        in a single route. The column with '_p' suffix contain the length percentage.
+        :return:
+        """
         # Create the pivot table
         pivot = self.create_pivot(columns=['_surf_group', '_grade'])
         required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
@@ -101,6 +106,11 @@ class Kemantapan(object):
         return mantap_comp
 
     def create_pivot(self, columns):
+        """
+        Create a pivot DataFrame from the DataFrame which already being graded
+        :param columns: The column used to create pivot table.
+        :return:
+        """
         pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=columns, aggfunc=np.sum,
                                            fill_value=0)
         return pivot
