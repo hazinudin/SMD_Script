@@ -35,7 +35,7 @@ class Kemantapan(object):
 
     def summary(self):
         # Create the pivot table
-        pivot = self.create_pivot()
+        pivot = self.create_pivot(columns=['_surf_group', '_grade'])
         required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
 
         # Create the Column for Missing Grade in Every Surface Type.
@@ -100,8 +100,8 @@ class Kemantapan(object):
 
         return mantap_comp
 
-    def create_pivot(self):
-        pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=['_surf_group', '_grade'], aggfunc=np.sum,
+    def create_pivot(self, columns):
+        pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=columns, aggfunc=np.sum,
                                            fill_value=0)
         return pivot
 
