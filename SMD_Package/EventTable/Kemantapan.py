@@ -33,7 +33,7 @@ class Kemantapan(object):
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
-    def summary_table(self):
+    def summary(self):
         # Create the pivot table
         pivot = self.create_pivot()
 
