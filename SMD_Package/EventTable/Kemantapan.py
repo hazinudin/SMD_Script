@@ -42,16 +42,19 @@ class Kemantapan(object):
         surftype_set = set(x for x in pivot.columns.get_level_values(0))  # All the list of surface type
         missing_surftype = np.setdiff1d(['paved', 'unpaved'], list(surftype_set))  # Check for missing surface type
 
+        # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
         if len(missing_surftype) != 0:
             for surface in missing_surftype:
                 for grade in required_grades:
-                    pivot[(surface, grade)] = pd.Series(0, index=pivot.index)
+                    pivot[(surface, grade)] = pd.Series(0, index=pivot.index)  # Contain 0 value
 
         for surface in surftype_set:
+            # The existing surface grade in a surface type.
             surface_grades = np.array(pivot[surface].columns.tolist())
 
+            # Check for missing grade.
             missing_grade = np.setdiff1d(required_grades, surface_grades)
-            for grade in missing_grade:
+            for grade in missing_grade:  # Iterate over all missing grade
                 pivot[surface, grade] = pd.Series(0, index=pivot.index)  # Add the missing grade column
 
             surface_df = pivot.loc[:, [surface]]  # Create the DataFrame for a single surface
@@ -60,7 +63,7 @@ class Kemantapan(object):
             percent_col = pd.Index([x+'_p' for x in surface_grades])
             grade_percent.columns = percent_col
 
-            upper_col = {}
+            upper_col = dict()
             upper_col[surface] = grade_percent
             grade_percent = pd.concat(upper_col, axis=1)
 
