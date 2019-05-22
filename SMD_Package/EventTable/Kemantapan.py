@@ -68,6 +68,7 @@ class Kemantapan(object):
             surface_grades = np.array(grade_percent[surface].columns.values)
             percent_col = pd.Index([x+'_p' for x in surface_grades])
             grade_percent.columns = percent_col
+            grade_percent.fillna(0, inplace=True)  # Fill the NA value with zero
 
             upper_col = dict()
             upper_col[surface] = grade_percent
