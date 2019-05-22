@@ -33,7 +33,7 @@ class Kemantapan(object):
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
-    def summary(self):
+    def summary(self, flatten=True):
         """
         Create a summary DataFrame which contain the length for every road grade and the percentage for every road grade
         in a single route. The column with '_p' suffix contain the length percentage.
@@ -74,9 +74,10 @@ class Kemantapan(object):
 
             pivot = pivot.join(grade_percent, how='inner')
 
-        # Flatten the Multi Level Columns
-        new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot.columns.values])
-        pivot.columns = new_column
+        if flatten:
+            # Flatten the Multi Level Columns
+            new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot.columns.values])
+            pivot.columns = new_column
 
         return pivot
 
