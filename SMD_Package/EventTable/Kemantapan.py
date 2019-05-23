@@ -56,8 +56,8 @@ class Kemantapan(object):
 
         if flatten:
             # Flatten the Multi Level Columns
-            new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_grade.columns.values])
-            pivot_grade.columns = new_column
+            new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_join.columns.values])
+            pivot_join.columns = new_column
 
         return pivot_join
 
