@@ -44,31 +44,51 @@ class Kemantapan(object):
         pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'])
 
         required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
+        required_mantap = np.array(['mantap', 'tidak mantap'])
         required_surftype = ['paved', 'unpaved']
 
-        # Create the Column for Missing Grade in Every Surface Type.
-        surftype_set = set(x for x in pivot_grade.columns.get_level_values(0))  # All the list of surface type
-        missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
+        pivot_grade = self._complete_surftype(pivot_grade, required_grades, required_surftype)
+        pivot_mantap = self._complete_surftype(pivot_mantap, required_mantap, required_surftype)
 
+        pivot_grade = self._percentage(pivot_grade, required_grades, required_surftype)
+        pivot_mantap = self._percentage(pivot_mantap, required_mantap, required_surftype)
+        pivot_join = pivot_grade.join(pivot_mantap)
+
+        if flatten:
+            # Flatten the Multi Level Columns
+            new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_grade.columns.values])
+            pivot_grade.columns = new_column
+
+        return pivot_join
+
+    @staticmethod
+    def _complete_surftype(pivot_table, required_grades, required_surftype):
+        # Create the Column for Missing Grade in Every Surface Type.
+        surftype_set = set(x for x in pivot_table.columns.get_level_values(0))  # All the list of surface type
+        missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
         # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
         if len(missing_surftype) != 0:
             for surface in missing_surftype:
                 for grade in required_grades:
-                    pivot_grade[(surface, grade)] = pd.Series(0, index=pivot_grade.index)  # Contain 0 value
+                    pivot_table[(surface, grade)] = pd.Series(0, index=pivot_table.index)  # Contain 0 value
 
+        return pivot_table
+
+    @staticmethod
+    def _percentage(pivot_table, required_grades, required_surftype):
         for surface in required_surftype:
             # The existing surface grade in a surface type.
-            surface_grades = np.array(pivot_grade[surface].columns.tolist())
+            surface_grades = np.array(pivot_table[surface].columns.tolist())
 
             # Check for missing grade.
             missing_grade = np.setdiff1d(required_grades, surface_grades)
             for grade in missing_grade:  # Iterate over all missing grade
-                pivot_grade[surface, grade] = pd.Series(0, index=pivot_grade.index)  # Add the missing grade column
+                pivot_table[surface, grade] = pd.Series(0, index=pivot_table.index)  # Add the missing grade column
 
-            surface_df = pivot_grade.loc[:, [surface]]  # Create the DataFrame for a single surface
-            grade_percent = surface_df.div(surface_df.sum(axis=1), axis=0)*100
+            surface_df = pivot_table.loc[:, [surface]]  # Create the DataFrame for a single surface
+            grade_percent = surface_df.div(surface_df.sum(axis=1), axis=0) * 100
             surface_grades = np.array(grade_percent[surface].columns.values)
-            percent_col = pd.Index([x+'_p' for x in surface_grades])  # Create the percentage column. suffix '_p'
+            percent_col = pd.Index([x + '_p' for x in surface_grades])  # Create the percentage column. suffix '_p'
             grade_percent.columns = percent_col
             grade_percent.fillna(0, inplace=True)  # Fill the NA value with zero
 
@@ -76,14 +96,9 @@ class Kemantapan(object):
             upper_col[surface] = grade_percent
             grade_percent = pd.concat(upper_col, axis=1)
 
-            pivot_grade = pivot_grade.join(grade_percent, how='inner')
+            pivot_table = pivot_table.join(grade_percent, how='inner')
 
-        if flatten:
-            # Flatten the Multi Level Columns
-            new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_grade.columns.values])
-            pivot_grade.columns = new_column
-
-        return pivot_grade
+        return pivot_table
 
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
         """
