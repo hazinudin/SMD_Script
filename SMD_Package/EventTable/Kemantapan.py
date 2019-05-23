@@ -37,6 +37,7 @@ class Kemantapan(object):
         """
         Create a summary DataFrame which contain the length for every road grade and the percentage for every road grade
         in a single route. The column with '_p' suffix contain the length percentage.
+        :param flatten: If true then the returned DataFrame does not use any multi index column.
         :return:
         """
         # Create the pivot table
@@ -63,9 +64,24 @@ class Kemantapan(object):
 
     @staticmethod
     def _complete_surftype(pivot_table, required_grades, required_surftype):
+        """
+        This static method is used to complete the required surface type and grade columns in every surface type upper
+        index column. Example:
+
+                    input                                         output
+
+        paved                       ||  paved                       | unpaved
+        baik  sedang  rusak ringan  ||  baik  sedang  rusak ringan  | baik  sedang  rusak ringan  rusak berat
+
+        :param pivot_table:  The input pivot table.
+        :param required_grades:  The required grades. Example ['baik', 'sedang', ...] or ['mantap', 'tidak mantap'].
+        :param required_surftype:  The requierd surface type. Example ['paved', 'unpaved'].
+        :return: Modified pivot table
+        """
         # Create the Column for Missing Grade in Every Surface Type.
         surftype_set = set(x for x in pivot_table.columns.get_level_values(0))  # All the list of surface type
         missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
+
         # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
         if len(missing_surftype) != 0:
             for surface in missing_surftype:
@@ -75,7 +91,18 @@ class Kemantapan(object):
         return pivot_table
 
     @staticmethod
-    def _percentage(pivot_table, required_grades, required_surftype):
+    def _percentage(pivot_table, required_grades, required_surftype, suffix='_p'):
+        """
+        This static method will add a percentage column for every required grades in the pivot table. The newly added
+        column will have an suffix determined by a parameter.
+        If the pivot table have a missing grade, then a new column will be added which contain 0 value.
+        :param pivot_table: The input pivot table.
+        :param required_grades: The required grades.
+        :param required_surftype: The required surface type.
+        :param suffix: The percentage column name suffix.
+        :return: Modified pivot table
+        """
+        # Iterate over all required surface type
         for surface in required_surftype:
             # The existing surface grade in a surface type.
             surface_grades = np.array(pivot_table[surface].columns.tolist())
@@ -88,7 +115,7 @@ class Kemantapan(object):
             surface_df = pivot_table.loc[:, [surface]]  # Create the DataFrame for a single surface
             grade_percent = surface_df.div(surface_df.sum(axis=1), axis=0) * 100
             surface_grades = np.array(grade_percent[surface].columns.values)
-            percent_col = pd.Index([x + '_p' for x in surface_grades])  # Create the percentage column. suffix '_p'
+            percent_col = pd.Index([(x + suffix) for x in surface_grades])  # Create the percentage column. suffix '_p'
             grade_percent.columns = percent_col
             grade_percent.fillna(0, inplace=True)  # Fill the NA value with zero
 
@@ -96,6 +123,7 @@ class Kemantapan(object):
             upper_col[surface] = grade_percent
             grade_percent = pd.concat(upper_col, axis=1)
 
+            # Join the pivot table with the percent table
             pivot_table = pivot_table.join(grade_percent, how='inner')
 
         return pivot_table
