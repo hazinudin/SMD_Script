@@ -1046,12 +1046,14 @@ class EventValidation(object):
             # Current year Kemantapan
             kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col,
                                     rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
-            kemantapan_current = kemantapan.mantap_percent.at['mantap', '_len']
             kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
-                                                       comp_to_col, route, self.sde_connection).at['mantap', '_len']
+                                                       comp_to_col, route, self.sde_connection)
+
+            mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
+            mantap_compare = kemantapan_compare.at['mantap', '_len']
 
             # Compare the kemantapan percentage between current data and previous data
-            if np.isclose(kemantapan_compare, kemantapan_current, atol=(kemantapan_compare*threshold)):
+            if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
                 pass  # If true then pass
             else:
                 # Create the error message
