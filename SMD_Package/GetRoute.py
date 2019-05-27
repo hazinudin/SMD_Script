@@ -56,6 +56,7 @@ class GetRoutes(object):
         This funtion create the JSON string to be used as the output of the script
         """
         results_list = []
+
         for kode_balai in self.balai_route_dict:
             route_dict = self.balai_route_dict[kode_balai]
             df = DataFrame.from_dict(route_dict)
@@ -63,15 +64,13 @@ class GetRoutes(object):
                 route_list = df['route_id'].tolist()
                 result_object = {"code": str(kode_balai), "routes": route_list}
                 results_list.append(result_object)
-                string_json_output = self.results_output("Succeeded", self.query_type, results_list)
             else:
                 df_route_id = df.set_index('route_id')
                 detailed_dict = df_route_id.T.to_dict()
                 result_object = {"code": str(kode_balai), "routes": detailed_dict}
                 results_list.append(result_object)
-                string_json_output = self.results_output("Succeeded", self.query_type, results_list)
 
-        return string_json_output
+        return self.results_output("Succeeded", self.query_type, results_list)
 
     def route_list(self, req_balai='ALL'):
         """
