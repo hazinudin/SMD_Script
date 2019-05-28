@@ -17,6 +17,7 @@ class GetRoutes(object):
                 query_value = [str(x) for x in query_value]
 
         self.string_json_output = None
+        self.query_value = query_value
 
         prov_balai_dict = {}  # Create a "prov": "kode_balai" dictionary
         balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
