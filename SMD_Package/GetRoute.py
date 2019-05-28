@@ -51,6 +51,7 @@ class GetRoutes(object):
                     balai_route_dict[kode_balai] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
 
         self.balai_route_dict = balai_route_dict
+        self.prov_balai_dict = prov_balai_dict
 
     def create_json_output(self, detailed=False):
         """
