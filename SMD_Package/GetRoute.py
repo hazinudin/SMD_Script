@@ -11,7 +11,7 @@ class GetRoutes(object):
         if query_value == "ALL":  # If the query value is 'ALL'
             pass
         else:
-            if type(query_value) == unicode:
+            if type(query_value) == unicode or type(query_value) == str:
                 query_value = [str(query_value)]
             elif type(query_value) == list:
                 query_value = [str(x) for x in query_value]
@@ -58,17 +58,22 @@ class GetRoutes(object):
         """
         results_list = []
 
-        for kode_balai in self.balai_route_dict:
-            route_dict = self.balai_route_dict[kode_balai]
-            df = DataFrame.from_dict(route_dict)
-            if not detailed:
-                route_list = df['route_id'].tolist()
-                result_object = {"code": str(kode_balai), "routes": route_list}
-                results_list.append(result_object)
+        for kode_balai in self.query_value:
+            if kode_balai in self.balai_route_dict:
+                route_dict = self.balai_route_dict[kode_balai]
+                df = DataFrame.from_dict(route_dict)
+                if not detailed:
+                    route_list = df['route_id'].tolist()
+                    result_object = {"code": str(kode_balai), "routes": route_list}
+                    results_list.append(result_object)
+                else:
+                    df_route_id = df.set_index('route_id')
+                    detailed_dict = df_route_id.T.to_dict()
+                    result_object = {"code": str(kode_balai), "routes": detailed_dict}
+                    results_list.append(result_object)
             else:
-                df_route_id = df.set_index('route_id')
-                detailed_dict = df_route_id.T.to_dict()
-                result_object = {"code": str(kode_balai), "routes": detailed_dict}
+                result_object = {"code": str(kode_balai), "routes": "kode {0} {1} tidak valid".
+                                 format(self.query_type, kode_balai)}
                 results_list.append(result_object)
 
         return self.results_output("Succeeded", self.query_type, results_list)
