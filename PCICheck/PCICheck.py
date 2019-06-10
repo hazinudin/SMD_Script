@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -21,6 +21,11 @@ LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 
 BalaiTable = smd_config['table_names']['balai_table']
 dbConnection = smd_config['smd_database']['instance']
+
+RNIEventTable = smd_config['table_names']['rni']
+RNIRouteID = smd_config['table_fields']['rni']['route_id']
+RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
+RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -43,10 +48,11 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
+InputDF = read_input_excel(TablePath)
+EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True, lane_code='LANE_CODE')
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True)
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
@@ -54,10 +60,10 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check(lane_code='LANE_CODE')
-    EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
-    EventCheck.measurement_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
-    EventCheck.coordinate_check(routes=valid_routes, at_start=False, lane_code='LANE_CODE')  # Check the input coordinate
+    EventCheck.range_domain_check()
+    EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
+    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)  # Check the from-to measurement
+    EventCheck.coordinate_check(routes=valid_routes, at_start=False)  # Check the input coordinate
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     failed_routes = EventCheck.route_results.keys()

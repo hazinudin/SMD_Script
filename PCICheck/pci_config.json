@@ -6,7 +6,7 @@
     "STA_TO":{"dtype":"integer"},
     "LENGTH":{"dtype":"double"},
     "DIRECTION":{"dtype":"string", "domain":["O", "N"]},
-    "LANE_CODE":{"dtype":"string"},
+    "CODE_LANE":{"dtype":"string"},
     "AS_CRACK_ALG":{"dtype":"double"},
     "AS_CRACK_EDGE":{"dtype":"double"},
     "AS_CRACK_LONG":{"dtype":"double"},
