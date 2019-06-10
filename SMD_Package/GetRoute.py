@@ -22,7 +22,7 @@ class GetRoutes(object):
         prov_balai_dict = {}  # Create a "prov": "kode_balai" dictionary
         balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
 
-        self.balai_route_dict = {}  # Create a "prov": [list of route_id] dictionary
+        self.code_route_dict = {}  # Create a "prov": [list of route_id] dictionary
         self.query_type = query_type
 
         # If the query type is based on province code and not all province are requested
@@ -42,15 +42,18 @@ class GetRoutes(object):
 
         # Start iterating over the requested province
         for prov_code in prov_balai_dict:
-            kode_balai = prov_balai_dict[prov_code]
+            if query_type == 'balai':
+                codes = prov_balai_dict[prov_code]
+            if query_type == 'no_prov':
+                codes = prov_code
             with da.SearchCursor(lrs_network, [lrs_routeid, lrs_route_name, lrs_lintas],
                                  where_clause='{0}=({1})'.format(lrs_prov_code, prov_code)) as search_cursor:
-                if kode_balai not in balai_route_dict:
-                    balai_route_dict[kode_balai] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                if codes not in balai_route_dict:
+                    balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
                 else:
-                    balai_route_dict[kode_balai] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                    balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
 
-        self.balai_route_dict = balai_route_dict
+        self.code_route_dict = balai_route_dict
         self.prov_balai_dict = prov_balai_dict
 
     def create_json_output(self, detailed=False):
@@ -59,22 +62,22 @@ class GetRoutes(object):
         """
         results_list = []
 
-        for kode_balai in self.query_value:
-            if kode_balai in self.balai_route_dict:
-                route_dict = self.balai_route_dict[kode_balai]
+        for code in self.query_value:
+            if code in self.code_route_dict:
+                route_dict = self.code_route_dict[code]
                 df = DataFrame.from_dict(route_dict)
                 if not detailed:
                     route_list = df['route_id'].tolist()
-                    result_object = {"code": str(kode_balai), "routes": route_list}
+                    result_object = {"code": str(code), "routes": route_list}
                     results_list.append(result_object)
                 else:
                     df_route_id = df.set_index('route_id')
                     detailed_dict = df_route_id.T.to_dict()
-                    result_object = {"code": str(kode_balai), "routes": detailed_dict}
+                    result_object = {"code": str(code), "routes": detailed_dict}
                     results_list.append(result_object)
             else:
-                result_object = {"code": str(kode_balai), "routes": "kode {0} {1} tidak valid".
-                                 format(self.query_type, kode_balai)}
+                result_object = {"code": str(code), "routes": "kode {0} {1} tidak valid".
+                                 format(self.query_type, code)}
                 results_list.append(result_object)
 
         return self.results_output("Succeeded", self.query_type, results_list)
@@ -91,14 +94,14 @@ class GetRoutes(object):
         """
         route_list = []
         if req_balai == 'ALL':
-            for balai in self.balai_route_dict:
-                df = DataFrame.from_dict(self.balai_route_dict[balai])
+            for balai in self.code_route_dict:
+                df = DataFrame.from_dict(self.code_route_dict[balai])
                 routes = df['route_id'].tolist()
                 route_list += routes
         else:
             for code in req_balai:
-                if code in self.balai_route_dict.keys():
-                    df = DataFrame.from_dict(self.balai_route_dict[code])
+                if code in self.code_route_dict.keys():
+                    df = DataFrame.from_dict(self.code_route_dict[code])
                     routes = df['route_id'].tolist()
                     route_list += routes
                 else:
