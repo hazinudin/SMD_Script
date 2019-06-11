@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
+from SMD_Package.GetRoute import GetRoutes
 from Kemantapan import Kemantapan
 from RNITable import RNIRouteDetails
 
@@ -689,6 +690,34 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', error_message)
 
         return self
+
+    def rni_availability(self, rni_table, routes='ALL', routeid_col='LINKID', rni_route_col='LINKID'):
+        """
+        This class method will check the route availability in the RNI Event Table.
+        :param routes: The route selection to be processed.
+        :param routeid_col: The RouteID column of the input table.
+        :param rni_route_col: The RNI Table RouteID column.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create a valid DataFrame copy
+
+        # If there is a route selection request
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        input_routes = df[routeid_col]  # The routes in the input table in np.array format
+        rni_df = event_fc_to_df(rni_table, rni_route_col, input_routes.tolist(), rni_route_col, self.sde_connection,
+                                is_table=True, orderby=None)  # The input routes in RNI Table DF in np.array format
+        rni_routes = np.array(rni_df[rni_route_col].tolist())  # The available routes in the RNI Table in np.array
+        missing_route = np.setdiff1d(input_routes, rni_routes)  # The unavailable route in the RNI Table
+
+        for route in self.missing_route:
+            message = "Rute {0} belum memiliki data RNI.".format(route)  # Create an error message
+            self.insert_route_message(route, 'error', message)  # Insert the error message
+
+        return missing_route.tolist()
 
     def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_codes='LANE_CODE',
                            median_col='MEDWIDTH', road_type_col='ROAD_TYPE'):
