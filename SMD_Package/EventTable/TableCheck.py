@@ -710,7 +710,7 @@ class EventValidation(object):
         input_routes = df[routeid_col]  # The routes in the input table in np.array format
         rni_df = event_fc_to_df(rni_table, rni_route_col, input_routes.tolist(), rni_route_col, self.sde_connection,
                                 is_table=True, orderby=None)  # The input routes in RNI Table DF in np.array format
-        rni_routes = np.array(rni_df[rni_route_col].tolist())  # The available routes in the RNI Table in np.array
+        rni_routes = np.array(rni_df[rni_route_col])  # The available routes in the RNI Table in np.array
         missing_route = np.setdiff1d(input_routes, rni_routes)  # The unavailable route in the RNI Table
 
         for route in self.missing_route:
