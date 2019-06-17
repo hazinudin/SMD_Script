@@ -5,7 +5,7 @@ from pandas import DataFrame
 
 class GetRoutes(object):
     def __init__(self, query_type, query_value, lrs_network, balai_table, lrs_routeid='ROUTEID', lrs_prov_code='NOPROP',
-                 lrs_route_name='ROUTE_NAME', lrs_lintas='FRCITY', balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
+                 lrs_route_name='ROUTE_NAME', lrs_lintas='ID_LINTAS', balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
 
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
