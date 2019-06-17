@@ -128,6 +128,35 @@ class Kemantapan(object):
 
         return pivot_table
 
+    @staticmethod
+    def _percentage_singlecol(pivot_table, required_grades, suffix='_p'):
+        """
+        This static method will add a percentage column for every required grades in the pivot table. The newly added
+        column will have an suffix determined by a parameter.
+        If the pivot table have a missing grade, then a new column will be added which contain 0 value.
+        :param pivot_table: The input pivot table.
+        :param required_grades: The required grades.
+        :param suffix: The percentage column name suffix.
+        :return: Modified pivot table.
+        """
+
+        grades = np.array(pivot_table.columns.tolist())
+
+        # Check for missing grade.
+        missing_grade = np.setdiff1d(required_grades, grades)
+        for grade in missing_grade:  # Iterate over all missing grade
+            pivot_table[grade] = pd.Series(0, index=pivot_table.index)  # Add the missing grade column
+
+        grade_percent = pivot_table.div(pivot_table.sum(axis=1), axis=0) * 100
+        grades = np.array(pivot_table.columns.values)
+        percent_col = pd.Index([(x + suffix) for x in grades])  # Create the percentage column. suffix '_p'
+        grade_percent.columns = percent_col
+        grade_percent.fillna(0, inplace=True)  # Fill the NA value with zero
+
+        pivot_table = pivot_table.join(grade_percent, how='inner')
+
+        return pivot_table
+
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
         """
         Compare the Kemantapan percentage from the event table and the compare table.
