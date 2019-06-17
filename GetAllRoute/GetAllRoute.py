@@ -8,7 +8,7 @@ import json
 import os
 import sys
 sys.path.append('E:\SMD_Script')
-from SMD_Package import GetRoutes, output_message, input_json_check
+from SMD_Package import GetRoutes, output_message, input_json_check, verify_balai
 
 
 # Change the directory to the SMD Script root folder
@@ -55,6 +55,18 @@ for table in [balaiTable, lrsNetwork]:
         message = "{0} does not exist".format(table)
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)
+
+# Check if all request code are valid
+if queryType == 'no_prov':
+    code_field = balaiTableProvCode
+if queryType == 'balai':
+    code_field = balaiTableBalaiCode
+
+code_check_result = verify_balai(queryValue, balaiTable, code_field, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
 
 # Creating the route query request object
 route_query = GetRoutes(queryType, queryValue, lrsNetwork, balaiTable, lrs_routeid=lrs_RID,
