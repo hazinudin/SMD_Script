@@ -105,7 +105,7 @@ class DictionaryToFeatureClass(object):
         self.csv_output = None
         self.zip_output = None
 
-    def create_segment_polyline(self, feature_class_name):
+    def create_segment_polyline(self, feature_class_name, return_segment=True):
         """
         This function gets all the shape from every segments from the LRS network feature class, then write it to a
         output shapefile.
@@ -115,16 +115,28 @@ class DictionaryToFeatureClass(object):
         CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
                                       spatial_reference=self.spatial_reference)
 
-        # Define field names and types for the new shapefile
-        field_name_and_type = {
-            'LINKID': 'TEXT',
-            'STA_FROM': 'DOUBLE',
-            'STA_TO': 'DOUBLE',
-            'LANE_CODES': 'TEXT'
-        }
+        if return_segment:  # The segmented Polyline ShapeFile
+            # Define field names and types for the new shapefile
+            field_name_and_type = {
+                'LINKID': 'TEXT',
+                'STA_FROM': 'DOUBLE',
+                'STA_TO': 'DOUBLE',
+                'LANE_CODES': 'TEXT'
+            }
 
-        # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODES']
+            # Insert cursor field
+            insert_field = ['SHAPE@', 'LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODES']
+
+        else:  # The whole route Polyline ShapeFile
+            # Define field names and types for the new shapefile
+            field_name_and_type = {
+                'LINKID': 'TEXT',
+                'ROUTE_NAME': 'TEXT',
+                'LINTAS': 'TEXT'
+            }
+
+            # Insert cursor field
+            insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'LINTAS']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
@@ -135,6 +147,7 @@ class DictionaryToFeatureClass(object):
         insert_cursor = da.InsertCursor("{0}\{1}".format(self.outpath, shapefile_name), insert_field)
 
         polyline_feature_count = 0  # Count inserted polyline feature
+        route_list = []
 
         # Iterate over available segment group
         for segment in self.segment_dict:
@@ -142,25 +155,46 @@ class DictionaryToFeatureClass(object):
             lane_codes = segment[1].strip('[]').replace('u', '')
 
             # Iterate over the LRS network feature class to get the route shape geometry
-            with da.SearchCursor(self.lrs_network, 'SHAPE@',
+            with da.SearchCursor(self.lrs_network, ['SHAPE@', 'ROUTE_NAME', 'ID_LINTAS'],
                                  where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))as search_cursor:
-                for search_row in search_cursor:
 
-                    # Get the segment geometry based on the segment from measure and to measure
-                    for segment_measurement in self.segment_dict[segment]:
-                        from_m_km = segment_measurement[0]  # From measure in kilometers
-                        to_m_km = segment_measurement[1]  # To measure in kilometers
+                if return_segment:  # If the request is to create a segment ShapeFile
+                    for search_row in search_cursor:
+                        # The whole route geometry
+                        route_geom = search_row[0]
 
-                        from_m_meter = segment_measurement[0]*1000  # From measure in meters
-                        to_m_meter = segment_measurement[1]*1000  # To measure in meters
+                        # Get the segment geometry based on the segment from measure and to measure
+                        for segment_measurement in self.segment_dict[segment]:
+                            from_m_km = segment_measurement[0]  # From measure in kilometers
+                            to_m_km = segment_measurement[1]  # To measure in kilometers
 
-                        # Geometry object of the segment
-                        segment_geom_obj = search_row[0].segmentAlongLine(from_m_meter, to_m_meter)
+                            from_m_meter = segment_measurement[0]*1000  # From measure in meters
+                            to_m_meter = segment_measurement[1]*1000  # To measure in meters
 
-                        # Start inserting new row to the shapefile
-                        new_row = [segment_geom_obj, route_id, from_m_km, to_m_km, lane_codes]
-                        insert_cursor.insertRow(new_row)
-                        polyline_feature_count += 1
+                            # Geometry object of the segment
+                            segment_geom_obj = route_geom.segmentAlongLine(from_m_meter, to_m_meter)
+
+                            # Start inserting new row to the ShapeFile
+                            new_row = [segment_geom_obj, route_id, from_m_km, to_m_km, lane_codes]
+                            insert_cursor.insertRow(new_row)
+                            polyline_feature_count += 1
+
+                else:  # If the request is to create a whole route ShapeFile
+                    for search_row in search_cursor:
+
+                        # Check if the route already being written to ShapeFile.
+                        if route_id in route_list:
+                            pass
+                        else:  # If the route has not been written to ShapeFile.
+                            route_list.append(route_id)  # Append the route id
+                            route_geom = search_row[0]  # The whole route geometry
+                            route_name = search_row[1]
+                            route_lintas = search_row[2]
+
+                            # Creating new row object to be inserted to the ShapeFile
+                            new_row = [route_geom, route_id, route_name, route_lintas]
+                            insert_cursor.insertRow(new_row)
+                            polyline_feature_count += 1
 
         # Check if there is route with missing data
         if self.missing_route is not None:
@@ -365,7 +399,7 @@ if ConnectionCheck.all_connected:
             req_codes = str(input_details["codes"])
 
         current_year = datetime.now().year
-        RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year))  # Create the polyline shapefile
+        RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year), return_segment=False)  # Create the polyline shapefile
         RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
         RouteGeometries.create_rni_csv(RNI_df_rename)  # Create the RNI DataFrame
 
