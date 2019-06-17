@@ -24,6 +24,8 @@ class Kemantapan(object):
         self.rni_from_col = rni_from_col
         self.rni_to_col = rni_to_col
         self.surftype_col = surftype_col
+        self.grading_col = grading_col
+        self.route_col = route_col
 
         self.group_details = group_details
 
@@ -65,6 +67,9 @@ class Kemantapan(object):
             pivot_join.columns = new_column
             pivot_join = pivot_join.join(pivot_grade_all)  # Summary of all surface group
             pivot_join = pivot_join.join(pivot_mantap_all)  # Summary of all surface group
+
+            avg_grade = self.graded_df.groupby(by=[self.route_col])[self.grading_col].mean()
+            pivot_join = pivot_join.join(avg_grade)
 
         return pivot_join
 
