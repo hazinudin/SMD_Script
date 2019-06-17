@@ -291,9 +291,11 @@ class DictionaryToFeatureClass(object):
         result_format = {"requested_routes":route_list, "polyline_fc":polyline feature class name,
         "polyline_count":count, "point_fc":point feature class name, "point_count":count}
         """
-        result = {"requested_routes": self.route_list, "polyline_fc": self.polyline_fc_name,
-                  "polyline_count": self.polyline_count, "point_fc": self.point_fc_name,
-                  "point_count": self.point_feature_count}
+        result = {
+            "requested_routes": self.route_list,
+            "polyline_fc": self.polyline_fc_name,
+            "point_fc": self.point_fc_name
+        }
 
         if self.polyline_count == 0 or self.point_feature_count == 0:
             output_json_string = output_message("Empty output", result)
