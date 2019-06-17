@@ -43,6 +43,8 @@ class Kemantapan(object):
         # Create the pivot table
         pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'])
         pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'])
+        pivot_mantap_all = self.create_pivot(columns=['_kemantapan'])
+        pivot_grade_all = self.create_pivot(columns=['_grade'])
 
         required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
         required_mantap = np.array(['mantap', 'tidak mantap'])
@@ -53,12 +55,16 @@ class Kemantapan(object):
 
         pivot_grade = self._percentage(pivot_grade, required_grades, required_surftype)
         pivot_mantap = self._percentage(pivot_mantap, required_mantap, required_surftype)
+        pivot_grade_all = self._percentage_singlecol(pivot_grade_all, required_grades)
+        pivot_mantap_all = self._percentage_singlecol(pivot_mantap_all, required_mantap)
         pivot_join = pivot_grade.join(pivot_mantap)
 
         if flatten:
             # Flatten the Multi Level Columns
             new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_join.columns.values])
             pivot_join.columns = new_column
+            pivot_join = pivot_join.join(pivot_grade_all)  # Summary of all surface group
+            pivot_join = pivot_join.join(pivot_mantap_all)  # Summary of all surface group
 
         return pivot_join
 
