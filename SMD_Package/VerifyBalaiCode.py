@@ -3,7 +3,7 @@ from pandas import DataFrame
 import numpy as np
 
 
-def verify_balai(input_code, balai_table, balai_col, environment):
+def verify_balai(input_code, balai_table, balai_col, environment, return_false=True):
     env.workspace = environment  # Setting up the GDB environment
 
     if type(input_code) != list:  # Check if they input value is in list type
@@ -15,6 +15,11 @@ def verify_balai(input_code, balai_table, balai_col, environment):
     balai_series = DataFrame(ar)[balai_col]  # Create a list from
 
     # Check if all the request is in the balai code domain
-    result = np.any(np.in1d(input, balai_series))
+    mask = np.in1d(input, balai_series)
+
+    if return_false:
+        result = input[np.invert(mask)].tolist()
+    else:
+        result = input[mask].tolist()
 
     return result
