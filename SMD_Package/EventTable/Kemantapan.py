@@ -63,11 +63,14 @@ class Kemantapan(object):
         pivot_grade_all_s = self._add_suffix(pivot_grade_all, '_km', levels=0)
         pivot_mantap_all_s = self._add_suffix(pivot_mantap_all, '_km', levels=0)
 
-        # pivot_grade_p = self._percentage(pivot_grade, required_grades, required_surftype, modify_input=False)
-        # pivot_mantap_p = self._percentage(pivot_mantap, required_mantap, required_surftype, modify_input=False)
+        pivot_grade_p = self._percentage(pivot_grade, required_surftype, modify_input=False)
+        pivot_mantap_p = self._percentage(pivot_mantap, required_surftype, modify_input=False)
         pivot_grade_all_p = self._percentage_singlecol(pivot_grade_all, modify_input=False)
         pivot_mantap_all_p = self._percentage_singlecol(pivot_mantap_all, modify_input=False)
+
         pivot_join = pivot_grade_s.join(pivot_mantap_s)
+        pivot_join = pivot_join.join(pivot_grade_p)
+        pivot_join = pivot_join.join(pivot_mantap_p)
 
         if flatten:
             # Flatten the Multi Level Columns
@@ -76,6 +79,7 @@ class Kemantapan(object):
 
             pivot_join = pivot_join.join(pivot_grade_all_p)
             pivot_join = pivot_join.join(pivot_mantap_all_p)
+
             pivot_join = pivot_join.join(pivot_grade_all_s)  # Summary of all surface group
             pivot_join = pivot_join.join(pivot_mantap_all_s)  # Summary of all surface group
 
@@ -158,7 +162,7 @@ class Kemantapan(object):
         return pivot_table
 
     @staticmethod
-    def _percentage(pivot_table, required_grades, required_surftype, suffix='_psn', modify_input=False):
+    def _percentage(pivot_table, required_surftype, suffix='_psn', modify_input=False):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -170,14 +174,8 @@ class Kemantapan(object):
         :return: Modified pivot table
         """
         # Iterate over all required surface type
+        result = None  # Variable for compiling the result
         for surface in required_surftype:
-            # The existing surface grade in a surface type.
-            surface_grades = np.array(pivot_table[surface].columns.tolist())
-
-            # Check for missing grade.
-            missing_grade = np.setdiff1d(required_grades, surface_grades)
-            for grade in missing_grade:  # Iterate over all missing grade
-                pivot_table[surface, grade] = pd.Series(0, index=pivot_table.index)  # Add the missing grade column
 
             surface_df = pivot_table.loc[:, [surface]]  # Create the DataFrame for a single surface
             grade_percent = surface_df.div(surface_df.sum(axis=1), axis=0) * 100
@@ -192,10 +190,14 @@ class Kemantapan(object):
 
             if modify_input:
                 # Join the pivot table with the percent table
-                pivot_table = pivot_table.join(grade_percent, how='inner')
-                return pivot_table  # Return the modified pivot table.
+                result = pivot_table.join(grade_percent, how='inner')
             else:
-                return grade_percent  # Return the percent DataFrame without modifying the input pivot table.
+                if result is None:
+                    result = grade_percent  # Initalize the result variable
+                else:
+                    result = result.join(grade_percent, how='inner')  # Join the result
+
+        return result  # Return the percent DataFrame without modifying the input pivot table.
 
     @staticmethod
     def _percentage_singlecol(pivot_table, suffix='_psn', modify_input=False):
