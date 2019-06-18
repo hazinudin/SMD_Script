@@ -3,19 +3,19 @@
   {
     "group":[1,2],
     "range":[10,12,16],
-    "category":"unpaved"
+    "category":"up"
   },
   "penmac":
   {
     "group":[3,6,7],
     "range":[8,10,12],
-    "category":"paved"
+    "category":"p"
   },
   "asphal":
   {
     "group":[4,5,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
     "range":[4,8,12],
-    "category":"paved"
+    "category":"p"
   }
 
 }

@@ -48,9 +48,9 @@ class Kemantapan(object):
         pivot_mantap_all = self.create_pivot(columns=['_kemantapan'])
         pivot_grade_all = self.create_pivot(columns=['_grade'])
 
-        required_grades = np.array(['baik', 'sedang', 'rusak ringan', 'rusak berat'])
-        required_mantap = np.array(['mantap', 'tidak mantap'])
-        required_surftype = ['paved', 'unpaved']
+        required_grades = np.array(['good', 'fair', 'poor', 'bad'])
+        required_mantap = np.array(['mantap', 'tdk_mantap'])
+        required_surftype = ['p', 'up']
 
         pivot_grade = self._complete_surftype(pivot_grade, required_grades, required_surftype)
         pivot_mantap = self._complete_surftype(pivot_mantap, required_mantap, required_surftype)
@@ -102,7 +102,7 @@ class Kemantapan(object):
         return pivot_table
 
     @staticmethod
-    def _percentage(pivot_table, required_grades, required_surftype, suffix='_p'):
+    def _percentage(pivot_table, required_grades, required_surftype, suffix='_psn'):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -140,7 +140,7 @@ class Kemantapan(object):
         return pivot_table
 
     @staticmethod
-    def _percentage_singlecol(pivot_table, required_grades, suffix='_p'):
+    def _percentage_singlecol(pivot_table, required_grades, suffix='_psn'):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -272,13 +272,13 @@ class Kemantapan(object):
 
             # Start the grading process
             if row[grading_col] <= lower_bound:
-                grade = 'baik'
+                grade = 'good'
             if (row[grading_col] > lower_bound) & (row[grading_col] <= mid):
-                grade = 'sedang'
+                grade = 'fair'
             if (row[grading_col] > mid) & (row[grading_col] <= upper_bound):
-                grade = 'rusak ringan'
+                grade = 'poor'
             if row[grading_col] > upper_bound:
-                grade = 'rusak berat'
+                grade = 'bad'
 
             df_merge.loc[index, grading_result] = grade
 
@@ -295,8 +295,8 @@ class Kemantapan(object):
         :return: DataFrame with '_kemantapan' column.
         """
         df_graded.loc[:, '_len'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
-        df_graded.loc[df_graded[grade_result_col].isin(['baik', 'sedang']), kemantapan_col] = 'mantap'
-        df_graded.loc[df_graded[grade_result_col].isin(['rusak ringan', 'rusak berat']), kemantapan_col] = 'tidak mantap'
+        df_graded.loc[df_graded[grade_result_col].isin(['good', 'fair']), kemantapan_col] = 'mantap'
+        df_graded.loc[df_graded[grade_result_col].isin(['poor', 'bad']), kemantapan_col] = 'tdk_mantap'
 
         kemantapan_len = df_graded.groupby(by=[route_col, kemantapan_col]).agg({'_len': 'sum'})
         kemantapan_prcnt = kemantapan_len.groupby(level=0).apply(lambda x: 100*x/float(x.sum())).reset_index()
