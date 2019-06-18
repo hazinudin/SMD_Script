@@ -8,3 +8,4 @@ from GDBTableWriter import gdb_table_writer
 import GenerateToken
 from InspectJSON import input_json_check
 from VerifyBalaiCode import verify_balai
+from EventTable.Kemantapan import *
