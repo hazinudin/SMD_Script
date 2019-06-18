@@ -65,11 +65,13 @@ class Kemantapan(object):
         pivot_grade_all_s = self._add_suffix(pivot_grade_all, '_km', levels=0)
         pivot_mantap_all_s = self._add_suffix(pivot_mantap_all, '_km', levels=0)
 
+        # Create all the percentage DataFrame
         pivot_grade_p = self._percentage(pivot_grade, required_surftype, modify_input=False)
         pivot_mantap_p = self._percentage(pivot_mantap, required_surftype, modify_input=False)
         pivot_grade_all_p = self._percentage_singlecol(pivot_grade_all, modify_input=False)
         pivot_mantap_all_p = self._percentage_singlecol(pivot_mantap_all, modify_input=False)
 
+        # Join the multilevel column DataFrame first
         pivot_join = pivot_grade_s.join(pivot_mantap_s)
         pivot_join = pivot_join.join(pivot_grade_p)
         pivot_join = pivot_join.join(pivot_mantap_p)
@@ -79,11 +81,11 @@ class Kemantapan(object):
             new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_join.columns.values])
             pivot_join.columns = new_column
 
-            pivot_join = pivot_join.join(pivot_grade_all_p)
-            pivot_join = pivot_join.join(pivot_mantap_all_p)
-
-            pivot_join = pivot_join.join(pivot_grade_all_s)  # Summary of all surface group
-            pivot_join = pivot_join.join(pivot_mantap_all_s)  # Summary of all surface group
+            # Join all the single level column DataFrame.
+            pivot_join = pivot_join.join(pivot_grade_all_s)
+            pivot_join = pivot_join.join(pivot_mantap_all_s)
+            pivot_join = pivot_join.join(pivot_grade_all_p)  # Summary of all surface group
+            pivot_join = pivot_join.join(pivot_mantap_all_p)  # Summary of all surface group
 
             # The grade average for all route
             avg_grade = self.graded_df.groupby(by=[self.route_col])[self.grading_col].mean()
@@ -102,17 +104,18 @@ class Kemantapan(object):
         :return: Modified pivot table.
         """
 
-        if levels == 0:
+        if levels == 0:  # For single level pivot table
             cols = np.array(pivot_table.columns.get_level_values(levels))
             result = pivot_table.rename(columns={x: (x + suffix) for x in cols})
             return result
-        else:
-            compiled = None
+        else:  # For multilevel pivot table
+            compiled = None  # For compiling the result
+            # Iterate over all upper column
             for upper_col in pivot_table.columns.get_level_values(levels-1).unique():
-                lower = pivot_table[upper_col]
-                cols = np.array(lower.columns.values)
-                cols_w_suffix = pd.Index([(x + suffix) for x in cols])
-                lower.columns = cols_w_suffix
+                lower = pivot_table[upper_col]  # The lower DataFrame
+                cols = np.array(lower.columns.values)  # The columns in the lower DataFrame
+                cols_w_suffix = pd.Index([(x + suffix) for x in cols])  # Create the column with the suffix
+                lower.columns = cols_w_suffix  # Assign the columns with the suffix
 
                 upper = dict()
                 upper[upper_col] = lower
