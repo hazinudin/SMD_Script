@@ -76,6 +76,21 @@ class Kemantapan(object):
         return pivot_join
 
     @staticmethod
+    def _add_suffix(pivot_table, suffix, levels=1):
+        """
+        This static method will add suffix to a pivot table.
+        :param pivot_table: The input pivot table.
+        :param suffix: The suffix that will be added to the column.
+        :param levels: The number of column level in the input pivot table.
+        :return: Modified pivot table.
+        """
+        cols = np.array(pivot_table.columns.get_level_values(levels))
+        cols_w_suffix = pd.Index([(x+suffix) for x in cols])
+        pivot_table.columns.set_levels(cols_w_suffix, level=levels, inplace=True)
+
+        return pivot_table
+
+    @staticmethod
     def _complete_surftype(pivot_table, required_grades, required_surftype):
         """
         This static method is used to complete the required surface type and grade columns in every surface type upper
