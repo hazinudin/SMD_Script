@@ -54,8 +54,10 @@ class Kemantapan(object):
         required_surftype = ['p', 'up']
 
         # Complete all the surface type and surface grades in every pivot table.
-        pivot_grade = self._complete_surftype(pivot_grade, required_grades, required_surftype)
-        pivot_mantap = self._complete_surftype(pivot_mantap, required_mantap, required_surftype)
+        pivot_grade = self._complete_surftype_grade(pivot_grade, required_grades, required_surftype)
+        pivot_mantap = self._complete_surftype_grade(pivot_mantap, required_mantap, required_surftype)
+        pivot_mantap_all = self._complete_surftype_grade(pivot_mantap_all, required_mantap, None)
+        pivot_grade_all = self._complete_surftype_grade(pivot_grade_all, required_grades, None)
 
         # Add suffix for non-percentage table.
         pivot_grade_s = self._add_suffix(pivot_grade, '_km', levels=1)
@@ -124,7 +126,7 @@ class Kemantapan(object):
             return compiled
 
     @staticmethod
-    def _complete_surftype(pivot_table, required_grades, required_surftype):
+    def _complete_surftype_grade(pivot_table, required_grades, required_surftype):
         """
         This static method is used to complete the required surface type and grade columns in every surface type upper
         index column. Example:
@@ -139,25 +141,34 @@ class Kemantapan(object):
         :param required_surftype:  The requierd surface type. Example ['paved', 'unpaved'].
         :return: Modified pivot table
         """
-        # Create the Column for Missing Grade in Every Surface Type.
-        surftype_set = set(x for x in pivot_table.columns.get_level_values(0))  # All the list of surface type
-        missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
+        if required_surftype is not None:  # If the surface type is specified (multilevel column)
 
-        # Iterate over all available surftype:
-        for surface in surftype_set:
-            surface_grades = np.array(pivot_table[surface].columns.tolist())
-            missing_grades = np.setdiff1d(required_grades, surface_grades)
+            # Create the Column for Missing Grade in Every Surface Type.
+            surftype_set = set(x for x in pivot_table.columns.get_level_values(0))  # All the list of surface type
+            missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
 
-            # Check for missing grade in available surface type
-            for grade in missing_grades:
+            # Iterate over all available surftype:
+            for surface in surftype_set:
+                surface_grades = np.array(pivot_table[surface].columns.tolist())
+                missing_grades = np.setdiff1d(required_grades, surface_grades)
+
+                # Check for missing grade in available surface type
+                for grade in missing_grades:
+                    # Add the missing grade
+                    pivot_table[surface, grade] = pd.Series(0, index=pivot_table.index)
+
+            # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
+            if len(missing_surftype) != 0:
+                for surface in missing_surftype:
+                    for grade in required_grades:
+                        pivot_table[(surface, grade)] = pd.Series(0, index=pivot_table.index)  # Contain 0 value
+
+        else:  # if the surface type is not specified (single level column)
+            pivot_grade = pivot_table.columns.values  # The available grade in the pivot table
+            missing_grade = np.setdiff1d(required_grades, pivot_grade)  # Check for missing grade
+            for grade in missing_grade:
                 # Add the missing grade
-                pivot_table[surface, grade] = pd.Series(0, index=pivot_table.index)
-
-        # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
-        if len(missing_surftype) != 0:
-            for surface in missing_surftype:
-                for grade in required_grades:
-                    pivot_table[(surface, grade)] = pd.Series(0, index=pivot_table.index)  # Contain 0 value
+                pivot_table[grade] = pd.Series(0, index=pivot_table.index)  # Add the missing grade column
 
         return pivot_table
 
