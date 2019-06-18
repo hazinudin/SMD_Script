@@ -48,25 +48,36 @@ class Kemantapan(object):
         pivot_mantap_all = self.create_pivot(columns=['_kemantapan'])
         pivot_grade_all = self.create_pivot(columns=['_grade'])
 
+        # All the required grades and surfaces
         required_grades = np.array(['good', 'fair', 'poor', 'bad'])
         required_mantap = np.array(['mantap', 'tdk_mantap'])
         required_surftype = ['p', 'up']
 
+        # Complete all the surface type and surface grades in every pivot table.
         pivot_grade = self._complete_surftype(pivot_grade, required_grades, required_surftype)
         pivot_mantap = self._complete_surftype(pivot_mantap, required_mantap, required_surftype)
 
-        pivot_grade_p = self._percentage(pivot_grade, required_grades, required_surftype, modify_input=False)
-        pivot_mantap_p = self._percentage(pivot_mantap, required_mantap, required_surftype, modify_input=False)
-        pivot_grade_all_p = self._percentage_singlecol(pivot_grade_all, required_grades, modify_input=False)
-        pivot_mantap_all_p = self._percentage_singlecol(pivot_mantap_all, required_mantap, modify_input=False)
-        pivot_join = pivot_grade.join(pivot_mantap)
+        # Add suffix for non-percentage table.
+        pivot_grade_s = self._add_suffix(pivot_grade, '_km', levels=1)
+        pivot_mantap_s = self._add_suffix(pivot_mantap, '_km', levels=1)
+        pivot_grade_all_s = self._add_suffix(pivot_grade_all, '_km', levels=0)
+        pivot_mantap_all_s = self._add_suffix(pivot_mantap_all, '_km', levels=0)
+
+        # pivot_grade_p = self._percentage(pivot_grade, required_grades, required_surftype, modify_input=False)
+        # pivot_mantap_p = self._percentage(pivot_mantap, required_mantap, required_surftype, modify_input=False)
+        pivot_grade_all_p = self._percentage_singlecol(pivot_grade_all, modify_input=False)
+        pivot_mantap_all_p = self._percentage_singlecol(pivot_mantap_all, modify_input=False)
+        pivot_join = pivot_grade_s.join(pivot_mantap_s)
 
         if flatten:
             # Flatten the Multi Level Columns
             new_column = pd.Index([str(x[0]+'_'+x[1].replace(' ', '')) for x in pivot_join.columns.values])
             pivot_join.columns = new_column
-            pivot_join = pivot_join.join(pivot_grade_all)  # Summary of all surface group
-            pivot_join = pivot_join.join(pivot_mantap_all)  # Summary of all surface group
+
+            pivot_join = pivot_join.join(pivot_grade_all_p)
+            pivot_join = pivot_join.join(pivot_mantap_all_p)
+            pivot_join = pivot_join.join(pivot_grade_all_s)  # Summary of all surface group
+            pivot_join = pivot_join.join(pivot_mantap_all_s)  # Summary of all surface group
 
             # The grade average for all route
             avg_grade = self.graded_df.groupby(by=[self.route_col])[self.grading_col].mean()
@@ -84,11 +95,29 @@ class Kemantapan(object):
         :param levels: The number of column level in the input pivot table.
         :return: Modified pivot table.
         """
-        cols = np.array(pivot_table.columns.get_level_values(levels))
-        cols_w_suffix = pd.Index([(x+suffix) for x in cols])
-        pivot_table.columns.set_levels(cols_w_suffix, level=levels, inplace=True)
 
-        return pivot_table
+        if levels == 0:
+            cols = np.array(pivot_table.columns.get_level_values(levels))
+            result = pivot_table.rename(columns={x: (x + suffix) for x in cols})
+            return result
+        else:
+            compiled = None
+            for upper_col in pivot_table.columns.get_level_values(levels-1).unique():
+                lower = pivot_table[upper_col]
+                cols = np.array(lower.columns.values)
+                cols_w_suffix = pd.Index([(x + suffix) for x in cols])
+                lower.columns = cols_w_suffix
+
+                upper = dict()
+                upper[upper_col] = lower
+                lower = pd.concat(upper, axis=1)
+
+                if compiled is None:
+                    compiled = lower
+                else:
+                    compiled = compiled.join(lower)
+
+            return compiled
 
     @staticmethod
     def _complete_surftype(pivot_table, required_grades, required_surftype):
@@ -109,6 +138,16 @@ class Kemantapan(object):
         # Create the Column for Missing Grade in Every Surface Type.
         surftype_set = set(x for x in pivot_table.columns.get_level_values(0))  # All the list of surface type
         missing_surftype = np.setdiff1d(required_surftype, list(surftype_set))  # Check for missing surface type
+
+        # Iterate over all available surftype:
+        for surface in surftype_set:
+            surface_grades = np.array(pivot_table[surface].columns.tolist())
+            missing_grades = np.setdiff1d(required_grades, surface_grades)
+
+            # Check for missing grade in available surface type
+            for grade in missing_grades:
+                # Add the missing grade
+                pivot_table[surface, grade] = pd.Series(0, index=pivot_table.index)
 
         # If there is a missing surface type in the pivot table, then add the missing surface type to pivot table
         if len(missing_surftype) != 0:
@@ -159,7 +198,7 @@ class Kemantapan(object):
                 return grade_percent  # Return the percent DataFrame without modifying the input pivot table.
 
     @staticmethod
-    def _percentage_singlecol(pivot_table, required_grades, suffix='_psn', modify_input=False):
+    def _percentage_singlecol(pivot_table, suffix='_psn', modify_input=False):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -169,13 +208,6 @@ class Kemantapan(object):
         :param suffix: The percentage column name suffix.
         :return: Modified pivot table.
         """
-
-        grades = np.array(pivot_table.columns.tolist())
-
-        # Check for missing grade.
-        missing_grade = np.setdiff1d(required_grades, grades)
-        for grade in missing_grade:  # Iterate over all missing grade
-            pivot_table[grade] = pd.Series(0, index=pivot_table.index)  # Add the missing grade column
 
         grade_percent = pivot_table.div(pivot_table.sum(axis=1), axis=0) * 100
         grades = np.array(pivot_table.columns.values)
