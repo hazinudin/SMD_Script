@@ -55,10 +55,10 @@ class Kemantapan(object):
         pivot_grade = self._complete_surftype(pivot_grade, required_grades, required_surftype)
         pivot_mantap = self._complete_surftype(pivot_mantap, required_mantap, required_surftype)
 
-        pivot_grade = self._percentage(pivot_grade, required_grades, required_surftype)
-        pivot_mantap = self._percentage(pivot_mantap, required_mantap, required_surftype)
-        pivot_grade_all = self._percentage_singlecol(pivot_grade_all, required_grades)
-        pivot_mantap_all = self._percentage_singlecol(pivot_mantap_all, required_mantap)
+        pivot_grade_p = self._percentage(pivot_grade, required_grades, required_surftype, modify_input=False)
+        pivot_mantap_p = self._percentage(pivot_mantap, required_mantap, required_surftype, modify_input=False)
+        pivot_grade_all_p = self._percentage_singlecol(pivot_grade_all, required_grades, modify_input=False)
+        pivot_mantap_all_p = self._percentage_singlecol(pivot_mantap_all, required_mantap, modify_input=False)
         pivot_join = pivot_grade.join(pivot_mantap)
 
         if flatten:
@@ -68,8 +68,10 @@ class Kemantapan(object):
             pivot_join = pivot_join.join(pivot_grade_all)  # Summary of all surface group
             pivot_join = pivot_join.join(pivot_mantap_all)  # Summary of all surface group
 
+            # The grade average for all route
             avg_grade = self.graded_df.groupby(by=[self.route_col])[self.grading_col].mean()
-            pivot_join = pivot_join.join(avg_grade)
+
+            pivot_join = pivot_join.join(avg_grade)  # Join the average grade DataFrame.
 
         return pivot_join
 
@@ -102,7 +104,7 @@ class Kemantapan(object):
         return pivot_table
 
     @staticmethod
-    def _percentage(pivot_table, required_grades, required_surftype, suffix='_psn'):
+    def _percentage(pivot_table, required_grades, required_surftype, suffix='_psn', modify_input=False):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -134,13 +136,15 @@ class Kemantapan(object):
             upper_col[surface] = grade_percent
             grade_percent = pd.concat(upper_col, axis=1)
 
-            # Join the pivot table with the percent table
-            pivot_table = pivot_table.join(grade_percent, how='inner')
-
-        return pivot_table
+            if modify_input:
+                # Join the pivot table with the percent table
+                pivot_table = pivot_table.join(grade_percent, how='inner')
+                return pivot_table  # Return the modified pivot table.
+            else:
+                return grade_percent  # Return the percent DataFrame without modifying the input pivot table.
 
     @staticmethod
-    def _percentage_singlecol(pivot_table, required_grades, suffix='_psn'):
+    def _percentage_singlecol(pivot_table, required_grades, suffix='_psn', modify_input=False):
         """
         This static method will add a percentage column for every required grades in the pivot table. The newly added
         column will have an suffix determined by a parameter.
@@ -164,9 +168,12 @@ class Kemantapan(object):
         grade_percent.columns = percent_col
         grade_percent.fillna(0, inplace=True)  # Fill the NA value with zero
 
-        pivot_table = pivot_table.join(grade_percent, how='inner')
-
-        return pivot_table
+        if modify_input:
+            # Join the pivot table with the percent table
+            pivot_table = pivot_table.join(grade_percent, how='inner')
+            return pivot_table
+        else:
+            return grade_percent
 
     def comparison(self, compare_table, grading_col, route_col, from_m_col, to_m_col, route, sde_connection):
         """
