@@ -1227,7 +1227,8 @@ class EventValidation(object):
                     # The dictionary object
                     dict_object = {
                         "linkid": route,
-                        "error": msg
+                        "status": message_type,
+                        "msg": msg
                     }
                     result_list.append(dict_object)  # Append the dictionary object
                 else:
