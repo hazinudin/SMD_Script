@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai
 from pprint import pprint
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
@@ -28,6 +28,7 @@ RNILaneCode = smd_config['table_fields']['rni']['lane_code']
 RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 
 BalaiTable = smd_config['table_names']['balai_table']
+BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
@@ -56,8 +57,17 @@ CompFromMeasure = roughness_config['compare_table']['from_measure']
 CompToMeasure = roughness_config['compare_table']['to_measure']
 CompIRI = roughness_config['compare_table']['iri']
 
-# GetAllRoute result containing all route from a Balai
+# Set the environment workspace
 env.workspace = dbConnection
+
+# Check if balai from the request is valid
+code_check_result = verify_balai(KodeBalai, BalaiTable, BalaiKodeBalai, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format("balai", code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
+
+# GetAllRoute result containing all route from a Balai
 routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
