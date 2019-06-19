@@ -944,13 +944,13 @@ class EventValidation(object):
                     input_only_surftype = merge_input_only['index'].tolist()
                     result = 'Rute {0} pada lane {4} memiliki {1} yang tidak terdapat pada data tahun {2}. {1}-{3}'.\
                         format(route, rni_surftype_col, year_comp, input_only_surftype, lane)
-                    self.insert_route_message(route, 'warning', result)
+                    self.insert_route_message(route, 'ToBeReviewed', result)
 
                 if len(merge_comp_only) != 0:
                     comp_only_surftype = merge_comp_only['index'].tolist()
                     result = 'Rute {0} pada lane {4} tidak memiliki tipe {1} yang terdapat pada data tahun {2}. {1}-{3}'.\
                         format(route, rni_surftype_col, year_comp, comp_only_surftype, lane)
-                    self.insert_route_message(route, 'warning', result)
+                    self.insert_route_message(route, 'ToBeReviewed', result)
 
                 if ((len(merge_input_only) != 0) or (len(merge_comp_only) != 0)) and (len(both) != 0):
                     pass
@@ -1028,7 +1028,7 @@ class EventValidation(object):
                         result += msg[:-2]
                         result += '.'
 
-                self.insert_route_message(route, 'warning', result)
+                self.insert_route_message(route, 'ToBeReviewed', result)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='CODE_LANE',
@@ -1089,7 +1089,7 @@ class EventValidation(object):
                 error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
                     format(route, (100*threshold))
                 self.error_list.append(error_message)
-                self.insert_route_message(route, 'warning', error_message)
+                self.insert_route_message(route, 'ToBeReviewed', error_message)
 
     def copy_valid_df(self, dropna=True):
         """
@@ -1204,7 +1204,7 @@ class EventValidation(object):
         if route not in self.route_results:
             self.route_results[route] = {
                 "error": [],
-                "warning": []
+                "ToBeReviewed": []
             }
 
         self.route_results[route][message_type].append(message)
