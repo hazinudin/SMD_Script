@@ -93,10 +93,15 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
+    # FOR ARCMAP USAGE ONLY #
     msg_count = 1
     for error_message in EventCheck.altered_route_result('error', dict_output=False):
-        AddMessage(str(msg_count)+'. '+error_message)
+        AddMessage(str(msg_count)+'. '+error_message+' ERROR')
         msg_count += 1
+
+    for error_message in EventCheck.altered_route_result(message_type='warning', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message+' WARNING')
+        msg_count +=1
 
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 
