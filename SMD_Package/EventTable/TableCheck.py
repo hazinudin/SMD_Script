@@ -1080,7 +1080,6 @@ class EventValidation(object):
 
             mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
             mantap_compare = kemantapan_compare.at['mantap', '_len']
-            AddMessage("{0} {1}".format(mantap_current, mantap_compare))
 
             # Compare the kemantapan percentage between current data and previous data
             if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
