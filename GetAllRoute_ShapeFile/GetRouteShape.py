@@ -334,82 +334,77 @@ os.chdir('E:/SMD_Script')
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON, result from GetAllRoute and config JSON
-input_details = input_json_check(inputJSON, 1, req_keys=['type', 'codes', 'routes'])
+input_details = input_json_check(inputJSON, 1, req_keys=['type', 'codes'])
 
 with open('smd_config.json') as config_f:
     config = json.load(config_f)
 
 
 # Tabel and column used in this script
+
+# The LRS Network Table Details
 lrsNetwork = config['table_names']['lrs_network']
 lrsNetwork_RouteID = config['table_fields']['lrs_network']['route_id']
 lrsNetwork_RouteName = config['table_fields']['lrs_network']['route_name']
 
+# The Balai Table
 balaiTable = config['table_names']['balai_table']
 
+# The RNI Table Details
 rniTable = config['table_names']['rni']
 rniSearchField = ['LINKID', 'FROMMEASURE', 'TOMEASURE', 'LANE_CODE']
 rniGroupbyField = ['LINKID', 'FROMMEASURE', 'TOMEASURE']
 rniCodeLane = config['table_fields']['rni']['lane_code']
 rniRouteID = config['table_fields']['rni']['route_id']
+
+# The SDE Database Connection
 dbConnection = config['smd_database']['instance']
 
 # Set the environment workspace
 env.workspace = dbConnection
 env.overwriteOutput = True
 
-getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable).create_json_output()
-allRouteQueryResult = json.loads(getAllRouteResult)
-
-# Define variable
-requestedRoutes = input_details['routes']
-outputSHPName = 'Routes'
-allResults = allRouteQueryResult['results']
+if input_details['type'] != 'routes':
+    getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable)
+    routeList = getAllRouteResult.route_list()
 
 # Checking the existence of all required table
 ConnectionCheck = SDE_TableConnection(env.workspace, [rniTable, lrsNetwork])
 if ConnectionCheck.all_connected:
 
-    # Checking the intersection between reqeusted routes and the available route
-    RequestCheckResult = request_check(allResults, requestedRoutes)
-    if RequestCheckResult is not None:
+    # Create a Pandas dataframe from the RNI table in geodatabase
+    RNI_df = event_fc_to_df(rniTable, rniSearchField, routeList, rniRouteID, dbConnection,
+                            is_table=True)
+    RNI_df_rename = RNI_df.rename(columns={'FROMMEASURE': 'STA_FROM', 'TOMEASURE': 'STA_TO'})
+    DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
 
-        # Create a Pandas dataframe from the RNI table in geodatabase
-        RNI_df = event_fc_to_df(rniTable, rniSearchField, RequestCheckResult, rniRouteID, dbConnection,
-                                is_table=True)
-        RNI_df_rename = RNI_df.rename(columns={'FROMMEASURE': 'STA_FROM', 'TOMEASURE': 'STA_TO'})
-        DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
+    available_rni = np.array(RNI_df_rename['LINKID'].tolist())
+    request_route = np.array(routeList)
+    missing_rni = np.setdiff1d(request_route, available_rni).tolist()
 
-        available_rni = np.array(RNI_df_rename['LINKID'].tolist())
-        request_route = np.array(RequestCheckResult)
-        missing_rni = np.setdiff1d(request_route, available_rni).tolist()
+    # Create the shapefile from the segment created by the dissolve segment function
+    RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
+                                               DissolvedSegmentDict, missing_route=missing_rni)
 
-        # Create the shapefile from the segment created by the dissolve segment function
-        RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
-                                                   DissolvedSegmentDict, missing_route=missing_rni)
+    if input_details["type"] == "balai":
+        req_type = 'Balai'
+    elif input_details["type"] == "no_prov":
+        req_type = "Prov"
+    else:
+        req_type = ""
 
-        if input_details["type"] == "balai":
-            req_type = 'Balai'
-        elif input_details["type"] == "no_prov":
-            req_type = "Prov"
-        else:
-            req_type = ""
+    if type(input_details["codes"]) == list:
+        req_codes = str(input_details["codes"]).strip("[]").replace("'", "").replace(', ','_').replace('u', '')
+    else:
+        req_codes = str(input_details["codes"])
 
-        if type(input_details["codes"]) == list:
-            req_codes = str(input_details["codes"]).strip("[]").replace("'", "").replace(', ','_').replace('u', '')
-        else:
-            req_codes = str(input_details["codes"])
+    current_year = datetime.now().year
+    RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year), return_segment=False)  # Create the polyline shapefile
+    RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
+    RouteGeometries.create_rni_csv(RNI_df_rename)  # Create the RNI DataFrame
 
-        current_year = datetime.now().year
-        RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year), return_segment=False)  # Create the polyline shapefile
-        RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
-        RouteGeometries.create_rni_csv(RNI_df_rename)  # Create the RNI DataFrame
-
-        SetParameterAsText(1, RouteGeometries.output_message())
-        SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2018".format(req_type, req_codes)).zip_output)
-
-    elif RequestCheckResult is None:
-        SetParameterAsText(1, output_message("Failed", "The requested route/s are not valid"))
+    SetParameterAsText(1, RouteGeometries.output_message())
+    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2018".format(req_type, req_codes)).zip_output)
 
 else:
     SetParameterAsText(1, output_message("Failed", "Required table are missing.{0}".format(ConnectionCheck.missing_table)))
