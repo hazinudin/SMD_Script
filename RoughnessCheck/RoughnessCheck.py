@@ -115,7 +115,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     # Write the JSON Output string.
-    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result()))
+    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1

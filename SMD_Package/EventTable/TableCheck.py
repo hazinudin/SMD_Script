@@ -1209,17 +1209,23 @@ class EventValidation(object):
 
         self.route_results[route][message_type].append(message)
 
-    def altered_route_result(self, message_type='error', dict_output=True):
+    def altered_route_result(self, routeid_col='LINKID', message_type='error', dict_output=True,
+                             include_valid_routes=True):
         """
         This method will alter route_result dictionary from {'route':['msg', 'msg',...]} to [{'route: 'msg'},
         {'route':'msg'},...]
+        :param routeid_col: The Route ID column of the input table.
         :param message_type: The message type will be passed to dictionary object
         :param dict_output: If True then this function will return [{'route: 'msg'}, {'route':'msg'},...] if false
+        :param include_valid_routes: Include the valid routes, these valid route will only be included if
+        dict_output = True
         :return:
         """
         result_list = []  # The list object to store the dictionary
+        failed_routes = self.route_results.keys()
+        passed_routes_row = self.df_valid.loc[~self.df_valid[routeid_col].isin(failed_routes)][routeid_col].tolist()
 
-        for route in self.route_results:
+        for route in failed_routes:
             messages = self.route_results[route][message_type]
 
             for msg in messages:
@@ -1233,5 +1239,14 @@ class EventValidation(object):
                     result_list.append(dict_object)  # Append the dictionary object
                 else:
                     result_list.append(msg)  # Append the message directly to list object
+
+        if include_valid_routes and dict_output:  # If the output is dictionary and also include the valid route
+            for route in passed_routes_row:
+                dict_object = {
+                    "linkid": route,  # The valid route
+                    "status": "verified",  # The status is "verified"
+                    "msg": ""  # The message is just an empty string
+                }
+                result_list.append(dict_object)  # Append the dictionary object
 
         return result_list
