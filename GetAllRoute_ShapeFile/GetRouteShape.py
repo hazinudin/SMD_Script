@@ -423,8 +423,8 @@ if ConnectionCheck.all_connected:
         req_type = 'Balai'
     elif input_details["type"] == "no_prov":
         req_type = "Prov"
-    else:
-        req_type = ""
+    elif input_details["type"] == "routes":
+        req_type = "Rute"
 
     if type(input_details["codes"]) == list:
         req_codes = str(input_details["codes"]).strip("[]").replace("'", "").replace(', ','_').replace('u', '')
