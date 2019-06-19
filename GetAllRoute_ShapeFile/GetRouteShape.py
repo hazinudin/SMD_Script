@@ -12,7 +12,7 @@ import zipfile
 import numpy as np
 from datetime import datetime
 sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df, input_json_check, output_message
+from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df, input_json_check, output_message, verify_balai
 
 
 class SDE_TableConnection(object):
@@ -349,6 +349,8 @@ lrsNetwork_RouteName = config['table_fields']['lrs_network']['route_name']
 
 # The Balai Table
 balaiTable = config['table_names']['balai_table']
+balaiProvCol = config['table_fields']['balai_table']['prov_code']
+balaiBalaiCol = config['table_fields']['balai_table']['balai_code']
 
 # The RNI Table Details
 rniTable = config['table_names']['rni']
@@ -364,9 +366,40 @@ dbConnection = config['smd_database']['instance']
 env.workspace = dbConnection
 env.overwriteOutput = True
 
-if input_details['type'] != 'routes':
+# Check the input type
+if input_details['type'] != 'routes':  # If the input type is not 'routes', then request the route
+
+    # Check the input request type
+    if input_details['type'] == 'no_prov':
+        code_col = balaiProvCol
+    if input_details['type'] == 'balai':
+        code_col = balaiBalaiCol
+    else:  # If the input request type is nor 'balai' or 'no_prov'
+        SetParameterAsText(1, output_message("Failed", "Request type {0} is invalid.".format(input_details['type'])))
+        sys.exit(0)
+
+    # Check the input code validity
+    code_check = verify_balai(input_details['codes'], balaiTable, code_col, dbConnection)
+    if len(code_check) != 0:  # If there is an invalid code
+        message = "Kode {0} {1} tidak valid.".format(input_details['type'], code_check)
+        SetParameterAsText(1, output_message("Failed", message))
+        sys.exit(0)  # Stop the script
+
     getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable)
-    routeList = getAllRouteResult.route_list()
+    routeList = getAllRouteResult.route_list()  # The list containing the query result
+
+elif input_details['type'] == 'routes':  # If the input type is 'routes' then use the value from 'codes'
+    if type(input_details['codes']) != list:  # If the input is not a list type
+        routeList = list(input_details['codes'])
+    elif type(input_details['codes']) == list:  # If the input is already a list type
+        routeList = input_details['codes']
+
+    # Check the input code validity
+    code_check = verify_balai(routeList, lrsNetwork, lrsNetwork_RouteID, dbConnection)
+    if len(code_check) != 0:  # If there is an invalid code
+        message = "Kode {0} {1} tidak valid.".format(input_details['type'], code_check)
+        SetParameterAsText(1, output_message("Failed", message))
+        sys.exit(0)  # Stop the script
 
 # Checking the existence of all required table
 ConnectionCheck = SDE_TableConnection(env.workspace, [rniTable, lrsNetwork])
