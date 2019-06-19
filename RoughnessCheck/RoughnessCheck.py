@@ -81,17 +81,23 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID)  # Check the event layer lane code combination
-    EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure, CompToMeasure,
-                                  CompRouteID, CompIRI, routes=valid_routes)
 
-    ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
+    failed_routes = EventCheck.route_results.keys()  # Only contain the Error message without the ToBeReviewed msg.
 
-    failed_routes = EventCheck.route_results.keys()
-    valid_df = EventCheck.copy_valid_df()
-    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
+    if len(failed_routes) == 0:  # There is no error in the Table, but check for manual review possibility
+        # The only function that will result a ToBeReviewed Message.
+        EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
+                                      CompToMeasure, CompRouteID, CompIRI, routes=valid_routes)
+
+    failed_routes = EventCheck.route_results.keys()  # Refresh the failed_routes list
+    valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
+    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]  # Only select the route which pass
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+
+    # Write the JSON Output string.
+    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result()))
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
@@ -99,11 +105,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         AddMessage(str(msg_count)+'. '+error_message+' ERROR')
         msg_count += 1
 
-    for error_message in EventCheck.altered_route_result(message_type='warning', dict_output=False):
+    for error_message in EventCheck.altered_route_result(message_type='ToBeReviewed', dict_output=False):
         AddMessage(str(msg_count)+'. '+error_message+' WARNING')
-        msg_count +=1
-
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+        msg_count += 1
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
