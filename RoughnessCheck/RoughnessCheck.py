@@ -62,7 +62,15 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-InputDF = read_input_excel(TablePath)
+try:
+    InputDF = read_input_excel(TablePath)  # Read the excel file
+except IOError:  # If the file path is invalid
+    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    sys.exit(0)  # Stop the script
+if InputDF is None:  # If the file format is not .xlsx
+    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    sys.exit(0)  # Stop the script
+
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
