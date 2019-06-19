@@ -119,7 +119,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
-    for error_message in EventCheck.altered_route_result('error', dict_output=False):
+    for error_message in EventCheck.altered_route_result(message_type='error', dict_output=False):
         AddMessage(str(msg_count)+'. '+error_message+' ERROR')
         msg_count += 1
 
