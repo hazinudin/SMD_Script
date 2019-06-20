@@ -48,7 +48,7 @@ IRIColumn = "IRI"
 RouteIDCol = 'LINKID'
 
 # The GDB table which store all the valid table row
-OutputGDBTable = smd_config['output_table']['roughness']
+OutputGDBTable = roughness_config['output_table']
 
 # All the details about comparison table
 CompTable = roughness_config['compare_table']['table_name']

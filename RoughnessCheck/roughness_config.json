@@ -21,5 +21,6 @@
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
     "iri":"IRI"
-  }
+  },
+  "output_table":"ELRS.DEV_ROUGHNESS_2_2018"
 }
