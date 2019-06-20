@@ -33,5 +33,8 @@
       "prov_code":"NO_PROV",
       "balai_code":"NOMOR_BALAI"
     }
+  },
+  "output_tables":{
+    "roughness":"ELRS.DEV_ROUGHNESS_2_2018"
   }
 }
