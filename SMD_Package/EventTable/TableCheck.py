@@ -385,17 +385,24 @@ class EventValidation(object):
                 # Get the RNI Max Measurement
                 rni_df = event_fc_to_df(rni_table, [rni_routeid, rni_to_m], route, rni_routeid, self.sde_connection,
                                         is_table=False, include_all=True, orderby=None)  # The RNI DataFrame
-                rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
 
-                comparison = rni_max_m
+                if len(rni_df) == 0:  # If the RNI Table does not exist for a route
+                    comparison = None  # The comparison value will be None
+                else:
+                    rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
+                    comparison = rni_max_m
 
             if compare_to == 'LRS':
                 # Get the LRS Network route length
                 lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
                 comparison = lrs_route_len
 
+            # If the comparison value is not available.
+            if comparison is None:
+                pass
+
             # If the largest To Measure value is less than the selected comparison then there is a gap at the end
-            if (max_to_meas < comparison) and not(np.isclose(max_to_meas, comparison, rtol=0.01)):
+            elif (max_to_meas < comparison) and not(np.isclose(max_to_meas, comparison, rtol=0.01)):
                 # Create an error message
                 error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
                     format(route, max_to_meas, comparison)
