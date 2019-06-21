@@ -1,7 +1,7 @@
 import sys
 sys.path.append('E:/SMD_Script')
 from SMD_Package import gdb_table_writer, read_input_excel, input_json_check, output_message
-from arcpy import GetParameterAsText, env, SetParameterAsText
+from arcpy import GetParameterAsText, env, SetParameterAsText, AddMessage
 import numpy as np
 import json
 import os
@@ -34,9 +34,9 @@ dbConnection = smd_config['smd_database']['instance']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'routeid', 'data', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'routes', 'data', 'year', 'semester'])
 TablePath = InputDetails["file_name"]
-Routes = InputDetails["routeid"]
+Routes = InputDetails["routes"]
 DataType = InputDetails["data"]
 DataYear = InputDetails["year"]
 DataSemester = InputDetails["semester"]
@@ -45,7 +45,7 @@ DataSemester = InputDetails["semester"]
 try:
     InputDF = read_input_excel(TablePath)  # Read the excel file
 except IOError:  # If the file path is invalid
-    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    SetParameterAsText(1, output_message("Failed", "Invalid file directory or invalid file name"))  # Throw an error message
     sys.exit(0)  # Stop the script
 if InputDF is None:  # If the file format is not .xlsx
     SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
@@ -66,11 +66,11 @@ if type(Routes) is list:  # If the inputted routes is a list
         sys.exit(0)  # Stop the script
 
 # Determine the output table based on the specified data type
-if DataType == 'IRI':  # If the data is IRI/Roughness
+if str(DataType) == "IRI":  # If the data is IRI/Roughness
     data_config = load_config_data('RoughnessCheck/roughness_config.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
-if DataType == 'RNI':  # If the data is RNI
+elif str(DataType) == "RNI":  # If the data is RNI
     data_config = load_config_data('RNICheck/rni_config.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
@@ -81,3 +81,4 @@ else:  # If other than that, the process will be terminated with an error messag
 
 # Start writing the input table to GDB
 gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails)
+SetParameterAsText(1, output_message("Succeeded", ""))
