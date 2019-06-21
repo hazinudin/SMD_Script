@@ -42,3 +42,16 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
             for col_name in cols_dtype.keys():
                 row_object.append(row[col_name])
             cursor.insertRow(row_object)  # Insert the new row
+
+
+def trim_event_table(dataframe, routeid_col, to_m_col, lrs_network, lrs_routeid, workspace):
+    """
+    This function will trim event table to fit the LRS Network Max Measurement.
+    :param dataframe: The event DataFrame
+    :param routeid_col: The RouteID column of the event table
+    :param to_m_col: The From Measure column of the event table
+    :param lrs_network : The LRS Network Feature Class
+    :param lrs_routeid : The LRS Network RouteID column
+    :param workspace : The SDE Connection for LRS Network
+    :return: Modified Event DataFrame
+    """

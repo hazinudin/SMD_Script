@@ -4,8 +4,8 @@ from EventTable.RNITable import *
 from FCtoDataFrame import event_fc_to_df
 from OutputMessage import *
 from GetRoute import *
-from GDBTableWriter import gdb_table_writer
 import GenerateToken
 from InspectJSON import input_json_check
 from VerifyBalaiCode import verify_balai
 from EventTable.Kemantapan import *
+from TableWriter.GDBTableWriter import *
