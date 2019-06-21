@@ -377,18 +377,21 @@ class EventValidation(object):
             df_groupped.sort_values(by=[routeid_col, from_m_col, to_m_col], inplace=True)
             df_groupped.reset_index(drop=True)
 
-            # Get the LRS Network route length
-            rni_df = event_fc_to_df(rni_table, [rni_routeid, rni_to_m], route, rni_routeid, self.sde_connection,
-                                    is_table=False, include_all=True, orderby=None)  # The RNI DataFrame
-            rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
-            lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
-            max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
-            max_to_meas = float(df_groupped.at[max_to_ind, to_m_col])/100  # The largest To Measure value
-
             # Comparison based on the 'compare_to' parameter
             if compare_to == 'RNI':
+                # Get the RNI Max Measurement
+                rni_df = event_fc_to_df(rni_table, [rni_routeid, rni_to_m], route, rni_routeid, self.sde_connection,
+                                        is_table=False, include_all=True, orderby=None)  # The RNI DataFrame
+                rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
+
                 comparison = rni_max_m
+
             if compare_to == 'LRS':
+                # Get the LRS Network route length
+                lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
+                max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
+                max_to_meas = float(df_groupped.at[max_to_ind, to_m_col]) / 100  # The largest To Measure value
+
                 comparison = lrs_route_len
 
             # If the largest To Measure value is less than the selected comparison then there is a gap at the end

@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -19,6 +19,7 @@ with open('smd_config.json') as smd_config_f:
 LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 BalaiTable = smd_config['table_names']['balai_table']
+BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
 dbConnection = smd_config['smd_database']['instance']
 RNIEventTable = smd_config['table_names']['rni']
 RNIRouteID = smd_config['table_fields']['rni']['route_id']
@@ -50,13 +51,31 @@ CompToM = rni_config['compare_table']['to_measure']
 CompSurfaceType = rni_config['compare_table']['surface_type']
 RouteIDCol = 'LINKID'
 
-# GetAllRoute result containing all route from a Balai
+# Set the environment workspace
 env.workspace = dbConnection
+
+# Check if balai from the request is valid
+code_check_result = verify_balai(KodeBalai, BalaiTable, BalaiKodeBalai, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format("balai", code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
+
+# GetAllRoute result containing all route from a Balai
 routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-InputDF = read_input_excel(TablePath)
+try:
+    InputDF = read_input_excel(TablePath)  # Read the excel file
+except IOError:  # If the file path is invalid
+    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    sys.exit(0)  # Stop the script
+if InputDF is None:  # If the file format is not .xlsx
+    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    sys.exit(0)  # Stop the script
+
+
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
@@ -74,28 +93,33 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
                                  lane_code='LANE_CODE', compare_to='LRS')  # Check the from-to measurement
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
-    EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
-                                        2018, RNILaneCode, routes=valid_routes)
-    EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
-                                     routes=valid_routes)
-    ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
-    failed_routes = EventCheck.route_results.keys()
+    failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
+
+    if len(failed_routes) == 0:  # If there is an route with no error, then write to GDB
+        EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
+                                            2018, RNILaneCode, routes=valid_routes)
+        EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
+                                         routes=valid_routes)
+
+    failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
     valid_df = EventCheck.copy_valid_df()
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
-    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+    if len(passed_routes_row) != 0:
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
-    msg_count = 1
-    for error_message in EventCheck.altered_route_result('error', dict_output=False):
-        AddMessage(str(msg_count)+'. '+error_message)
-        msg_count += 1
-    for error_message in EventCheck.altered_route_result('warning', dict_output=False):
-        AddMessage(str(msg_count)+'. '+error_message)
-        msg_count += 1
-
+    # Write the JSON Output string.
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+
+    # FOR ARCMAP USAGE ONLY#
+    msg_count = 1
+    for error_message in EventCheck.altered_route_result(message_type='error', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message)
+        msg_count += 1
+    for error_message in EventCheck.altered_route_result(message_type='ToBeReviewed', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message)
+        msg_count += 1
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
