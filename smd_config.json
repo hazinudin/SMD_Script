@@ -13,7 +13,7 @@
   "table_names":{
     "lrs_network":"ELRS.National_Network2018",
     "balai_table":"ELRS.All_Balai_Prov",
-    "rni": "ELRS.RNI_National_2_dropped"
+    "rni": "ELRS.RNI_National_2_REV"
   },
   "table_fields":{
     "lrs_network":{
