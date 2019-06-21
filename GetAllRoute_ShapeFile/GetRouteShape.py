@@ -372,7 +372,7 @@ if input_details['type'] != 'routes':  # If the input type is not 'routes', then
     # Check the input request type
     if input_details['type'] == 'no_prov':
         code_col = balaiProvCol
-    if input_details['type'] == 'balai':
+    elif input_details['type'] == 'balai':
         code_col = balaiBalaiCol
     else:  # If the input request type is nor 'balai' or 'no_prov'
         SetParameterAsText(1, output_message("Failed", "Request type {0} is invalid.".format(input_details['type'])))
