@@ -2,8 +2,8 @@
   "search_radius":30,
   "column_details":{
     "LINKID":{"dtype":"string"},
-    "STA_FR":{"dtype":"integer"},
-    "STA_TO":{"dtype":"integer"},
+    "STA_FR":{"dtype":"double"},
+    "STA_TO":{"dtype":"double"},
     "LENGTH":{"dtype":"double"},
     "CODE_LANE":{"dtype":"string"},
     "IRI":{"dtype":"double", "range":[1, 25]},
