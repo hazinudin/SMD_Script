@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -49,7 +49,12 @@ CompRouteID = rni_config['compare_table']['route_id']
 CompFromM = rni_config['compare_table']['from_measure']
 CompToM = rni_config['compare_table']['to_measure']
 CompSurfaceType = rni_config['compare_table']['surface_type']
+
+# The input Table Column
 RouteIDCol = 'LINKID'
+FromMCol = "STA_FR"
+ToMCol = "STA_TO"
+CodeLane = "CODE_LANE"
 
 # Set the environment workspace
 env.workspace = dbConnection
@@ -107,6 +112,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
     if len(passed_routes_row) != 0:
+        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
+                         dbConnection)
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     # Write the JSON Output string.
