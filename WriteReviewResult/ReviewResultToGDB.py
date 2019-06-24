@@ -1,6 +1,6 @@
 import sys
 sys.path.append('E:/SMD_Script')
-from SMD_Package import gdb_table_writer, read_input_excel, input_json_check, output_message
+from SMD_Package import gdb_table_writer, read_input_excel, input_json_check, output_message, convert_and_trim
 from arcpy import GetParameterAsText, env, SetParameterAsText, AddMessage
 import numpy as np
 import json
@@ -41,6 +41,12 @@ DataType = InputDetails["data"]
 DataYear = InputDetails["year"]
 DataSemester = InputDetails["semester"]
 
+# The input Event Table Columns
+inputRouteID = 'LINKID'
+inputFromM = 'STA_FR'
+inputToM = 'STA_TO'
+inputLaneCode = 'CODE_LANE'
+
 # Load the excel file as an DataFrame
 try:
     InputDF = read_input_excel(TablePath)  # Read the excel file
@@ -57,7 +63,7 @@ if type(Routes) is not list:  # Check if the inputted routes is a list
     SetParameterAsText(1, message)
     sys.exit(0)
 if type(Routes) is list:  # If the inputted routes is a list
-    df_routes = InputDF['LINKID']  # Available routes in the input table
+    df_routes = InputDF[inputRouteID]  # Available routes in the input table
     mask = np.in1d(Routes, df_routes)  # Masking for input route array
     invalid_route = np.array(Routes)[~mask]  # All the route which does not exist in input table
     if len(invalid_route) != 0:  # There is an invalid route
@@ -80,5 +86,6 @@ else:  # If other than that, the process will be terminated with an error messag
     sys.exit(0)
 
 # Start writing the input table to GDB
-gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails)
+convert_and_trim(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode, LrsNetwork, LrsNetworkRID, dbConnection)
+gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails, new_table=False)
 SetParameterAsText(1, output_message("Succeeded", ""))
