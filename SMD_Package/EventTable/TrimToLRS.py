@@ -1,5 +1,29 @@
 from arcpy import env, da
 
+
+def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace, conversion=100):
+    """
+    This function will convert the input DataFrame to the specified conversion and trim the input DataFrame measurement
+    column to fit the LRS Maximum measurement value.
+    :param dataframe: The input DataFrame.
+    :param routeid_col: The RouteID column of the evnet table.
+    :param from_m_col: The From Measurement column of the event table.
+    :param to_m_col: The To Measurement column of the event table.
+    :param lane_code: The Lane Code column of the evne table.
+    :param lrs_network: The LRS Network Feature Class.
+    :param lrs_routeid: LRS Network RouteID column.
+    :param workspace: The SDE Connection.
+    :param conversion:  Conversion factor.
+    :return: Modified DataFrame.
+    """
+
+    df = dataframe
+    _convert_measurement(df, from_m_col, to_m_col)  # Convert the measurement
+    _trim_event_table(df, routeid_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace)  # Trim the event table
+
+    return df
+
+
 def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace):
     """
     This function will trim event table to fit the LRS Network Max Measurement.
