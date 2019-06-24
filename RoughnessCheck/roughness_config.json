@@ -5,7 +5,7 @@
     "STA_FR":{"dtype":"double"},
     "STA_TO":{"dtype":"double"},
     "LENGTH":{"dtype":"double"},
-    "CODE_LANE":{"dtype":"string"},
+    "LANE_CODE":{"dtype":"string"},
     "IRI":{"dtype":"double", "range":[1, 25]},
     "YEAR":{"dtype":"integer"},
     "SEMESTER":{"dtype":"integer"},

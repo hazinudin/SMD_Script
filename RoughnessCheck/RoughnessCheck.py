@@ -48,7 +48,7 @@ IRIColumn = "IRI"
 RouteIDCol = 'LINKID'
 FromMCol = "STA_FR"
 ToMCol = "STA_TO"
-CodeLane = "CODE_LANE"
+CodeLane = "LANE_CODE"
 
 # The GDB table which store all the valid table row
 OutputGDBTable = roughness_config['output_table']
@@ -95,13 +95,13 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check()  # Check the IRI value range
-    EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
+    EventCheck.range_domain_check(lane_code='LANE_CODE')  # Check the IRI value range
+    EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure,
-                                 routes=valid_routes)  # Check the from-to measurement
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
+                                 routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
-                               rni_route_col=RNIRouteID)  # Check the event layer lane code combination
+                               rni_route_col=RNIRouteID, lane_code='LANE_CODE')  # Check the event layer lane code combination
 
     failed_routes = EventCheck.route_results.keys()  # Only contain the Error message without the ToBeReviewed msg.
 

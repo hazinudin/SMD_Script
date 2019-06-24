@@ -635,6 +635,11 @@ class EventValidation(object):
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
+                # Modify the lane_code variable
+                if lane_code == rni_lane_code:
+                    lane_code = lane_code+'_INPUT'
+                    rni_lane_code = rni_lane_code+'_RNI'
+
                 # Create a column containing intersection count of lane code combination
                 # between the input table and RNI Table
                 df_both.loc[:, 'lane_intersect_count'] = pd.Series([len(set(a).intersection(b)) for a, b in
