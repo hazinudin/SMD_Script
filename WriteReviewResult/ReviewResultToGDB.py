@@ -45,7 +45,7 @@ DataSemester = InputDetails["semester"]
 inputRouteID = 'LINKID'
 inputFromM = 'STA_FR'
 inputToM = 'STA_TO'
-inputLaneCode = 'CODE_LANE'
+inputLaneCode = 'LANE_CODE'
 
 # Load the excel file as an DataFrame
 try:
@@ -87,5 +87,5 @@ else:  # If other than that, the process will be terminated with an error messag
 
 # Start writing the input table to GDB
 convert_and_trim(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode, LrsNetwork, LrsNetworkRID, dbConnection)
-gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails, new_table=False)
+gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails, new_table=True)
 SetParameterAsText(1, output_message("Succeeded", ""))

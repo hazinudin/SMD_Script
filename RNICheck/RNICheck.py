@@ -54,7 +54,7 @@ CompSurfaceType = rni_config['compare_table']['surface_type']
 RouteIDCol = 'LINKID'
 FromMCol = "STA_FR"
 ToMCol = "STA_TO"
-CodeLane = "CODE_LANE"
+CodeLane = "LANE_CODE"
 
 # Set the environment workspace
 env.workspace = dbConnection
