@@ -1,8 +1,8 @@
 {
   "column_details":{
     "LINKID":{"dtype":"string"},
-    "STA_FR":{"dtype":"integer"},
-    "STA_TO":{"dtype":"integer"},
+    "STA_FR":{"dtype":"double"},
+    "STA_TO":{"dtype":"double"},
     "LENGTH":{"dtype":"double"},
     "LANE_CODE":{"dtype":"string"},
     "SURFTYPE":{"dtype":"integer", "range":[1,21]},
