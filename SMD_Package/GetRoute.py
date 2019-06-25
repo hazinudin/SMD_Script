@@ -4,9 +4,25 @@ from pandas import DataFrame
 
 
 class GetRoutes(object):
-    def __init__(self, query_type, query_value, lrs_network, balai_table, lrs_routeid='ROUTEID', lrs_prov_code='NOPROP',
-                 lrs_route_name='ROUTE_NAME', lrs_lintas='ID_LINTAS', balai_code='NOMOR_BALAI', balai_prov='NO_PROV'):
-
+    """
+    This Object is used for RouteID query based on requesty type either Province Code or Balai Code.
+    """
+    def __init__(self, query_type, query_value, lrs_network, balai_table, balai_route_table, lrs_routeid='ROUTEID',
+                 lrs_prov_code='NOPROP', lrs_route_name='ROUTE_NAME', lrs_lintas='ID_LINTAS', balai_code='NOMOR_BALAI',
+                 balai_prov='NO_PROV'):
+        """
+        :param query_type: The query type, either 'no_prov' or 'balai'
+        :param query_value: The query value.
+        :param lrs_network: The LRS Network which store all the route.
+        :param balai_table: The Balai Table which store the Balai-Prov Mapping.
+        :param balai_route_table: The Table which store the Balai-Route Mapping.
+        :param lrs_routeid: The RouteID column in LRS Network.
+        :param lrs_prov_code: The Prov Code column in LRS Network.
+        :param lrs_route_name: The Route Name column in LRS Network.
+        :param lrs_lintas: The Lintas Name column in LRS Network.
+        :param balai_code: The Balai Code column in Balai-Prov Table.
+        :param balai_prov: The Prov Code column in the Balai-Code Table.
+        """
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
             pass
