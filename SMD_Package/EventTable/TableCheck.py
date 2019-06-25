@@ -15,7 +15,7 @@ def read_input_excel(event_table_path):
     :param event_table_path: The excel file path.
     :return: Pandas DataFrame or NoneType.
     """
-    file_format = str(event_table_path).split('.')[1]
+    file_format = str(event_table_path)[-4:]
     if file_format in ['xls', 'xlsx']:
 
         df_self_dtype = pd.read_excel(event_table_path)
