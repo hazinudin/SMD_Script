@@ -30,6 +30,7 @@ queryType = input_details['type']
 queryValue = input_details['codes']
 lrsNetwork = config['table_names']['lrs_network']
 balaiTable = config['table_names']['balai_table']
+balaiRouteTable = config['table_names']['balai_route_table']
 
 lrs_RID = 'ROUTEID'
 lrs_provcode = 'NOPROP'
@@ -69,6 +70,6 @@ if len(code_check_result) != 0:  # If there is an error
     sys.exit(0)
 
 # Creating the route query request object
-route_query = GetRoutes(queryType, queryValue, lrsNetwork, balaiTable, lrs_routeid=lrs_RID,
+route_query = GetRoutes(queryType, queryValue, lrsNetwork, balaiTable, balaiRouteTable, lrs_routeid=lrs_RID,
                         lrs_prov_code=lrs_provcode, balai_code=balaiTableBalaiCode, balai_prov=balaiTableProvCode)
 SetParameterAsText(1, route_query.create_json_output(detailed=True))

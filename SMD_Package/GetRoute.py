@@ -51,19 +51,39 @@ class GetRoutes(object):
                 sql_statement = '{0} in ({1})'.format(balai_code, str(query_value).strip('[]'))
 
         # Start the balai and prov query from the balai_prov table in geodatabase
-        with da.SearchCursor(balai_table, [balai_prov, balai_code], where_clause=sql_statement,
-                             sql_clause=('DISTINCT', None)) as search_cursor:
-            for row in search_cursor:
-                prov_balai_dict[str(row[0])] = str(row[1])  # Create a "prov":"kode_balai" dictionary
+        _arr = da.FeatureClassToNumPyArray(balai_table, [balai_prov, balai_code], where_clause=sql_statement)
+        _df = DataFrame(_arr)
+
+        # Create a list [{"kode_prov":prov_code, "kode_balai":balai_code}, ...]
+        prov_balai_dict = _df.to_dict(orient='records')
 
         # Start iterating over the requested province
         for prov_code in prov_balai_dict:
             if query_type == 'balai':
-                codes = prov_balai_dict[prov_code]
+                codes = prov_code[balai_code]  # The Balai Code
+
+                # Read the Balai-Route Table
+                _arr = da.FeatureClassToNumPyArray(balai_route_table, [balai_code, lrs_routeid])
+                _df = DataFrame(_arr)
+                in_route_map = _df[balai_code].isin([codes]).any()  # True if the codes exist in Balai-Route Map Table
+
+                # If code exist Balai-Route Mapping Table.
+                if in_route_map:
+                    routes = _df.loc[_df[balai_code] == codes, lrs_routeid].tolist()
+
             if query_type == 'no_prov':
-                codes = prov_code
+                codes = prov_code[balai_prov]
+
+            # Start accessing the LRS Network Feature Class
+            if query_type == 'balai' and in_route_map:
+                in_field = lrs_routeid
+                search_val = str(routes).strip('[]')
+            else:
+                in_field = lrs_prov_code
+                search_val = prov_code[balai_prov]
+
             with da.SearchCursor(lrs_network, [lrs_routeid, lrs_route_name, lrs_lintas],
-                                 where_clause='{0}=({1})'.format(lrs_prov_code, prov_code)) as search_cursor:
+                                 where_clause='{0} in ({1})'.format(in_field, search_val)) as search_cursor:
                 if codes not in balai_route_dict:
                     balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
                 else:
