@@ -352,6 +352,9 @@ balaiTable = config['table_names']['balai_table']
 balaiProvCol = config['table_fields']['balai_table']['prov_code']
 balaiBalaiCol = config['table_fields']['balai_table']['balai_code']
 
+# The Balai Route Table
+balaiRouteTable = config['table_names']['balai_route_table']
+
 # The RNI Table Details
 rniTable = config['table_names']['rni']
 rniSearchField = ['LINKID', 'FROMMEASURE', 'TOMEASURE', 'LANE_CODE']
@@ -385,7 +388,7 @@ if input_details['type'] != 'routes':  # If the input type is not 'routes', then
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)  # Stop the script
 
-    getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable)
+    getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable, balaiRouteTable)
     routeList = getAllRouteResult.route_list()  # The list containing the query result
 
 elif input_details['type'] == 'routes':  # If the input type is 'routes' then use the value from 'codes'
