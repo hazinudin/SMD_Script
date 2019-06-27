@@ -36,5 +36,7 @@ TableCheck = EventValidation(df, column_details, 'ELRS.National_Network2018', 'R
 TableCheck.measurement_check(rni_fc, 'LINKID', 'TOMEASURE', from_m_col='KMPOST', to_m_col='KMPOSTTO', lane_code='LANE_CODE', compare_to='LRS')
 TableCheck.rni_roadtype_check(roadtype_details, from_m_col='KMPOST', to_m_col='KMPOSTTO', lane_codes='LANE_CODE')
 
-DataFrame(TableCheck.altered_route_result()).to_csv("{1}/error_check_{0}.csv".format(prov_code, env.scratchFolder))
+df_result = DataFrame(TableCheck.altered_route_result())
+df_verif = df_result.loc[df_result['status'] == 'verified']
+df_verif.to_csv("{1}/error_check_{0}.csv".format(prov_code, env.scratchFolder))
 SetParameter(1, "{1}/error_check_{0}.csv".format(prov_code, env.scratchFolder))
