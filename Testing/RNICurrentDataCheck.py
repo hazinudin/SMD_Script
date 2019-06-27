@@ -12,7 +12,7 @@ import json
 with open('RNICheck/rni_config.json') as config_f:
     rni_config = json.load(config_f)
 
-env.workspace = 'Database Connections/ELRS@GEODBBM 144.sde'
+env.workspace = 'ELRS@GEODBBM 144.sde'
 env.overwriteOutput = True
 rni_fc = 'ELRS.RNI_National_2_REV'
 input_fields = ['LINKID', 'KMPOST', 'KMPOSTTO', 'LANE_CODE', 'ROAD_TYPE', 'MEDWIDTH']
