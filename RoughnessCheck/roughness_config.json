@@ -13,7 +13,11 @@
     "SURV_DATE":{"dtype":"date"},
     "LONGITUDE":{"dtype":"double"},
     "LATITUDE":{"dtype":"double"},
-    "ALTITUDE":{"dtype":"double"}
+    "ALTITUDE":{"dtype":"double"},
+    "ID_KONSULTAN":{"dtype":"integer"},
+    "ID_SURVEYOR":{"dtype":"integer"},
+    "ID_ALATSURVEY":{"dtype":"integer"},
+    "SURVEY_LENGTH":{"dtype":"double"}
   },
   "compare_table":{
     "table_name":"ELRS.Roughness_National_REV",
