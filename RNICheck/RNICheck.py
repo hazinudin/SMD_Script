@@ -20,6 +20,7 @@ LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 BalaiTable = smd_config['table_names']['balai_table']
 BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
+BalaiRouteTable = smd_config['table_names']['balai_route_table']
 dbConnection = smd_config['smd_database']['instance']
 RNIEventTable = smd_config['table_names']['rni']
 RNIRouteID = smd_config['table_fields']['rni']['route_id']
@@ -67,7 +68,7 @@ if len(code_check_result) != 0:  # If there is an error
     sys.exit(0)
 
 # GetAllRoute result containing all route from a Balai
-routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
+routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check

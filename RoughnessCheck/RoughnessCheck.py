@@ -30,6 +30,7 @@ RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 BalaiTable = smd_config['table_names']['balai_table']
 BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
 dbConnection = smd_config['smd_database']['instance']
+BalaiRouteTable = smd_config['table_names']['balai_route_table']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -71,7 +72,7 @@ if len(code_check_result) != 0:  # If there is an error
     sys.exit(0)
 
 # GetAllRoute result containing all route from a Balai
-routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
+routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTable).route_list()
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
