@@ -117,7 +117,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
         convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                         dbConnection)
+                         dbConnection)  # Convert the measurement value from Decameters to Kilometers and trim excess
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
     # Write the JSON Output string.
