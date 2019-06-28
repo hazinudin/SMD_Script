@@ -39,7 +39,7 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
         df_route = df.loc[df[routeid_col] == route]  # Create route DataFrame
 
         # Access the LRS Network to get LRS geometry for current route
-        with da.SearchCursor(lrs_network, 'SHAPE@', where_clause="{0}={1}".format(lrs_routeid, route)) as cursor:
+        with da.SearchCursor(lrs_network, 'SHAPE@', where_clause="{0}='{1}'".format(lrs_routeid, route)) as cursor:
             for row in cursor:
                 lrs_geom = row[0]
 
@@ -67,7 +67,7 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
 
                 # Create the summary row
                 num_summary = df_lane.tail(meanrows).describe(include=[np.number]).loc['mean'].reset_index(drop=True)
-                obj_summary = df_lane.tail(meanrows).describe(include=[np.number]).lco['top'].reset_index(drop=True)
+                obj_summary = df_lane.tail(meanrows).describe(include=[np.number]).loc['top'].reset_index(drop=True)
                 new_row = concat([num_summary, obj_summary], axis=1, join_axes=[num_summary.index])
                 new_rows = new_row.append([new_row]*new_row_count, ignore_index=True)
 
