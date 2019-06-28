@@ -46,7 +46,8 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
         # Check if route data is shorter than LRS
         route_data_max = df_route[to_m_col].max()
         lrs_max = lrs_geom.lastPoint.M
-        if route_data_max < lrs_max:  # If the route event data is shorter than LRS max m value.
+        max_diff = lrs_max - route_data_max
+        if (route_data_max < lrs_max) and (max_diff > increment):  # If the route event data is shorter than LRS max m value.
 
             # Start creating a patch for this route
             # The route's lane from the last interval
@@ -58,7 +59,8 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
                 lane_max_ind = df_lane[to_m_col].idxmax()
 
                 # Normalized the last to-m value
-                df[lane_max_ind, to_m_col] = df_lane.at[lane_max_ind, from_m_col] + increment  # Replace the value in df
+                df.at[lane_max_ind, to_m_col] = df_lane.at[lane_max_ind, from_m_col] + increment  # Replace the value in df
+                df_lane.at[lane_max_ind, to_m_col] = df_lane.at[lane_max_ind, from_m_col] + increment
                 normalized_max = df_lane[to_m_col].max()
 
                 # New row properties
@@ -66,8 +68,8 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
                 new_row_count = len(new_from_m)-1
 
                 # Create the summary row
-                num_summary = df_lane.tail(meanrows).describe(include=[np.number]).loc['mean'].reset_index(drop=True)
-                obj_summary = df_lane.tail(meanrows).describe(include=[np.number]).loc['top'].reset_index(drop=True)
+                num_summary = df_lane.tail(meanrows).describe(include=[np.number]).loc[['mean']].reset_index(drop=True)
+                obj_summary = df_lane.tail(meanrows).describe(include=[object]).loc[['top']].reset_index(drop=True)
                 new_row = concat([num_summary, obj_summary], axis=1, join_axes=[num_summary.index])
                 new_rows = new_row.append([new_row]*new_row_count, ignore_index=True)
 
@@ -78,7 +80,10 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
                     _lane_code = lane  # The lane code of new row
 
                     new_rows.at[index, from_m_col] = _from_m
-                    new_rows.at[index, to_m_col] = _to_m
+                    if index == (len(new_from_m)-1):
+                        new_rows.at[index, to_m_col] = lrs_max
+                    else:
+                        new_rows.at[index, to_m_col] = _to_m
                     new_rows.at[index, lane_code] = lane
 
                 # Insert the newly created rows to DataFrame
@@ -86,4 +91,4 @@ def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, lrs_net
         else:
             pass
 
-        return df
+    return df
