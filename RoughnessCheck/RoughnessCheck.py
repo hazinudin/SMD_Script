@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim, create_patch
 from pprint import pprint
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
@@ -50,6 +50,9 @@ RouteIDCol = 'LINKID'
 FromMCol = "STA_FR"
 ToMCol = "STA_TO"
 CodeLane = "LANE_CODE"
+LongitudeCol = 'LONGITUDE'
+LatitudeCol = 'LATITUDE'
+AltitudeCol = 'ALTITUDE'
 
 # The GDB table which store all the valid table row
 OutputGDBTable = roughness_config['output_table']
@@ -116,6 +119,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]  # Only select the route which pass
 
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+        passed_routes_row = create_patch(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LongitudeCol,
+                                         LatitudeCol, AltitudeCol, LrsNetwork, LrsNetworkRID)  # Create the patch or stretch
         convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
                          dbConnection)  # Convert the measurement value from Decameters to Kilometers and trim excess
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
