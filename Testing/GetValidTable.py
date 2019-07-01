@@ -6,7 +6,7 @@ env.workspace = 'Database Connections/ELRS@GEODBBM 144.sde'
 rni_fc = 'ELRS.RNI_National_2_REV'
 lrs_network = 'ELRS.National_Network2018'
 
-ar = da.FeatureClassToNumPyArray(rni_fc, ['KMPOST', 'KMPOSTTO', 'LANE_CODE', 'LINKID'],
+ar = da.FeatureClassToNumPyArray(rni_fc, ['KMPOST', 'KMPOSTTO', 'LANE_CODE', 'LINKID', 'ROAD_TYPE', 'SURFTYPE'],
                                  where_clause="LINKID='{0}'".format(route))
 df = pd.DataFrame(ar)  # Create the DataFrame
 
@@ -25,10 +25,12 @@ for index, row in df.iterrows():
 
     if lane[0] == 'L':
         point = lrs_geom.positionAlongLine(to_meas)
+        df.loc[index, 'DIRECTION'] = 'N'  # The direction column
     if lane[0] == 'R':
         point = lrs_geom.positionAlongLine(from_meas)
+        df.loc[index, 'DIRECTION'] = 'O'
 
-    point = point.projectAs('4326')
+    point = point.projectAs('4326')  # Re-project to WGS 1984
     df.loc[index, ['LONGITUDE']] = point.lastPoint.X
     df.loc[index, ['LATITUDE']] = point.lastPoint.Y
     df.loc[index, ['ALTITUDE']] = 0
