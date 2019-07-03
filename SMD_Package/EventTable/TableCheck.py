@@ -164,7 +164,7 @@ class EventValidation(object):
         else:
             return self.header_check_result
 
-    def year_and_semester_check(self, year_input, semester_input, year_col='YEAR', sem_col='SEMESTER',
+    def year_and_semester_check(self, year_input, semester_input, year_col='SURVEY_YEAR', sem_col='SURVEY_SMS',
                                 routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE',
                                 year_check_only=False):
         """
@@ -459,7 +459,7 @@ class EventValidation(object):
 
         return self
 
-    def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="LONGITUDE", lat_col="LATITUDE",
+    def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FR', to_m_col='STA_TO', lane_code='CODE_LANE', input_projection='4326',
                          threshold=30, at_start=True):
         """
@@ -1109,7 +1109,10 @@ class EventValidation(object):
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'ToBeReviewed', error_message)
             else:  # If the route does not exist
-                pass
+                error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
+                    format(route)
+                self.error_list.append(error_message)
+                self.insert_route_message(route, 'ToBeReviewed', error_message)
 
         return self
 
