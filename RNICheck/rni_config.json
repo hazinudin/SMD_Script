@@ -39,7 +39,7 @@
   },
   "output_table":"ELRS.DEV_RNI_2_2018",
   "compare_table":{
-    "table_name":"ELRS.RNI_National_2",
+    "table_name":"SMD.RNI_2018",
     "route_id":"LINKID",
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
