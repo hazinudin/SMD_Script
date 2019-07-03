@@ -34,7 +34,7 @@ RNILaneWidth = smd_config['table_fields']['rni']['lane_width']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 DataSemester = InputDetails['semester']
