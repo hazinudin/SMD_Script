@@ -37,7 +37,7 @@
     "ID_ALATSURVEY":{"dtype":"integer"},
     "SURVEY_LENGTH":{"dtype":"double"}
   },
-  "output_table":"ELRS.DEV_RNI_2_2018",
+  "output_table":"SMD.RNI_2019",
   "compare_table":{
     "table_name":"SMD.RNI_2018",
     "route_id":"LINKID",
