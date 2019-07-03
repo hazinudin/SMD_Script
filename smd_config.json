@@ -6,15 +6,15 @@
     "referer":"https://gisserver.binamarga.pu.go.id:6443/arcgis/admin"
   },
   "smd_database":{
-    "instance":"ELRS@GEODBBM 144.sde",
-    "username":"ELRS",
-    "password":"ELRS"
+    "instance":"SMD@GEODBBM 144.sde",
+    "username":"SMD",
+    "password":"SMD123M"
   },
   "table_names":{
-    "lrs_network":"ELRS.National_Network2018",
-    "balai_table":"ELRS.All_Balai_Prov",
-    "balai_route_table":"ELRS.BalaiRoute",
-    "rni": "ELRS.RNI_National_2_REV"
+    "lrs_network":"SMD.LRS_NETWORK_2019",
+    "balai_table":"SMD.MAP_BALAI_PROV",
+    "balai_route_table":"SMD.MAP_BALAI_ROUTE",
+    "rni": "SMD.RNI_2018"
   },
   "table_fields":{
     "lrs_network":{

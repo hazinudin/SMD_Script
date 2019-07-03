@@ -20,11 +20,11 @@
     "SURVEY_LENGTH":{"dtype":"double"}
   },
   "compare_table":{
-    "table_name":"ELRS.Roughness_National_REV",
+    "table_name":"SMD.ROUGHNESS_2_2018",
     "route_id":"LINKID",
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
     "iri":"IRI"
   },
-  "output_table":"ELRS.DEV_ROUGHNESS_2_2018"
+  "output_table":"SMD.ROUGHNESS_1_2019"
 }

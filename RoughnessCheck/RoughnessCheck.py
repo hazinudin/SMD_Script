@@ -55,7 +55,7 @@ LatitudeCol = 'LATITUDE'
 AltitudeCol = 'ALTITUDE'
 
 # The GDB table which store all the valid table row
-OutputGDBTable = roughness_config['output_table']
+OutputGDBTable = 'SMD.ROUGHNESS_{0}_{1}'.format(Semester, DataYear)
 
 # All the details about comparison table
 CompTable = roughness_config['compare_table']['table_name']
