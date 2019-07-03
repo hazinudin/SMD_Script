@@ -109,10 +109,16 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     failed_routes = EventCheck.route_results.keys()  # Only contain the Error message without the ToBeReviewed msg.
 
+    # Write the JSON Output string.
+    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
+
     if len(failed_routes) == 0:  # There is no error in the Table, but check for manual review possibility
         # The only function that will result a ToBeReviewed Message.
         EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
                                       CompToMeasure, CompRouteID, CompIRI, routes=valid_routes)
+        # Write the JSON Output string.
+        SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True,
+                                                                                          message_type='ToBeReviewed')))
 
     failed_routes = EventCheck.route_results.keys()  # Refresh the failed_routes list
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
@@ -124,9 +130,6 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
                          dbConnection)  # Convert the measurement value from Decameters to Kilometers and trim excess
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
-
-    # Write the JSON Output string.
-    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
