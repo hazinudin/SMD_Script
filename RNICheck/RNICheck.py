@@ -102,11 +102,16 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
 
+    # Write the JSON Output string.
+    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+
     if len(failed_routes) == 0:  # If there is an route with no error, then write to GDB
         EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
                                             2018, RNILaneCode, routes=valid_routes)
         EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
                                          routes=valid_routes)
+        # Write the JSON Output string.
+        SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result(message_type='ToBeReviewed')))
 
     failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
     valid_df = EventCheck.copy_valid_df()
@@ -116,9 +121,6 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
                          dbConnection)
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
-
-    # Write the JSON Output string.
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 
     # FOR ARCMAP USAGE ONLY#
     msg_count = 1
