@@ -1095,18 +1095,23 @@ class EventValidation(object):
             kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
                                                        comp_to_col, route, self.sde_connection)
 
-            mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
-            mantap_compare = kemantapan_compare.at['mantap', '_len']
+            if kemantapan_compare is not None:  # Check if the specified route exist in the comparison table.
+                mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
+                mantap_compare = kemantapan_compare.at['mantap', '_len']
 
-            # Compare the kemantapan percentage between current data and previous data
-            if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
-                pass  # If true then pass
-            else:
-                # Create the error message
-                error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
-                    format(route, (100*threshold))
-                self.error_list.append(error_message)
-                self.insert_route_message(route, 'ToBeReviewed', error_message)
+                # Compare the kemantapan percentage between current data and previous data
+                if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
+                    pass  # If true then pass
+                else:
+                    # Create the error message
+                    error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
+                        format(route, (100*threshold))
+                    self.error_list.append(error_message)
+                    self.insert_route_message(route, 'ToBeReviewed', error_message)
+            else:  # If the route does not exist
+                pass
+
+        return self
 
     def copy_valid_df(self, dropna=True):
         """

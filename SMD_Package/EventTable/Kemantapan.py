@@ -253,6 +253,10 @@ class Kemantapan(object):
         # Create the compare_table DataFrame
         comp_df = event_fc_to_df(compare_table, [route_col, from_m_col, to_m_col, grading_col], route, route_col,
                                  sde_connection, orderby=None)
+
+        if len(comp_df) == 0:  # If the comparison table is empty
+            return None
+
         comp_df[from_m_col] = pd.Series(comp_df[from_m_col]*100)
         comp_df[to_m_col] = pd.Series(comp_df[to_m_col]*100)
 
