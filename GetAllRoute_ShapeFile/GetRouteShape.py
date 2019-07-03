@@ -200,7 +200,7 @@ class DictionaryToFeatureClass(object):
         if self.missing_route is not None:
             for route in self.missing_route:
                 message = self.missing_msg
-                new_row = [None, route, 0, 0, message]
+                new_row = [None, route, message, message]
                 insert_cursor.insertRow(new_row)
                 polyline_feature_count += 1
 
