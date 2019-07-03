@@ -37,7 +37,6 @@ inputJSON = GetParameterAsText(0)
 InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
-DataSemester = InputDetails['semester']
 KodeBalai = InputDetails["balai"]
 
 # All the column details in the roughness_config.json
@@ -85,7 +84,7 @@ if InputDF is None:  # If the file format is not .xlsx
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True, lane_code='LANE_CODE')
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_check_only=True, lane_code='LANE_CODE')
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
