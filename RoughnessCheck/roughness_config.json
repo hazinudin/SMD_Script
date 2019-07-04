@@ -9,7 +9,7 @@
     "IRI":{"dtype":"double", "range":[1, 25]},
     "SURVEY_YEAR":{"dtype":"integer"},
     "SURVEY_SMS":{"dtype":"integer"},
-    "DIRECTION":{"dtype":"string", "domain":["O", "N"]},
+    "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
     "SURVEY_DATE":{"dtype":"date"},
     "STATO_LONG":{"dtype":"double"},
     "STATO_LAT":{"dtype":"double"},
