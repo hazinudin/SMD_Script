@@ -23,7 +23,7 @@ def read_input_excel(event_table_path):
         del df_self_dtype
 
         df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
-        df_string.columns = df_string.columns.str.upper()
+        df_string.columns = df_string.columns.str.upper()  # Uppercase all the column name
         return df_string  # df_string is DataFrame which contain all data in string format
     else:
         return None
