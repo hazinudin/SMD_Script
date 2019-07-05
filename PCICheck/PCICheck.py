@@ -3,7 +3,7 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -20,7 +20,9 @@ LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 
 BalaiTable = smd_config['table_names']['balai_table']
+BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
 dbConnection = smd_config['smd_database']['instance']
+BalaiRouteTable = smd_config['table_names']['balai_route_table']
 
 RNIEventTable = smd_config['table_names']['rni']
 RNIRouteID = smd_config['table_fields']['rni']['route_id']
@@ -31,28 +33,48 @@ RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
-DataSemester = InputDetails['semester']
 KodeBalai = InputDetails["balai"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = pci_config['column_details']  # Load the roughness column details dictionary
-OutputTable = pci_config['output_table']
+OutputTable = "SMD.PCI_{0}".format(DataYear)
 RouteIDCol = 'LINKID'
+FromMCol = "STA_FR"
+ToMCol = "STA_TO"
+CodeLane = "LANE_CODE"
+LongitudeCol = 'LONGITUDE'
+LatitudeCol = 'LATITUDE'
+AltitudeCol = 'ALTITUDE'
 
 # GetAllRoute result containing all route from a Balai
 env.workspace = dbConnection
-routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
+routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTable).route_list()
+
+# Check if balai from the request is valid
+code_check_result = verify_balai(KodeBalai, BalaiTable, BalaiKodeBalai, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format("balai", code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-InputDF = read_input_excel(TablePath)
+try:
+    InputDF = read_input_excel(TablePath)  # Read the excel file
+except IOError:  # If the file path is invalid
+    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    sys.exit(0)  # Stop the script
+if InputDF is None:  # If the file format is not .xlsx
+    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    sys.exit(0)  # Stop the script
+
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, DataSemester, year_check_only=True)
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_check_only=True)
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
@@ -70,15 +92,20 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_df = EventCheck.copy_valid_df()
     passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
 
+    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+
     if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
         gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails)
 
+    # FOR ARCMAP USAGE ONLY #
     msg_count = 1
-    for error_message in EventCheck.altered_route_result('error', dict_output=False):
-        AddMessage(str(msg_count)+'. '+error_message)
+    for error_message in EventCheck.altered_route_result(message_type='error', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message+' ERROR')
         msg_count += 1
 
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+    for error_message in EventCheck.altered_route_result(message_type='ToBeReviewed', dict_output=False):
+        AddMessage(str(msg_count)+'. '+error_message+' WARNING')
+        msg_count += 1
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check

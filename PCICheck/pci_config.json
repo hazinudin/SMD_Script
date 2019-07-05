@@ -4,9 +4,9 @@
     "LINKID":{"dtype":"string"},
     "STA_FR":{"dtype":"integer"},
     "STA_TO":{"dtype":"integer"},
-    "LENGTH":{"dtype":"double"},
-    "DIRECTION":{"dtype":"string", "domain":["O", "N"]},
-    "CODE_LANE":{"dtype":"string"},
+    "SEGMENT_LENGTH":{"dtype":"double"},
+    "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
+    "LANE_CODE":{"dtype":"string"},
     "AS_CRACK_ALG":{"dtype":"double"},
     "AS_CRACK_EDGE":{"dtype":"double"},
     "AS_CRACK_LONG":{"dtype":"double"},
@@ -29,11 +29,15 @@
     "RG_SPALLING_JOINT":{"dtype":"integer"},
     "RG_JOINT_SEAL":{"dtype":"integer"},
     "RG_PATCHING":{"dtype":"integer"},
-    "SURV_DATE":{"dtype":"date"},
-    "YEAR":{"dtype":"integer"},
+    "SURVEY_DATE":{"dtype":"date"},
+    "SURVEY_YEAR":{"dtype":"integer"},
     "PCI":{"dtype":"double"},
-    "LONGITUDE":{"dtype":"double"},
-    "LATITUDE":{"dtype":"double"},
-    "ALTITUDE":{"dtype":"double"}
+    "STATO_LONG":{"dtype":"double"},
+    "STATO_LAT":{"dtype":"double"},
+    "STATO_ALT":{"dtype":"double"},
+    "ID_KONSULTAN":{"dtype":"integer"},
+    "ID_SURVEYOR":{"dtype":"integer"},
+    "ID_ALATSURVEY":{"dtype":"integer"},
+    "SURVEY_LENGTH":{"dtype":"double"}
   }
 }
