@@ -25,6 +25,10 @@ class Kemantapan(object):
         with open('SMD_Package/EventTable/surftype_group.json') as group_json:
             group_details = json.load(group_json)  # Load the surface type group JSON
 
+        # make sure the kemantapan_type is between 'ROUGHNESS' and 'PCI'
+        if kemantapan_type not in ['ROUGHNESS', 'PCI']:
+            raise Exception('{0} is not a valid kemantapan type.'.format(kemantapan_type))  # Raise an exception
+
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
         self.df_rni = df_rni
