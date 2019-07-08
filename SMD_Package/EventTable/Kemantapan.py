@@ -322,13 +322,15 @@ class Kemantapan(object):
         return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 
     @staticmethod
-    def grading(df_merge, surftype_col, grading_col, group_details, grading_result='_grade'):
+    def grading(df_merge, surftype_col, grading_col, group_details, type, grading_result='_grade'):
         """
         This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan", "rusak_berat")
         based on the segment surface type group and value in the grading column.
         :param df_merge: The merge result of event DataFrame and the RNI DataFrame.
         :param surftype_col: The surface type column in the merge result.
         :param grading_col: The value used in the grading process.
+        :param group_details: The surface type group details (grading value and surface type (paved or unpaved)).
+        :param type: The kemantapan type tha will be calculated
         :param grading_result: The new column used to store the grading result.
         :return: The df_merge with new column which store the grading result.
         """
