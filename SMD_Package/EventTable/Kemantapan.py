@@ -6,13 +6,21 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 class Kemantapan(object):
     def __init__(self, df_rni, df_event, grading_col, route_col, from_m_col, to_m_col, rni_route_col, rni_from_col,
-                 rni_to_col, surftype_col=None):
+                 rni_to_col, surftype_col=None, kemantapan_type='ROUGHNESS'):
         """
         Initialize the Kemantapan class for grading kemantapan value
         :param df_rni: The DataFrame for RNI table.
         :param df_event: The DataFrame for the input table.
         :param grading_col: The value used for grading
+        :param route_col: The RouteID column of the input DataFrame.
+        :param from_m_col: The From Measure column of the input DataFrame.
+        :param to_m_col: The To Measure column of the input DataFrame.
+        :param rni_route_col: The RouteID column of the RNI DataFrame.
+        :param rni_from_col: The From Measure column of the RNI DataFrame.
+        :param rni_to_col: The To Measure column of the RNI DataFrame.
         :param surftype_col: The column which store the surface type value in the RNI Table
+        :param kemantapan_type: The type of kemantapan will be calculated. ROUGHNESS or PCI only. The selection will
+        effect the amount of grading level.
         """
         with open('SMD_Package/EventTable/surftype_group.json') as group_json:
             group_details = json.load(group_json)  # Load the surface type group JSON
