@@ -319,6 +319,7 @@ class Kemantapan(object):
         input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
 
         # GroupBy the RNI Table to get the summary of surface type from all lane in a segment.
+        # Get the first surface type in single RNI segment group
         rni_groupped = df_rni.groupby(by=rni_group_col)[surftype_col].\
             agg(lambda x: x.value_counts().index[0]).reset_index()
 
