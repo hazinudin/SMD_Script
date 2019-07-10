@@ -28,6 +28,8 @@ class Kemantapan(object):
         # make sure the kemantapan_type is between 'ROUGHNESS' and 'PCI'
         if kemantapan_type not in ['ROUGHNESS', 'PCI']:
             raise Exception('{0} is not a valid kemantapan type.'.format(kemantapan_type))  # Raise an exception
+        else:
+            self.type = kemantapan_type
 
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
@@ -61,7 +63,10 @@ class Kemantapan(object):
         pivot_grade_all = self.create_pivot(columns=['_grade'])
 
         # All the required grades and surfaces
-        required_grades = np.array(['good', 'fair', 'poor', 'bad'])
+        if self.type == 'ROUGHNESS':
+            required_grades = np.array(['good', 'fair', 'poor', 'bad'])
+        elif self.type == 'PCI':
+            required_grades = np.array(['good', 'satisfactory', 'fair', 'poor', 'very poor', 'serious', 'failed'])
         required_mantap = np.array(['mantap', 'tdk_mantap'])
         required_surftype = ['p', 'up']
 
@@ -194,7 +199,6 @@ class Kemantapan(object):
         column will have an suffix determined by a parameter.
         If the pivot table have a missing grade, then a new column will be added which contain 0 value.
         :param pivot_table: The input pivot table.
-        :param required_grades: The required grades.
         :param required_surftype: The required surface type.
         :param suffix: The percentage column name suffix.
         :return: Modified pivot table
