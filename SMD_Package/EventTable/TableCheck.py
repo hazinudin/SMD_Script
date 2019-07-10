@@ -712,6 +712,45 @@ class EventValidation(object):
 
         return self
 
+    def lane_direction_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FR',
+                             to_m_col='STA_TO', direction_col='SURVEY_DIREC',):
+        """
+        This class method will check for consistency between the stated lane and the direction. The Left lane e.g(L1,
+        L2, L3, etc) should has a N(Normal) direction. Meanwhile, the Right lane e.g(R1, R2, R3, etc) should has a
+        O(Opposite) direction.
+        :param routes: The routes that will be checked.
+        :param routeid_col: The RouteID column in the input DataFrame.
+        :param lane_code: The Lane Code column in the input DataFrame.
+        :param from_m_col: The From Measure column in the input DataFrame.
+        :param to_m_col: The To Measure column in the input DataFrame.
+        :param direction_col: The direction column in the input DataFrame.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create a valid DataFrame copy
+
+        # If there is a route selection request
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        # The False row
+        false_row_l = df.loc[(df[lane_code].str.startswith("L")) & (df[direction_col] == "O")]  # The L lane with O dir
+        false_row_r = df.loc[(df[lane_code].str.startswith("R")) & (df[direction_col] == "N")]  # The R lane with N dir
+        false_row = pd.concat(false_row_l, false_row_r)  # All false row
+
+        for index, row in false_row.iterrows():  # Iterate over all row in the False DataFrame.
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            lane = row[lane_code]
+
+            message = "{0} pada segmen {1}-{2} {3} memiliki arah yang tidak konsisten dengan kode lajur.".\
+                format(route, from_m, to_m, lane)
+            self.insert_route_message(route, 'error', message)  # Insert the route's error message.
+
+        return self
+
     def rni_availability(self, rni_table, routes='ALL', routeid_col='LINKID', rni_route_col='LINKID'):
         """
         This class method will check the route availability in the RNI Event Table.
