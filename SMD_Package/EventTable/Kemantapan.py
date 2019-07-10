@@ -45,6 +45,8 @@ class Kemantapan(object):
         self.route_col = route_col
 
         self.group_details = group_details
+        self.lane_based = lane_based
+        self.lane_code = lane_code
 
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
@@ -60,11 +62,18 @@ class Kemantapan(object):
         :param flatten: If true then the returned DataFrame does not use any multi index column.
         :return:
         """
-        # Create the pivot table
-        pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'])
-        pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'])
-        pivot_mantap_all = self.create_pivot(columns=['_kemantapan'])
-        pivot_grade_all = self.create_pivot(columns=['_grade'])
+        if not self.lane_based:
+            # Create the pivot table
+            pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'])
+            pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'])
+            pivot_mantap_all = self.create_pivot(columns=['_kemantapan'])
+            pivot_grade_all = self.create_pivot(columns=['_grade'])
+        elif self.lane_based:
+            # Create the pivot table
+            pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'], lane_code=self.lane_code)
+            pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'], lane_code=self.lane_code)
+            pivot_mantap_all = self.create_pivot(columns=['_kemantapan'], lane_code=self.lane_code)
+            pivot_grade_all = self.create_pivot(columns=['_grade'], lane_code=self.lane_code)
 
         # All the required grades and surfaces
         if self.type == 'ROUGHNESS':
@@ -287,14 +296,19 @@ class Kemantapan(object):
 
         return mantap_comp
 
-    def create_pivot(self, columns):
+    def create_pivot(self, columns, lane_code=None):
         """
         Create a pivot DataFrame from the DataFrame which already being graded
         :param columns: The column used to create pivot table.
+        :param lane_code: The lane code column.
         :return:
         """
-        pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=columns, aggfunc=np.sum,
-                                           fill_value=0)
+        if lane_code is None:  # If no lane code column is specified
+            pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=columns, aggfunc=np.sum,
+                                               fill_value=0)
+        elif lane_code is not None:
+            pivot = self.graded_df.pivot_table('_len', index=['LINKID', lane_code], columns=columns, aggfunc=np.sum,
+                                               fill_value=0)
         return pivot
 
     @staticmethod
