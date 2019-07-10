@@ -48,7 +48,8 @@ class Kemantapan(object):
 
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
-                                       rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based)
+                                       rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
+                                       lane_code=lane_code, rni_lane_code=rni_lane_code)
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details, kemantapan_type)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
 
@@ -298,7 +299,7 @@ class Kemantapan(object):
 
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
-                       rni_to_col, surftype_col, lane_based, match_only=True):
+                       rni_to_col, surftype_col, lane_based, match_only=True, lane_code=None, rni_lane_code=None):
         """
         This static method used for joining the input event table and the RNI table
         :param df_rni: The RNI DataFrame.
@@ -312,6 +313,8 @@ class Kemantapan(object):
         :param rni_to_col: The column in RNI Table which stores the To Measure.
         :param surftype_col: The column in RNI Table which stores the surface type data.
         :param match_only: If True then this method only returns the 'both' merge result.
+        :param lane_code: The Input DataFrame lane code column.
+        :param rni_lane_code: The RNI Table lane code column.
         :return: A DataFrame from the merge result between the RNI and input event table.
         """
         if not lane_based:  # Do the table join with linkid, from, and to as join key.
@@ -335,8 +338,14 @@ class Kemantapan(object):
             return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 
         elif lane_based:  # Do the table join with linkid, from, to and lane code as join key
-            input_key = [route_col, from_m_col, to_m_col]
-            pass
+            input_key = [route_col, from_m_col, to_m_col, lane_code]
+            rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
+
+            df_merge = pd.merge(df_event, df_rni, how='outer', left_on=input_key, right_on=rni_key, indicator=True,
+                                suffixes=['_INPUT', '_RNI'])
+
+            df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
+            return df_match if match_only else df_merge
 
     @staticmethod
     def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade'):
