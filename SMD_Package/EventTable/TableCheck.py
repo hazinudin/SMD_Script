@@ -1093,9 +1093,10 @@ class EventValidation(object):
                 self.insert_route_message(route, 'ToBeReviewed', result)
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
-                           comp_route_col, comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='LANE_CODE',
-                           from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE',
-                           rni_to_col='TOMEASURE', threshold=0.05):
+                           comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
+                           lane_codes='LANE_CODE', from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID',
+                           rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE', rni_lane_code='LANE_CODE',
+                           threshold=0.05, lane_based = True):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -1129,36 +1130,49 @@ class EventValidation(object):
         for route in route_list:  # Iterate over all available route
             df_route = df.loc[df[routeid_col] == route]  # The DataFrame with only selected route
             # Create the comparison DataFrame
-            df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_grading_col], route,
+            comp_search_field = [comp_route_col, comp_from_col, comp_to_col, comp_grading_col, comp_lane_code]
+            df_comp = event_fc_to_df(comp_fc, comp_search_field, route,
                                      comp_route_col, self.sde_connection, include_all=True, orderby=None)
             df_comp[[comp_from_col, comp_to_col]] = df_comp[[comp_from_col, comp_to_col]].apply(lambda x: x*100).astype(int)
 
             # Create the RNI Table DataFrame
-            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
+            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col, rni_lane_code]  # The column included in RNI
             df_rni = event_fc_to_df(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
                                     is_table=True, orderby=None)
 
             if len(df_comp) != 0:  # Check if the specified route exist in the comparison table.
 
-                # Current year Kemantapan
-                kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col, None,
-                                        rni_route_col, rni_from_col, rni_to_col, None, surftype_col=surftype_col)
+                # Create Kemantapan instance for both input data and comparison data.
+                kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col, lane_codes,
+                                        rni_route_col, rni_from_col, rni_to_col, rni_lane_code, surftype_col=surftype_col,
+                                        lane_based=lane_based)
                 kemantapan_compare = Kemantapan(df_rni, df_comp, comp_grading_col, comp_route_col, comp_from_col,
-                                                comp_to_col, None, rni_route_col, rni_from_col, rni_to_col, None,
-                                                surftype_col=surftype_col)
+                                                comp_to_col, comp_lane_code, rni_route_col, rni_from_col, rni_to_col,
+                                                rni_lane_code, surftype_col=surftype_col, lane_based=lane_based)
 
-                mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
-                mantap_compare = kemantapan_compare.at['mantap', '_len']
+                if not lane_based:  # If the comparison is not lane based
+                    mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
+                    mantap_compare = kemantapan_compare.at['mantap', '_len']
 
-                # Compare the kemantapan percentage between current data and previous data
-                if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
-                    pass  # If true then pass
-                else:
-                    # Create the error message
-                    error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
-                        format(route, (100*threshold))
-                    self.error_list.append(error_message)
-                    self.insert_route_message(route, 'ToBeReviewed', error_message)
+                    # Compare the kemantapan percentage between current data and previous data
+                    if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
+                        pass  # If true then pass
+                    else:
+                        # Create the error message
+                        error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
+                            format(route, (100*threshold))
+                        self.error_list.append(error_message)
+                        self.insert_route_message(route, 'ToBeReviewed', error_message)
+
+                elif lane_based:  # If the ocmparison is lane based
+                    mantap_current = kemantapan.graded_df
+                    mantap_compare = kemantapan_compare.graded_df
+
+                    current_key = [routeid_col, from_m_col, to_m_col, lane_codes]
+                    compare_key = [comp_route_col, comp_from_col, comp_to_col, comp_lane_code]
+                    mantap_merge = pd.merge(mantap_current, mantap_compare, how='inner', left_on=current_key,
+                                            right_on=compare_key)
+
             else:  # If the route does not exist
                 error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
                     format(route)
