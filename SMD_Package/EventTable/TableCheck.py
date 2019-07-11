@@ -737,7 +737,7 @@ class EventValidation(object):
         # The False row
         false_row_l = df.loc[(df[lane_code].str.startswith("L")) & (df[direction_col] == "O")]  # The L lane with O dir
         false_row_r = df.loc[(df[lane_code].str.startswith("R")) & (df[direction_col] == "N")]  # The R lane with N dir
-        false_row = pd.concat(false_row_l, false_row_r)  # All false row
+        false_row = pd.concat([false_row_l, false_row_r])  # All false row
 
         for index, row in false_row.iterrows():  # Iterate over all row in the False DataFrame.
             route = row[routeid_col]
