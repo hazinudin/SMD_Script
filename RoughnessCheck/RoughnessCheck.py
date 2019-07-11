@@ -100,6 +100,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check(lane_code='LANE_CODE')  # Check the IRI value range
+    EventCheck.lane_direction_check(routes=valid_routes)  # Check the Lane - Direction Consistency
     EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure,
                                  routes=valid_routes, lane_code='LANE_CODE')  # Check the from-to measurement
