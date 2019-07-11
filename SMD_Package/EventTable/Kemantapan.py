@@ -34,6 +34,9 @@ class Kemantapan(object):
         else:
             self.type = kemantapan_type
 
+        if len(df_event) == 0:
+            raise Exception('Input Event DataFrame is Empty')
+
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
         self.df_rni = df_rni
