@@ -24,6 +24,7 @@
     "route_id":"LINKID",
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
+    "lane_code":"CODE_LANE",
     "iri":"IRI"
   },
   "output_table":"SMD.ROUGHNESS_1_2019"
