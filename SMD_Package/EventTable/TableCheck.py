@@ -1128,19 +1128,25 @@ class EventValidation(object):
         route_list = self.route_lane_tuple(df, routeid_col, lane_codes, route_only=True)  # Create a route list
         for route in route_list:  # Iterate over all available route
             df_route = df.loc[df[routeid_col] == route]  # The DataFrame with only selected route
+            # Create the comparison DataFrame
+            df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_grading_col], route,
+                                     comp_route_col, self.sde_connection, include_all=True, orderby=None)
+            df_comp[[comp_from_col, comp_to_col]] = df_comp[[comp_from_col, comp_to_col]].apply(lambda x: x*100).astype(int)
 
-            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
             # Create the RNI Table DataFrame
+            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col]  # The column included in RNI
             df_rni = event_fc_to_df(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
                                     is_table=True, orderby=None)
 
-            # Current year Kemantapan
-            kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col,
-                                    rni_route_col, rni_from_col, rni_to_col, surftype_col=surftype_col)
-            kemantapan_compare = kemantapan.comparison(comp_fc, comp_grading_col, comp_route_col, comp_from_col,
-                                                       comp_to_col, route, self.sde_connection)
+            if len(df_comp) != 0:  # Check if the specified route exist in the comparison table.
 
-            if kemantapan_compare is not None:  # Check if the specified route exist in the comparison table.
+                # Current year Kemantapan
+                kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col, None,
+                                        rni_route_col, rni_from_col, rni_to_col, None, surftype_col=surftype_col)
+                kemantapan_compare = Kemantapan(df_rni, df_comp, comp_grading_col, comp_route_col, comp_from_col,
+                                                comp_to_col, None, rni_route_col, rni_from_col, rni_to_col, None,
+                                                surftype_col=surftype_col)
+
                 mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
                 mantap_compare = kemantapan_compare.at['mantap', '_len']
 
