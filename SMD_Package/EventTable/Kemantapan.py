@@ -366,7 +366,8 @@ class Kemantapan(object):
             return df_match if match_only else df_merge
 
     @staticmethod
-    def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade'):
+    def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade',
+                grading_level='_grade_level'):
         """
         This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan", "rusak_berat")
         based on the segment surface type group and value in the grading column.
@@ -403,14 +404,19 @@ class Kemantapan(object):
                 # Start the grading process
                 if row[grading_col] <= lower_bound:
                     grade = 'good'
+                    level = 1
                 if (row[grading_col] > lower_bound) & (row[grading_col] <= mid):
                     grade = 'fair'
+                    level = 2
                 if (row[grading_col] > mid) & (row[grading_col] <= upper_bound):
                     grade = 'poor'
+                    level = 3
                 if row[grading_col] > upper_bound:
                     grade = 'bad'
+                    level = 4
 
                 df_merge.loc[index, grading_result] = grade
+                df_merge.loc[index, grading_level] = level
 
             elif kemantapan_type == 'PCI':  # If the kemantapan type is PCI
                 pass
