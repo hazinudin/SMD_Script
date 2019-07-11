@@ -1164,7 +1164,7 @@ class EventValidation(object):
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'ToBeReviewed', error_message)
 
-                elif lane_based:  # If the ocmparison is lane based
+                elif lane_based:  # If the comparison is lane based
                     mantap_current = kemantapan.graded_df
                     mantap_compare = kemantapan_compare.graded_df
 
