@@ -62,6 +62,7 @@ CompTable = roughness_config['compare_table']['table_name']
 CompRouteID = roughness_config['compare_table']['route_id']
 CompFromMeasure = roughness_config['compare_table']['from_measure']
 CompToMeasure = roughness_config['compare_table']['to_measure']
+CompLaneCode = roughness_config['compare_table']['lane_code']
 CompIRI = roughness_config['compare_table']['iri']
 
 # Set the environment workspace
@@ -116,7 +117,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     if len(failed_routes) == 0:  # There is no error in the Table, but check for manual review possibility
         # The only function that will result a ToBeReviewed Message.
         EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
-                                      CompToMeasure, CompRouteID, CompIRI, routes=valid_routes)
+                                      CompToMeasure, CompRouteID, CompLaneCode, CompIRI, routes=valid_routes)
         # Write the JSON Output string.
         SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True,
                                                                                           message_type='ToBeReviewed')))
