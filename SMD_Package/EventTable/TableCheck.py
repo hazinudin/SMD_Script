@@ -1151,11 +1151,11 @@ class EventValidation(object):
                                                 rni_lane_code, surftype_col=surftype_col, lane_based=lane_based)
 
                 if not lane_based:  # If the comparison is not lane based
-                    mantap_current = kemantapan.mantap_percent.at['mantap', '_len']
-                    mantap_compare = kemantapan_compare.at['mantap', '_len']
+                    current = kemantapan.mantap_percent.at['mantap', '_len']
+                    compare = kemantapan_compare.at['mantap', '_len']
 
                     # Compare the kemantapan percentage between current data and previous data
-                    if np.isclose(mantap_compare, mantap_current, atol=(mantap_compare*threshold)):
+                    if np.isclose(compare, current, atol=(compare*threshold)):
                         pass  # If true then pass
                     else:
                         # Create the error message
@@ -1165,13 +1165,16 @@ class EventValidation(object):
                         self.insert_route_message(route, 'ToBeReviewed', error_message)
 
                 elif lane_based:  # If the comparison is lane based
-                    mantap_current = kemantapan.graded_df
-                    mantap_compare = kemantapan_compare.graded_df
+                    current = kemantapan.graded_df
+                    compare = kemantapan_compare.graded_df
 
+                    # Merge the current input data and comparison table
                     current_key = [routeid_col, from_m_col, to_m_col, lane_codes]
                     compare_key = [comp_route_col, comp_from_col, comp_to_col, comp_lane_code]
-                    mantap_merge = pd.merge(mantap_current, mantap_compare, how='inner', left_on=current_key,
+                    _merge = pd.merge(current, compare, how='inner', left_on=current_key,
                                             right_on=compare_key)
+
+                    _merge['_level_diff'] = _merge['_grade_level_x'] - _merge['_grade_level_y']
 
             else:  # If the route does not exist
                 error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
