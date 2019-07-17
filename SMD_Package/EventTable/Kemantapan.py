@@ -356,10 +356,12 @@ class Kemantapan(object):
             return df_match if match_only else df_merge  # If 'match_only' is true then only return the 'both'
 
         elif lane_based:  # Do the table join with linkid, from, to and lane code as join key
-            input_key = [route_col, from_m_col, to_m_col, lane_code]
-            rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
+            input_key = list([route_col, from_m_col, to_m_col, lane_code])
+            rni_key = list([rni_route_col, rni_from_col, rni_to_col, rni_lane_code])
+            rni_col = list(rni_key)  # RNI table column used for merge
+            rni_col.append(surftype_col)
 
-            df_merge = pd.merge(df_event, df_rni, how='outer', left_on=input_key, right_on=rni_key, indicator=True,
+            df_merge = pd.merge(df_event, df_rni[rni_col], how='outer', left_on=input_key, right_on=rni_key, indicator=True,
                                 suffixes=['_INPUT', '_RNI'])
 
             df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
