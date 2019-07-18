@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
-from SMD_Package.GetRoute import GetRoutes
 from Kemantapan import Kemantapan
 from RNITable import RNIRouteDetails
 
@@ -260,10 +259,26 @@ class EventValidation(object):
 
         for column in self.column_details.keys():
             if 'range' in self.column_details[column].keys():
-                val_range = self.column_details[column]['range']
-                upper_bound = val_range[1]  # The range upper bound
-                lower_bound = val_range[0]  # The range lower bound
-                error_row = df.loc[(df[column] < lower_bound) | (df[column] > upper_bound)]  # Find the faulty row
+                range_details = self.column_details[column]['range']
+                upper_bound = range_details['upper']  # The range upper bound
+                lower_bound = range_details['lower']  # The range lower bound
+                eq_upper = range_details['eq_upper']  # Equal with the upper bound
+                eq_lower = range_details['eq_lower']  # Equal with the lower bound
+                for_review = range_details['review']  # As To Be Reviewed message or as an Error Message
+
+                # The upper value mask
+                if eq_upper:
+                    upper_mask = df[column] >= upper_bound
+                else:
+                    upper_mask = df[column] > upper_bound
+
+                # The lower value mask
+                if eq_lower:
+                    lower_mask = df[column] <= lower_bound
+                else:
+                    lower_mask = df[column] < lower_bound
+
+                error_row = df.loc[lower_mask | upper_mask]  # Find the faulty row
 
                 if len(error_row) != 0:
                     # Create error message
@@ -276,7 +291,12 @@ class EventValidation(object):
                         result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}". \
                             format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col], row[to_m_col],
                                    row[lane_code])
-                        self.insert_route_message(row[routeid_col], 'error', result)
+
+                        # Insert the error message depend on the message status (as an Error or Review)
+                        if for_review:
+                            self.insert_route_message(row[routeid_col], 'ToBeReviewed', result)
+                        else:
+                            self.insert_route_message(row[routeid_col], 'error', result)
 
             if 'domain' in self.column_details[column].keys():
                 val_domain = self.column_details[column]['domain']  # The domain list
