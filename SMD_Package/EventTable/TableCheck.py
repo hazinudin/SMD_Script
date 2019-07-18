@@ -1179,22 +1179,24 @@ class EventValidation(object):
                     grade_diff = 2
                     _merge[diff_col] = abs(_merge['_grade_level_x'].astype(float) - _merge['_grade_level_y'].astype(float))
                     _error_rows = _merge.loc[_merge[diff_col] >= grade_diff]
+                    error_rows_len = len(_error_rows)
 
                     # If the lane code between the input table and comparison table is same
                     if lane_codes in list(compare):
                         lane_codes = lane_codes+'_x'  # Use the lane code from the input
 
                     # Iterate over all error rows
-                    for index, row in _error_rows.iterrows():
-                        sta_fr = row[from_m_col]
-                        sta_to = row[to_m_col]
-                        lane = row[lane_codes]
+                    if error_rows_len >= 10:
+                        for index, row in _error_rows.iterrows():
+                            sta_fr = row[from_m_col]
+                            sta_to = row[to_m_col]
+                            lane = row[lane_codes]
 
-                        error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
-                            format(route, sta_fr, sta_to, lane, grade_diff)
-                        self.insert_route_message(route, 'ToBeReviewed', error_message)
+                            error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
+                                format(route, sta_fr, sta_to, lane, grade_diff)
+                            self.insert_route_message(route, 'ToBeReviewed', error_message)
 
-            else:  # If the route does not exist
+            else:  # If the route does not exist in the comparison table
                 error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
                     format(route)
                 self.error_list.append(error_message)
