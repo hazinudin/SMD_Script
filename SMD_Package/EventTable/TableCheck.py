@@ -168,7 +168,8 @@ class EventValidation(object):
                                 routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='LANE_CODE',
                                 year_check_only=False):
         """
-        This function check if the inputted data year and semester in JSON match with the data in input table
+        This function check if the inputted data year and semester in JSON match with the data in input table.
+        This function also check if the input year in the table is less than the current year.
         :param year_input: The input year mentioned in the input JSON.
         :param semester_input: The input semester mentioned in the the input JSON.
         :param year_col: The year column in the input table.
@@ -184,11 +185,14 @@ class EventValidation(object):
         if df is None:  # This means no rows passed the data type check
             return None  # Return None
 
+        # Get the current year
+        cur_year = datetime.now().year
+
         # the index of row with bad val
         if year_check_only:
             error_row = df.loc[(df[year_col] != year_input)]
         else:
-            error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input)]
+            error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input) | df[year_col] > cur_year]
 
         # If  there is an error
         if len(error_row) != 0:
