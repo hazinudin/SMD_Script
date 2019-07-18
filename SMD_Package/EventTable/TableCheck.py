@@ -1172,9 +1172,27 @@ class EventValidation(object):
                     current_key = [routeid_col, from_m_col, to_m_col, lane_codes]
                     compare_key = [comp_route_col, comp_from_col, comp_to_col, comp_lane_code]
                     _merge = pd.merge(current, compare, how='inner', left_on=current_key,
-                                            right_on=compare_key)
+                                      right_on=compare_key)
 
-                    _merge['_level_diff'] = _merge['_grade_level_x'] - _merge['_grade_level_y']
+                    # Create the new column for difference in grade level
+                    diff_col = '_level_diff'
+                    grade_diff = 2
+                    _merge[diff_col] = abs(_merge['_grade_level_x'].astype(float) - _merge['_grade_level_y'].astype(float))
+                    _error_rows = _merge.loc[_merge[diff_col] >= grade_diff]
+
+                    # If the lane code between the input table and comparison table is same
+                    if lane_codes in list(compare):
+                        lane_codes = lane_codes+'_x'  # Use the lane code from the input
+
+                    # Iterate over all error rows
+                    for index, row in _error_rows.iterrows():
+                        sta_fr = row[from_m_col]
+                        sta_to = row[to_m_col]
+                        lane = row[lane_codes]
+
+                        error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
+                            format(route, sta_fr, sta_to, lane, grade_diff)
+                        self.insert_route_message(route, 'ToBeReviewed', error_message)
 
             else:  # If the route does not exist
                 error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
