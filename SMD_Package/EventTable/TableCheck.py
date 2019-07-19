@@ -45,9 +45,9 @@ class EventValidation(object):
 
         self.error_list = []  # List for storing the error message for all checks
         self.route_results = {}
+        self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
-        self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
 
