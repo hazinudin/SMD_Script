@@ -268,15 +268,15 @@ class EventValidation(object):
 
                 # The upper value mask
                 if eq_upper:
-                    upper_mask = df[column] >= upper_bound
-                else:
                     upper_mask = df[column] > upper_bound
+                else:
+                    upper_mask = df[column] >= upper_bound
 
                 # The lower value mask
                 if eq_lower:
-                    lower_mask = df[column] <= lower_bound
-                else:
                     lower_mask = df[column] < lower_bound
+                else:
+                    lower_mask = df[column] <= lower_bound
 
                 error_row = df.loc[lower_mask | upper_mask]  # Find the faulty row
 
