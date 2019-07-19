@@ -187,11 +187,16 @@ class EventValidation(object):
         # Get the current year
         cur_year = datetime.now().year
 
+        # Create the selection mask
+        year_mask = df[year_col] != year_input
+        semester_mask = df[sem_col] != semester_input
+        cur_year_mask = df[year_col] > cur_year
+
         # the index of row with bad val
         if year_check_only:
-            error_row = df.loc[(df[year_col] != year_input)]
+            error_row = df.loc[year_mask | cur_year_mask]
         else:
-            error_row = df.loc[(df[year_col] != year_input) | (df[sem_col] != semester_input) | df[year_col] > cur_year]
+            error_row = df.loc[cur_year_mask | semester_mask | year_mask]
 
         # If  there is an error
         if len(error_row) != 0:
