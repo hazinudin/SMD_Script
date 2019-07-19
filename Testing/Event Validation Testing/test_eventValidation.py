@@ -7,6 +7,7 @@ from arcpy import env
 
 os.chdir('E:\SMD_Script')
 
+
 class TestEventValidation(TestCase):
     @staticmethod
     def read_smdconfig():
@@ -26,10 +27,21 @@ class TestEventValidation(TestCase):
         config = self.read_smdconfig()
         return config['table_names']['balai_route_table']
 
-    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/Test File/RoughValid_240911B.xlsx", "balai":"7", "year":2019, "semester":1}'):
+    @staticmethod
+    def read_roughconfig():
         # Load the roughness script config JSON file
         with open('RoughnessCheck/roughness_config.json') as config_f:
             roughness_config = json.load(config_f)
+
+        return roughness_config
+
+    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/Test File/RoughValid_240911B.xlsx", "balai":"7", "year":2019, "semester":1}',
+                         data_type='ROUGHNESS'):
+
+        if data_type == 'ROUGHNESS':
+            data_config = self.read_roughconfig()
+        else:
+            pass
 
         smd_config = self.read_smdconfig()
 
@@ -42,7 +54,7 @@ class TestEventValidation(TestCase):
         input_details = input_json_check(input_json, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
         table_path = input_details["file_name"]
         # All the column details in the roughness_config.json
-        column_details = roughness_config['column_details']  # Load the roughness column details dictionary
+        column_details = data_config['column_details']  # Load the roughness column details dictionary
         # Set the environment workspace
         env.workspace = db_connection
 
@@ -87,19 +99,41 @@ class TestEventValidation(TestCase):
         check.route_results = {}
 
     def test_range_domain_check(self):
-        self.fail()
+        check = self.validation_class()
 
-    def test_segment_len_check(self):
-        self.fail()
+        check.df_string['IRI'] = 3.1
+        check.range_domain_check()
+        self.assertTrue(len(check.route_results) == 0, 'Valid range and domain in input file.')
+        check.route_results = {}
 
-    def test_measurement_check(self):
-        self.fail()
+        check.df_string['IRI'] = 3.0
+        check.range_domain_check()
+        self.assertTrue(len(check.route_results) == 0, 'Same with the lower bound value')
+        check.route_results = {}
 
-    def test_coordinate_check(self):
-        self.fail()
+        check.column_details['IRI']['range']['eq_lower'] = False
+        check.range_domain_check()
+        self.assertFalse(len(check.route_results) == 0, 'Same with the lower bound value, eq_lower=False')
+        check.route_results = {}
 
-    def test_lane_code_check(self):
-        self.fail()
+        check.column_details['IRI']['range']['eq_lower'] = True
+        check.df_string['IRI'] = 2.999
+        check.range_domain_check()
+        self.assertFalse(len(check.route_results) == 0, 'Lower than the lower bound value')
+        check.route_results = {}
 
-    def test_lane_direction_check(self):
-        self.fail()
+    #
+    # def test_segment_len_check(self):
+    #     self.fail()
+    #
+    # def test_measurement_check(self):
+    #     self.fail()
+    #
+    # def test_coordinate_check(self):
+    #     self.fail()
+    #
+    # def test_lane_code_check(self):
+    #     self.fail()
+    #
+    # def test_lane_direction_check(self):
+    #     self.fail()
