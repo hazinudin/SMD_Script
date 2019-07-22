@@ -1123,9 +1123,9 @@ class EventValidation(object):
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
-                           lane_codes='LANE_CODE', from_m_col='STA_FR', to_m_col='STA_TO', rni_route_col='LINKID',
-                           rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE', rni_lane_code='LANE_CODE',
-                           threshold=0.05, lane_based = True):
+                           lane_codes='LANE_CODE', from_m_col='STA_FR', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
+                           rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
+                           rni_lane_code='LANE_CODE', threshold=0.05, lane_based = True):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -1169,7 +1169,7 @@ class EventValidation(object):
             df_rni = event_fc_to_df(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
                                     is_table=True, orderby=None)
 
-            if len(df_comp) != 0:  # Check if the specified route exist in the comparison table.
+            if len(df_comp) != 0 or len(df_rni) != 0:  # Check if the specified route exist in the comparison table.
 
                 # Create Kemantapan instance for both input data and comparison data.
                 kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col, lane_codes,
@@ -1208,28 +1208,40 @@ class EventValidation(object):
                     grade_diff = 2
                     _merge[diff_col] = abs(_merge['_grade_level_x'].astype(float) - _merge['_grade_level_y'].astype(float))
                     _error_rows = _merge.loc[_merge[diff_col] >= grade_diff]
-                    error_rows_len = len(_error_rows)
+                    df_rni['_segm_len'] = df_rni[rni_to_col] - df_rni[rni_from_col]  # Create segment len col for RNI
 
                     # If the lane code between the input table and comparison table is same
                     if lane_codes in list(compare):
                         lane_codes = lane_codes+'_x'  # Use the lane code from the input
 
-                    # Iterate over all error rows
-                    if error_rows_len >= 10:
-                        for index, row in _error_rows.iterrows():
-                            sta_fr = row[from_m_col]
-                            sta_to = row[to_m_col]
-                            lane = row[lane_codes]
+                    if segment_len in list(compare):
+                        segment_len = segment_len+'_x'  # Use the segment langth from the input
 
+                    # Iterate over all error rows
+                    for index, row in _error_rows.iterrows():
+                        sta_fr = row[from_m_col]
+                        sta_to = row[to_m_col]
+                        lane = row[lane_codes]
+
+                        # Compare the RNI and input table lane length
+                        rni_lane_len = df_rni.loc[df_rni[rni_lane_code] == lane, '_segm_len'].sum()
+                        input_lane_len = _error_rows.loc[_error_rows[lane_codes] == lane, segment_len].sum()
+
+                        if input_lane_len >= (rni_lane_len*0.1):
                             error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
                                 format(route, sta_fr, sta_to, lane, grade_diff)
                             self.insert_route_message(route, 'ToBeReviewed', error_message)
 
             else:  # If the route does not exist in the comparison table
-                error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
-                    format(route)
-                self.error_list.append(error_message)
-                self.insert_route_message(route, 'ToBeReviewed', error_message)
+                if len(df_comp) == 0:
+                    error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
+                        format(route)
+                    self.error_list.append(error_message)
+                    self.insert_route_message(route, 'ToBeReviewed', error_message)
+                if len(df_rni) == 0:
+                    error_message = "Data RNI rute {0} tidak tersedia".format(route)
+                    self.error_list.append(error_message)
+                    self.insert_route_message(route, "error", error_message)
 
         return self
 
