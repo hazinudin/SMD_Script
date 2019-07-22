@@ -117,9 +117,10 @@ class TestEventValidation(TestCase):
         check.route_results = {}
 
         check.column_details['IRI']['range']['eq_lower'] = True
+        check.column_details['IRI']['range']['review'] = True
         check.df_string['IRI'] = 2.999
         check.range_domain_check()
-        self.assertFalse(len(check.route_results) == 0, 'Lower than the lower bound value')
+        self.assertTrue(len(check.altered_route_result()) == 0, 'Lower than the lower bound value')
         check.route_results = {}
 
     #
