@@ -110,28 +110,33 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
                                rni_route_col=RNIRouteID, lane_code='LANE_CODE')  # Check the event layer lane code combination
 
     failed_routes = EventCheck.route_results.keys()  # Only contain the Error message without the ToBeReviewed msg.
+    valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
+    passed_routes = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)][RouteIDCol].tolist()
 
-    # Write the JSON Output string.
-    SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
-
-    if len(failed_routes) == 0:  # There is no error in the Table, but check for manual review possibility
+    if len(passed_routes) != 0:  # Only process the route which passed the Error check.
         # The only function that will result a ToBeReviewed Message.
         EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
-                                      CompToMeasure, CompRouteID, CompLaneCode, CompIRI, routes=valid_routes)
+                                      CompToMeasure, CompRouteID, CompLaneCode, CompIRI, routes=passed_routes)
+
+        failed_routes = EventCheck.route_results.keys()  # Refresh the failed_routes list
+        passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]  # Only select the route which pass
+
+        if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+            passed_routes_row = create_patch(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LongitudeCol,
+                                             LatitudeCol, AltitudeCol, LrsNetwork,
+                                             LrsNetworkRID)  # Create the patch or stretch
+            convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
+                             dbConnection)  # Convert the measurement value from Decameters to Kilometers and trim excess
+            gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+
+        # Write the JSON Output string for all error.
+        errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
+        reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
+        all_msg = errors + reviews
+        SetParameterAsText(1, output_message("Succeeded", all_msg))
+    else:
         # Write the JSON Output string.
-        SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True,
-                                                                                          message_type='ToBeReviewed')))
-
-    failed_routes = EventCheck.route_results.keys()  # Refresh the failed_routes list
-    valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
-    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]  # Only select the route which pass
-
-    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
-        passed_routes_row = create_patch(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LongitudeCol,
-                                         LatitudeCol, AltitudeCol, LrsNetwork, LrsNetworkRID)  # Create the patch or stretch
-        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                         dbConnection)  # Convert the measurement value from Decameters to Kilometers and trim excess
-        gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+        SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
