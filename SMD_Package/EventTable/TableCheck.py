@@ -1435,3 +1435,15 @@ class EventValidation(object):
                 result_list.append(dict_object)  # Append the dictionary object
 
         return result_list
+
+    @property
+    def failed_routes(self):
+        """
+        This property contain a list of all routes that did not passed the verification (with error message not
+        ToBeReviewed message). The route is extracted from the route_result class attribute.
+        :return:
+        """
+        df = pd.DataFrame(self.altered_route_result(include_valid_routes=False))
+        routes = df['linkid'].unique().tolist()
+
+        return routes
