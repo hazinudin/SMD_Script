@@ -1444,6 +1444,21 @@ class EventValidation(object):
         :return:
         """
         df = pd.DataFrame(self.altered_route_result(include_valid_routes=False))
-        routes = df['linkid'].unique().tolist()
+        if len(df) != 0:
+            routes = df['linkid'].unique().tolist()
+            return routes
+        else:
+            return list()
+
+    @property
+    def passed_routes(self):
+        """
+        This property contain a list of all routes that passed all the verification and does not require any review.
+        The route is extracted from the route_result class attribute.
+        :return:
+        """
+        df = pd.DataFrame(self.altered_route_result(include_valid_routes=True))
+        passed_status = 'verified'
+        routes = df.loc[df['status'] == passed_status]['linkid'].unique().tolist()
 
         return routes
