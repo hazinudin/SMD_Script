@@ -269,7 +269,9 @@ class EventValidation(object):
                 lower_bound = range_details['lower']  # The range lower bound
                 eq_upper = range_details['eq_upper']  # Equal with the upper bound
                 eq_lower = range_details['eq_lower']  # Equal with the lower bound
-                for_review = range_details['review']  # As To Be Reviewed message or as an Error Message
+                review = range_details['review']  # As To Be Reviewed message or as an Error Message
+                status_col = '_status'
+                df[status_col] = pd.Series(None)  # Create an empty column for storing row status
 
                 # The upper value mask
                 if eq_upper:
@@ -283,7 +285,38 @@ class EventValidation(object):
                 else:
                     lower_mask = df[column] <= lower_bound
 
-                error_row = df.loc[lower_mask | upper_mask]  # Find the faulty row
+                # Give the error status for the lower and upper mask
+                df.loc[upper_mask | lower_mask, [status_col]] = 'error'
+
+                # Check the review condition
+                if review is True:
+                    df.loc[upper_mask | lower_mask, [status_col]] = 'ToBeReviewed'
+                elif review == 'upper':
+                    df.loc[upper_mask, [status_col]] = 'ToBeReviewed'
+                elif review == 'lower':
+                    df.loc[lower_mask, [status_col]] = 'ToBeReviewed'
+                elif type(review) == dict:
+                    rev_upper = review['upper']
+                    rev_lower = review['lower']
+                    rev_eq_upper = review['eq_upper']
+                    rev_eq_lower = review['eq_lower']
+
+                    # The upper value mask
+                    if rev_eq_upper:
+                        rev_upper_mask = df[column] < rev_upper
+                    else:
+                        rev_upper_mask = df[column] <= rev_upper
+
+                    # The lower value mask
+                    if rev_eq_lower:
+                        rev_lower_mask = df[column] > rev_lower
+                    else:
+                        rev_lower_mask = df[column] >= rev_lower
+
+                    # Give the review status for the lower and upper mask
+                    df.loc[rev_upper_mask & rev_lower_mask, [status_col]] = 'ToBeReviewed'
+
+                error_row = df.loc[df[status_col].notnull()]  # Find the faulty row
 
                 if len(error_row) != 0:
                     # Create error message
@@ -293,15 +326,13 @@ class EventValidation(object):
                     self.error_list.append(error_message)  # Append to the error message
 
                     for index, row in error_row.iterrows():
+                        msg_status = row[status_col]
                         result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}". \
                             format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col], row[to_m_col],
                                    row[lane_code])
 
                         # Insert the error message depend on the message status (as an Error or Review)
-                        if for_review:
-                            self.insert_route_message(row[routeid_col], 'ToBeReviewed', result)
-                        else:
-                            self.insert_route_message(row[routeid_col], 'error', result)
+                        self.insert_route_message(row[routeid_col], msg_status, result)
 
             if 'domain' in self.column_details[column].keys():
                 val_domain = self.column_details[column]['domain']  # The domain list
