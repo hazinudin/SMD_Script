@@ -99,27 +99,31 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
 
-    failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
+    valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
+    passed_routes = EventCheck.passed_routes
 
-    # Write the JSON Output string.
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
-
-    if len(failed_routes) == 0:  # If there is an route with no error, then write to GDB
+    if len(passed_routes) != 0:  # Only process the route which passed the Error check.
         EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
-                                            2018, RNILaneCode, routes=valid_routes)
+                                            2018, RNILaneCode, routes=passed_routes)
         EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
-                                         routes=valid_routes)
+                                         routes=passed_routes)
+
+        passed_routes = EventCheck.passed_routes  # Refresh the all passed routes list
+        passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
+
+        if len(passed_routes_row) != 0:
+            convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
+                             dbConnection)
+            gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+
+        # Write the JSON Output string for all error.
+        errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
+        reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
+        all_msg = errors + reviews
+        SetParameterAsText(1, output_message("Succeeded", all_msg))
+    else:
         # Write the JSON Output string.
-        SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result(message_type='ToBeReviewed')))
-
-    failed_routes = EventCheck.route_results.keys()  # Only contain the Error Message with Error status, without Review
-    valid_df = EventCheck.copy_valid_df()
-    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
-
-    if len(passed_routes_row) != 0:
-        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                         dbConnection)
-        gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+        SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
 
     # FOR ARCMAP USAGE ONLY#
     msg_count = 1
