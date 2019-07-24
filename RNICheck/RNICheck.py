@@ -95,7 +95,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.range_domain_check()
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
-    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
+    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes, compare_to='LRS')
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
 
