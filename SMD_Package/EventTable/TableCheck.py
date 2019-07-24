@@ -164,7 +164,7 @@ class EventValidation(object):
             return self.header_check_result
 
     def year_and_semester_check(self, year_input, semester_input, year_col='SURVEY_YEAR', sem_col='SURVEY_SMS',
-                                routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_code='LANE_CODE',
+                                routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE',
                                 year_check_only=False):
         """
         This function check if the inputted data year and semester in JSON match with the data in input table.
@@ -249,7 +249,7 @@ class EventValidation(object):
 
         return self
 
-    def range_domain_check(self, routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO',
+    def range_domain_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                            lane_code='LANE_CODE'):
         """
         This function checks every value in a specified data column, to match the specified range value defined by
@@ -346,7 +346,7 @@ class EventValidation(object):
 
         return self
 
-    def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FR',
+    def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FROM',
                           to_m_col='STA_TO', lane_code='LANE_CODE', length_col='SEGMENT_LENGTH'):
         """
         This function check for every segment length. The segment length has to be 100 meters, and stated segment length
@@ -416,7 +416,7 @@ class EventValidation(object):
 
         return self
 
-    def measurement_check(self, rni_table, rni_routeid, rni_to_m, routes='ALL', from_m_col='STA_FR', to_m_col='STA_TO',
+    def measurement_check(self, rni_table, rni_routeid, rni_to_m, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
@@ -526,7 +526,7 @@ class EventValidation(object):
         return self
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
-                         from_m_col='STA_FR', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
+                         from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
                          threshold=30, at_start=True):
         """
         This function checks whether if the segment starting coordinate located not further than
@@ -632,7 +632,7 @@ class EventValidation(object):
 
         return self
 
-    def lane_code_check(self, rni_table, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FR',
+    def lane_code_check(self, rni_table, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
                         to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
                         rni_lane_code='LANE_CODE', find_no_match=False):
         """
@@ -772,7 +772,7 @@ class EventValidation(object):
 
         return self
 
-    def lane_direction_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FR',
+    def lane_direction_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
                              to_m_col='STA_TO', direction_col='SURVEY_DIREC',):
         """
         This class method will check for consistency between the stated lane and the direction. The Left lane e.g(L1,
@@ -839,7 +839,7 @@ class EventValidation(object):
 
         return missing_route.tolist()
 
-    def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FR', to_m_col='STA_TO', lane_codes='LANE_CODE',
+    def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_codes='LANE_CODE',
                            median_col='MEDWIDTH', road_type_col='ROAD_TYPE'):
         """
         This class method will check the consistency of stated roadtype code with other details such as the lane count,
@@ -1006,7 +1006,7 @@ class EventValidation(object):
         return self
 
     def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
-                                 comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
+                                 comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
                                  rni_surftype_col='SURFTYPE', rni_lane_code='LANE_CODE', routes='ALL'):
         """
         This class method will compare the surface type length of a route to previous year data. If there is a
@@ -1078,7 +1078,7 @@ class EventValidation(object):
                     pass
 
     def rni_compare_surfwidth(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_lane_width, year_comp,
-                              rni_route_col='LINKID', rni_from_col='STA_FR', rni_to_col='STA_TO',
+                              rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
                               rni_lane_width='LANE_WIDTH', routes='ALL'):
         """
         This class method will compare the road width to a comparison feature class, if there is a difference in the
@@ -1154,7 +1154,7 @@ class EventValidation(object):
 
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
-                           lane_codes='LANE_CODE', from_m_col='STA_FR', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
+                           lane_codes='LANE_CODE', from_m_col='STA_FROM', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
                            rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
                            rni_lane_code='LANE_CODE', threshold=0.05, lane_based = True):
         """
