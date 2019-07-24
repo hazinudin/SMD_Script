@@ -3,7 +3,7 @@ from pandas import DataFrame
 
 
 def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
-                   include_all=False, orderby='FROMMEASURE'):
+                   include_all=False, orderby=None):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
