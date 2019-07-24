@@ -109,17 +109,16 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes,
                                rni_route_col=RNIRouteID, lane_code='LANE_CODE')  # Check the event layer lane code combination
 
-    failed_routes = EventCheck.route_results.keys()  # Only contain the Error message without the ToBeReviewed msg.
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
-    passed_routes = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)][RouteIDCol].tolist()
+    passed_routes = EventCheck.passed_routes
 
     if len(passed_routes) != 0:  # Only process the route which passed the Error check.
         # The only function that will result a ToBeReviewed Message.
         EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
                                       CompToMeasure, CompRouteID, CompLaneCode, CompIRI, routes=passed_routes)
 
-        failed_routes = EventCheck.route_results.keys()  # Refresh the failed_routes list
-        passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]  # Only select the route which pass
+        passed_routes = EventCheck.passed_routes  # Refresh the list of all passed routes list
+        passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
 
         if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
             passed_routes_row = create_patch(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LongitudeCol,
