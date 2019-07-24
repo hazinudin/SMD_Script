@@ -7,8 +7,9 @@ from arcpy import env, da
 from pandas import concat
 
 
-def create_patch(input_df, routeid_col, from_m_col, to_m_col, lane_code, x_col, y_col, z_col, lrs_network, lrs_routeid,
-                 increment=0.1, to_meters=1000, meanrows=3, workspace=None):
+def create_patch(input_df, lrs_network, lrs_routeid, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                 lane_code='LANE_CODE', x_col='STATO_LONG', y_col='STATO_LAT', z_col='STATO_ALT', increment=0.1,
+                 to_meters=1000, meanrows=3, workspace=None):
     """
     This function will create a patch for an input Event table, the patch will be created based on the measurement value
     of the LRS Network feature class
