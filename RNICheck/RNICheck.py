@@ -84,7 +84,7 @@ if InputDF is None:  # If the file format is not .xlsx
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_check_only=True, lane_code='LANE_CODE')
+year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_check_only=True)
 
 # If the header check, data type check and year semester check returns None, the process can continue
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
@@ -92,11 +92,11 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check(lane_code='LANE_CODE')
-    EventCheck.segment_len_check(routes=valid_routes, lane_code='LANE_CODE')  # Check the segment length validity
-    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes,
-                                 lane_code='LANE_CODE', compare_to='LRS')  # Check the from-to measurement
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, lane_code='LANE_CODE')
+    EventCheck.range_domain_check()
+    EventCheck.lane_direction_check(routes=valid_routes)
+    EventCheck.segment_len_check(routes=valid_routes)
+    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
