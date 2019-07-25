@@ -1152,9 +1152,9 @@ class EventValidation(object):
 
                 self.insert_route_message(route, 'ToBeReviewed', result)
 
-    def pci_as_check(self, rni_table, rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_lane_width,
-                     routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                     lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH'):
+    def pci_asp_check(self, rni_table, rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_lane_width,
+                      routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                      lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH'):
         """
         This method will check the consistency in as_ column value compared to the maximum calculated value
         (lane width*segment length). The value of as_ column should not exceed the calculated value, otherwise an error
