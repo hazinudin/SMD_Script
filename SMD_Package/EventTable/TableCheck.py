@@ -1152,6 +1152,73 @@ class EventValidation(object):
 
                 self.insert_route_message(route, 'ToBeReviewed', result)
 
+    def pci_as_check(self, rni_table, rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_lane_width,
+                     routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                     lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH'):
+        """
+        This method will check the consistency in as_ column value compared to the maximum calculated value
+        (lane width*segment length). The value of as_ column should not exceed the calculated value, otherwise an error
+        message will be written.
+        :param asp_pref: Asphalt column of PCI table prefix(as_alg_crack, as_edge_crack, etc)
+        :param rni_table: The RNI Table.
+        :param rni_route_col: The RNI Table RouteID column.
+        :param rni_from_col: The RNI From Measure column.
+        :param rni_to_col: The RNI To Measure column.
+        :param rni_lane_code: The RNI Lane Code column.
+        :param routes: The route selections.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create a valid DataFrame copy
+
+        col_list = df.columns.tolist()
+        col_mask1 = np.in1d(col_list, [routeid_col, from_m_col, to_m_col, lane_code, segment_len])
+        col_mask2 = np.char.startswith(col_list, asp_pref)
+
+        if not col_mask2.any():
+            return self  # The specified prefix does not match any column.
+
+        if routes == 'ALL':  # Check for route request
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        route_list = self.route_lane_tuple(df, routeid_col, lane_code, route_only=True)
+        for route in route_list:
+            df_route = df.loc[df[routeid_col] == route]
+
+            rni_cols = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_lane_width]
+            df_rni = event_fc_to_df(rni_table, rni_cols, route, rni_route_col, self.sde_connection, is_table=True)
+
+            df_rni[rni_from_col] = df_rni[rni_from_col].apply(lambda x: x*100).astype(int)
+            df_rni[rni_to_col] = df_rni[rni_to_col].apply(lambda x: x*100).astype(int)
+
+            if len(df_rni) == 0:  # If the RNI DataFrame is empty.
+                error_message = "Data RNI rute {0} tidak tersedia".format(route)
+                self.insert_route_message(route, 'error', error_message)
+            else:
+                input_key = [routeid_col, from_m_col, to_m_col, lane_code]
+                rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
+                merge = pd.merge(df_route, df_rni, how='inner', left_on=input_key, right_on=rni_key)
+
+                calc_asp_col = '_calc'
+                merge[calc_asp_col] = pd.Series(None)
+                merge.loc[:, [calc_asp_col]] = merge[segment_len]*merge[rni_lane_width]*1000
+
+                for index, row in merge.iterrows():
+                    calc_val = row[calc_asp_col]
+                    from_m = row[from_m_col]
+                    to_m = row[to_m_col]
+                    lane = row[lane_code]
+                    asp_series = row[col_mask2].mask(row[col_mask2] <= calc_val)
+                    asp_series.dropna(inplace=True)
+
+                    for col, value in asp_series.iteritems():
+                        error_message = 'Rute {0} pada segmen {1}-{2} {3} memiliki nilai {4} ({5}) yang melebihi nilai luas segmen ({6}).'.\
+                            format(route, from_m, to_m, lane, col, value, calc_val)
+                        self.insert_route_message(route, 'error', error_message)
+
+        return self
+
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
                            lane_codes='LANE_CODE', from_m_col='STA_FROM', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
