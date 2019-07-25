@@ -21,7 +21,7 @@
     "RG_CORN_BREAK":{"dtype":"integer"},
     "RG_DIV_SLAB":{"dtype":"integer"},
     "RG_FAULTING":{"dtype":"integer"},
-    "RG_CRACK_LINE":{"dtype":"integer"},
+    "RG_LINE_CRACK":{"dtype":"integer"},
     "RG_PUNCH_OUT":{"dtype":"integer"},
     "RG_SHRINKAGE":{"dtype":"integer"},
     "RG_PUMPING":{"dtype":"integer"},
