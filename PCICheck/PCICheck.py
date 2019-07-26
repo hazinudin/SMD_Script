@@ -28,6 +28,8 @@ RNIEventTable = smd_config['table_names']['rni']
 RNIRouteID = smd_config['table_fields']['rni']['route_id']
 RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
 RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
+RNILaneCode = smd_config['table_fields']['rni']['lane_code']
+RNILaneWidth = smd_config['table_fields']['rni']['lane_width']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -83,14 +85,16 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
+    EventCheck.lane_direction_check()
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
-    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)  # Check the from-to measurement
+    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
     EventCheck.coordinate_check(routes=valid_routes, at_start=False)  # Check the input coordinate
-    ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
+    EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth)
+    EventCheck.pci_val_check()
 
-    failed_routes = EventCheck.route_results.keys()
     valid_df = EventCheck.copy_valid_df()
-    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
+    passed_routes = EventCheck.passed_routes
+    passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
 
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 
