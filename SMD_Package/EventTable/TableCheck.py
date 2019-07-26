@@ -1219,6 +1219,55 @@ class EventValidation(object):
 
         return self
 
+    def pci_val_check(self, rg_pref='RG_', asp_pref='AS_', pci_col='PCI', routeid_col='LINKID', from_m_col='STA_FROM',
+                      to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL'):
+        """
+        This class method will check for consistency between the value of PCI and the RG_x and AS_x columns.
+        :param rg_pref: The prefix of Rigid column.
+        :param asp_pref: The prefix of Asphalt column.
+        :param pci_col: The PCI column.
+        :param from_m_col: The From Measure column.
+        :param to_m_col: The To Measure column.
+        :param lane_code: The Lane Code.
+        :param routes: The route selections.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create the valid DataFrame copy
+
+        if routes == 'ALL':  # Check for route request
+            pass
+        else:
+            df = self.selected_route_df(df, routes)  # Create a DataFrame with selected route
+
+        col_list = df.columns.tolist()
+        rg_mask = np.char.startswith(col_list, rg_pref)
+        asp_mask = np.char.startswith(col_list, asp_pref)
+
+        route_list = self.route_lane_tuple(df, routeid_col, lane_code, route_only=True)
+        for route in route_list:
+            df_route = df.loc[df[routeid_col] == route]
+            df_pci = df_route.loc[(df_route[pci_col] == 0) | (df_route[pci_col] == 100)]
+
+            for index, row in df_pci.iterrows():
+                from_m = row[from_m_col]
+                to_m = row[to_m_col]
+                lane = row[lane_code]
+                asp_rg = row[rg_mask | asp_mask]
+                pci_val = row[pci_col]
+                asp_rg_cond = asp_rg.mask(asp_rg == 0)
+                asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero
+
+                if (pci_val == 0) and (asp_rg_allzero is True):
+                    error_message = 'Rute {0} pada segmen {1]-{2} lane {3} memiliki nilai {4}=0 namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
+                        format(route, from_m, to_m, lane, pci_col)
+                    self.insert_route_message(route, 'error', error_message)
+                if (pci_val == 100) and (asp_rg_allzero is not True):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}=100 namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
+                        format(route, from_m, to_m, lane, pci_col)
+                    self.insert_route_message(route, 'error', error_message)
+
+        return self
+
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
                            lane_codes='LANE_CODE', from_m_col='STA_FROM', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
