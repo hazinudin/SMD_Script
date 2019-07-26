@@ -1171,7 +1171,6 @@ class EventValidation(object):
         df = self.copy_valid_df()  # Create a valid DataFrame copy
 
         col_list = df.columns.tolist()
-        col_mask1 = np.in1d(col_list, [routeid_col, from_m_col, to_m_col, lane_code, segment_len])
         col_mask2 = np.char.startswith(col_list, asp_pref)
 
         if not col_mask2.any():
@@ -1195,27 +1194,28 @@ class EventValidation(object):
             if len(df_rni) == 0:  # If the RNI DataFrame is empty.
                 error_message = "Data RNI rute {0} tidak tersedia".format(route)
                 self.insert_route_message(route, 'error', error_message)
+                continue
             else:
                 input_key = [routeid_col, from_m_col, to_m_col, lane_code]
                 rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
                 merge = pd.merge(df_route, df_rni, how='inner', left_on=input_key, right_on=rni_key)
 
-                calc_asp_col = '_calc'
-                merge[calc_asp_col] = pd.Series(None)
-                merge.loc[:, [calc_asp_col]] = merge[segment_len]*merge[rni_lane_width]*1000
+            calc_asp_col = '_calc'
+            merge[calc_asp_col] = pd.Series(None)
+            merge.loc[:, [calc_asp_col]] = merge[segment_len]*merge[rni_lane_width]*1000
 
-                for index, row in merge.iterrows():
-                    calc_val = row[calc_asp_col]
-                    from_m = row[from_m_col]
-                    to_m = row[to_m_col]
-                    lane = row[lane_code]
-                    asp_series = row[col_mask2].mask(row[col_mask2] <= calc_val)
-                    asp_series.dropna(inplace=True)
+            for index, row in merge.iterrows():
+                calc_val = row[calc_asp_col]
+                from_m = row[from_m_col]
+                to_m = row[to_m_col]
+                lane = row[lane_code]
+                asp_series = row[col_mask2].mask(row[col_mask2] <= calc_val)
+                asp_series.dropna(inplace=True)
 
-                    for col, value in asp_series.iteritems():
-                        error_message = 'Rute {0} pada segmen {1}-{2} {3} memiliki nilai {4} ({5}) yang melebihi nilai luas segmen ({6}).'.\
-                            format(route, from_m, to_m, lane, col, value, calc_val)
-                        self.insert_route_message(route, 'error', error_message)
+                for col, value in asp_series.iteritems():
+                    error_message = 'Rute {0} pada segmen {1}-{2} {3} memiliki nilai {4} ({5}) yang melebihi nilai luas segmen ({6}).'.\
+                        format(route, from_m, to_m, lane, col, value, calc_val)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
@@ -1252,19 +1252,139 @@ class EventValidation(object):
                 from_m = row[from_m_col]
                 to_m = row[to_m_col]
                 lane = row[lane_code]
-                asp_rg = row[rg_mask | asp_mask]
                 pci_val = row[pci_col]
+
+                asp_rg = row[rg_mask | asp_mask]
                 asp_rg_cond = asp_rg.mask(asp_rg == 0)
                 asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero
 
-                if (pci_val == 0) and (asp_rg_allzero is True):
+                if (pci_val == 0) and asp_rg_allzero:
                     error_message = 'Rute {0} pada segmen {1]-{2} lane {3} memiliki nilai {4}=0 namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col)
                     self.insert_route_message(route, 'error', error_message)
-                if (pci_val == 100) and (asp_rg_allzero is not True):
+                if (pci_val == 100) and (not asp_rg_allzero):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}=100 namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col)
                     self.insert_route_message(route, 'error', error_message)
+
+        return self
+
+    def pci_surftype_check(self, rni_table, rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_surf_type,
+                           routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID', from_m_col='STA_FROM',
+                           to_m_col='STA_TO', lane_code='LANE_CODE'):
+        """
+
+        :param rni_table:
+        :param rni_route_col:
+        :param rni_from_col:
+        :param rni_to_col:
+        :param rni_lane_code:
+        :param rni_surf_type:
+        :param routes:
+        :param asp_pref:
+        :param rg_pref:
+        :param routeid_col:
+        :param from_m_col:
+        :param to_m_col:
+        :param lane_code:
+        :return:
+        """
+
+        def surf_df(surf_col):
+            """
+            This function create a surface group DataFrame for PCI usage.
+            :param surf_col: The surface column in the output DataFrame.
+            :return:
+            """
+            df_surf = pd.DataFrame(range(1, 22), columns=['code'])
+            df_surf[surf_col] = pd.Series(None)
+
+            # Define the surface group
+            surf_dict = {
+                "unpaved": range(1, 3),
+                "asphalt": range(3, 21),
+                "rigid": range(21, 22)
+            }
+
+            for surf in surf_dict:
+                group = surf_dict[surf]
+                df_surf.loc[df_surf['code'].isin(group), [surf_col]] = surf
+
+            return df_surf.set_index('code')
+
+        def row_allzero(row_series, mask):
+            """
+            This function will determine whether a row contain only zero value.
+            :param row_series: The row series from a DataFrame.
+            :param mask: Column masking.
+            :return:
+            """
+            row = row_series[mask]
+            row_zero = row.mask(row == 0)
+            result = np.all(row_zero.isnull())
+
+            return result
+
+        df = self.copy_valid_df()  # Create a valid DataFrame copy
+        surf_col = '_surface'
+        df_surf = surf_df(surf_col)  # DataFrame containing surface group
+
+        col_list = df.columns.tolist()
+        asp_mask = np.char.startswith(col_list, asp_pref)
+        rg_mask = np.char.startswith(col_list, rg_pref)
+
+        if (not rg_mask.any()) or (not asp_mask.any()):  # Check if no column was found
+            return self  # The specified prefix does not match any column.
+
+        if routes == 'ALL':  # Check for route request
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        route_list = self.route_lane_tuple(df, routeid_col, lane_code, route_only=True)
+        for route in route_list:
+            df_route = df.loc[df[routeid_col] == route]
+
+            rni_cols = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_surf_type]
+            df_rni = event_fc_to_df(rni_table, rni_cols, route, rni_route_col, self.sde_connection, is_table=True)
+
+            df_rni[rni_from_col] = df_rni[rni_from_col].apply(lambda x: x*100).astype(int)
+            df_rni[rni_to_col] = df_rni[rni_to_col].apply(lambda x: x*100).astype(int)
+
+            if len(df_rni) == 0:  # If the RNI DataFrame is empty.
+                error_message = "Data RNI rute {0} tidak tersedia".format(route)
+                self.insert_route_message(route, 'error', error_message)
+                continue
+            else:
+                input_key = [routeid_col, from_m_col, to_m_col, lane_code]
+                rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
+                merge = pd.merge(df_route, df_rni, how='inner', left_on=input_key, right_on=rni_key)
+                merge_surf = merge.join(df_surf, on=rni_surf_type)
+
+            for index, row in merge_surf.iterrows():
+                from_m = row[from_m_col]
+                to_m = row[to_m_col]
+                lane = row[lane_code]
+
+                asp_allzero = row_allzero(row, asp_mask)
+                rg_allzero = row_allzero(row, rg_mask)
+                surface = row[surf_col]
+
+                if surface == 'asphalt':
+                    if not rg_allzero:
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan aspal namun memiliki nilai kerusakan rigid.'.\
+                            format(route, from_m, to_m, lane)
+                        self.insert_route_message(route, 'error', error_message)
+                if surface == 'rigid':
+                    if not asp_allzero:
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan rigid namun memiliki nilai kerusakan aspal.'. \
+                            format(route, from_m, to_m, lane)
+                        self.insert_route_message(route, 'error', error_message)
+                if surface == 'unpaved':
+                    if (not asp_allzero) or (not rg_allzero):
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan unpaved namun memiliki nilai kerusakan rigid atau aspal.'. \
+                            format(route, from_m, to_m, lane)
+                        self.insert_route_message(route, 'error', error_message)
 
         return self
 
