@@ -30,6 +30,7 @@ RNIFromMeasure = smd_config['table_fields']['rni']['from_measure']
 RNIToMeasure = smd_config['table_fields']['rni']['to_measure']
 RNILaneCode = smd_config['table_fields']['rni']['lane_code']
 RNILaneWidth = smd_config['table_fields']['rni']['lane_width']
+RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
@@ -90,7 +91,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
     EventCheck.coordinate_check(routes=valid_routes, at_start=False)  # Check the input coordinate
     EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth)
-    EventCheck.pci_val_check()
+    EventCheck.pci_val_check(routes=valid_routes)
+    EventCheck.pci_surftype_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNISurfaceType,
+                                  routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes
