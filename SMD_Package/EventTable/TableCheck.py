@@ -527,7 +527,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=True, monotonic_check=True):
+                         threshold=30, at_start=True, monotonic_check=True, segm_dist=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -579,6 +579,16 @@ class EventValidation(object):
 
             return dist_to_ref
 
+        def lrs_dist(point_obj, lrs_geom):
+            """
+            This function will calculate the distance from the point object to LRS geometry.
+            :param point_obj: Point object
+            :param lrs_geom:  LRS Geometry object
+            :return: Distance from Point geometry to LRS Geometry.
+            """
+            dist_to_lrs = point_obj.distanceTo(lrs_geom)
+            return dist_to_lrs
+
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
         df['measureOnLine'] = pd.Series(np.nan, dtype=np.float)  # Create a new column for storing coordinate m-value
@@ -606,24 +616,32 @@ class EventValidation(object):
                 point_geom = PointGeometry(point).projectAs(input_projection)
                 # Re-project the point geometry using the lrs spat ref
                 point_geom = point_geom.projectAs(route_spat_ref)
-                distance_to_ref = ref_point_dist(row, route_max_m, df_route, route_geom)
 
-                if distance_to_ref is None:
-                    pass
-                if distance_to_ref > threshold:
-                    error_i.append(index)  # Append the index of row with coordinate error
+                # If segment distance is True then the distance will be calculated to segment end point
+                if segm_dist:
+                    distance_to_ref = ref_point_dist(row, route_max_m, df_route, route_geom)
+                    if distance_to_ref is None:
+                        pass
+                    if distance_to_ref > threshold:
+                        error_i.append(index)  # Append the index of row with coordinate error
+                        if at_start:
+                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'. \
+                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(row[routeid_col], 'error', error_message)
 
-                    if at_start:
-                        error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'.\
-                            format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(row[routeid_col], 'error', error_message)
+                        if not at_start:
+                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'. \
+                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(row[routeid_col], 'error', error_message)
 
-                    if not at_start:
-                        error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'.\
-                            format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(row[routeid_col], 'error', error_message)
+                if not segm_dist:
+                    distance_to_ref = lrs_dist(point_geom, route_geom)
+                    if distance_to_ref > threshold:
+                        error_message = 'Koordinat pada rute {0} berjarak lebih dari {1} meter dari geometri ruas jalan.'.\
+                            format(route, threshold)
+                        self.insert_route_message(route, 'error', error_message)
 
             if monotonic_check:
                 for lane in df_route[lane_code].unique().tolist():
