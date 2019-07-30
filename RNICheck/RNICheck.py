@@ -52,7 +52,7 @@ CompSurfaceType = rni_config['compare_table']['surface_type']
 
 # The input Table Column
 RouteIDCol = 'LINKID'
-FromMCol = "STA_FR"
+FromMCol = "STA_FROM"
 ToMCol = "STA_TO"
 CodeLane = "LANE_CODE"
 
@@ -93,7 +93,6 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
-    EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes, compare_to='LRS')
     EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
@@ -109,9 +108,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
                                          routes=passed_routes)
 
         passed_routes = EventCheck.passed_routes  # Refresh the all passed routes list
-        passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
 
-        if len(passed_routes_row) != 0:
+        if len(passed_routes) != 0:
+            passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
             convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
                              dbConnection)
             gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
