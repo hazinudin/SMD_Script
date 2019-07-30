@@ -542,6 +542,7 @@ class EventValidation(object):
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param monotonic_check: If True then the check also include a monotonic check.
+        :param segm_dist: If True then the check will measure the distance from the input point to the segment's end.
         :return:
         """
         def ref_point_dist(row_obj, max_m, route_df, lrs_geom, start=at_start, from_col=from_m_col, to_col=to_m_col):
