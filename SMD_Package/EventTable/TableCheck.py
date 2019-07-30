@@ -527,7 +527,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=True):
+                         threshold=30, at_start=True, monotonic_check=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -606,29 +606,30 @@ class EventValidation(object):
                             self.error_list.append(error_message)
                             self.insert_route_message(row[routeid_col], 'error', error_message)
 
-            for lane in df_route[lane_code].unique().tolist():
-                df_lane = df_route.loc[df_route[lane_code] == lane]  # Create a DataFrame for every available lane
-                df_lane.sort_values(by=[from_m_col, to_m_col], inplace=True)  # Sort the DataFrame
-                monotonic_check = np.diff(df_lane['measureOnLine']) > 0
-                check_unique = np.unique(monotonic_check)
+            if monotonic_check:
+                for lane in df_route[lane_code].unique().tolist():
+                    df_lane = df_route.loc[df_route[lane_code] == lane]  # Create a DataFrame for every available lane
+                    df_lane.sort_values(by=[from_m_col, to_m_col], inplace=True)  # Sort the DataFrame
+                    monotonic_check = np.diff(df_lane['measureOnLine']) > 0
+                    check_unique = np.unique(monotonic_check)
 
-                if check_unique.all():  # Check whether the result only contain True
-                    pass  # This means OK
-                elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                    error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
-                    self.error_list.append(error_message)
-                    self.insert_route_message(route, 'error', error_message)
-                else:  # If not entirely False then give the segment which has the faulty measurement
-                    faulty_index = np.where(monotonic_check is False)  # Get the index of the faulty segment
-                    faulty_segment = df_lane.loc[faulty_index]  # DataFrame of all faulty segment
-
-                    for index, row in faulty_segment.iterrows():  # Iterate for all available faulty segment
-                        from_meas = row[from_m_col]
-                        to_meas = row[to_m_col]
-                        error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
-                            format(from_meas, to_meas, lane, route)
+                    if check_unique.all():  # Check whether the result only contain True
+                        pass  # This means OK
+                    elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
+                        error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
+                    else:  # If not entirely False then give the segment which has the faulty measurement
+                        faulty_index = np.where(monotonic_check is False)  # Get the index of the faulty segment
+                        faulty_segment = df_lane.loc[faulty_index]  # DataFrame of all faulty segment
+
+                        for index, row in faulty_segment.iterrows():  # Iterate for all available faulty segment
+                            from_meas = row[from_m_col]
+                            to_meas = row[to_m_col]
+                            error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
+                                format(from_meas, to_meas, lane, route)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
 
         return self
 
