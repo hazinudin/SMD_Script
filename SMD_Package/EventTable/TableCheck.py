@@ -878,7 +878,7 @@ class EventValidation(object):
         return missing_route.tolist()
 
     def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_codes='LANE_CODE',
-                           median_col='MEDWIDTH', road_type_col='ROAD_TYPE'):
+                           median_col='MED_WIDTH', road_type_col='ROAD_TYPE'):
         """
         This class method will check the consistency of stated roadtype code with other details such as the lane count,
         the median information, and the segment direction.
@@ -1046,7 +1046,7 @@ class EventValidation(object):
 
     def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
                                  comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
-                                 rni_surftype_col='SURFTYPE', rni_lane_code='LANE_CODE', routes='ALL'):
+                                 rni_surftype_col='SURF_TYPE', rni_lane_code='LANE_CODE', routes='ALL'):
         """
         This class method will compare the surface type length of a route to previous year data. If there is a
         difference in the surface type length of a route, then an error message will be written.
