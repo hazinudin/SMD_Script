@@ -3,7 +3,8 @@ import sys
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, verify_balai, \
+    read_input_excel
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -20,6 +21,8 @@ LrsNetwork = smd_config['table_names']['lrs_network']
 LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
 
 BalaiTable = smd_config['table_names']['balai_table']
+BalaiRouteTable = smd_config['table_names']['balai_route_table']
+BalaiKodeBalai = smd_config['table_fields']['balai_table']['balai_code']
 dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
@@ -40,11 +43,27 @@ RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
 env.workspace = dbConnection
-routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable).route_list()
+routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTable).route_list()
+
+# Check if balai from the request is valid
+code_check_result = verify_balai(KodeBalai, BalaiTable, BalaiKodeBalai, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format("balai", code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
-EventCheck = EventValidation(TablePath, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
+try:
+    InputDF = read_input_excel(TablePath)  # Read the excel file
+except IOError:  # If the file path is invalid
+    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    sys.exit(0)  # Stop the script
+if InputDF is None:  # If the file format is not .xlsx
+    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    sys.exit(0)  # Stop the script
+
+EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
 
@@ -54,24 +73,30 @@ if (header_check_result is None) & (dtype_check_result is None):
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
+    EventCheck.coordinate_check(routes=valid_routes, segm_dist=False, lat_col='RTC_LAT', long_col='RTC_LONG',
+                                monotonic_check=False)
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
     EventCheck.rtc_time_interval_check(routes=valid_routes)  # The RTC survey time interval check.
     ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
-    failed_routes = EventCheck.route_results.keys()
     valid_df = EventCheck.copy_valid_df()
-    passed_routes_row = valid_df.loc[~valid_df[RouteIDCol].isin(failed_routes)]
-
-    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
-        gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails, new_table=False)
-        pass
-
-    msg_count = 1
-    for error_message in EventCheck.altered_route_result('error', dict_output=False):
-        AddMessage(str(msg_count)+'. '+error_message)
-        msg_count += 1
+    passed_routes = EventCheck.passed_routes
+    passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
 
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+
+    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+        gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails)
+
+    # FOR ARCMAP USAGE ONLY #
+    msg_count = 1
+    for error_message in EventCheck.altered_route_result(message_type='error', dict_output=False):
+        AddMessage(str(msg_count) + '. ' + error_message + ' ERROR')
+        msg_count += 1
+
+    for error_message in EventCheck.altered_route_result(message_type='ToBeReviewed', dict_output=False):
+        AddMessage(str(msg_count) + '. ' + error_message + ' WARNING')
+        msg_count += 1
 
 else:
     # There must be an error with dtype check or header check
