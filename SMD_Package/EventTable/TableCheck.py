@@ -580,14 +580,13 @@ class EventValidation(object):
 
             return dist_to_ref
 
-        def lrs_dist(point_obj, lrs_geom):
+        def lrs_dist(lrs_geom):
             """
             This function will calculate the distance from the point object to LRS geometry.
-            :param point_obj: Point object
             :param lrs_geom:  LRS Geometry object
             :return: Distance from Point geometry to LRS Geometry.
             """
-            dist_to_lrs = point_obj.distanceTo(lrs_geom)
+            dist_to_lrs = point_geom.distanceTo(lrs_geom)
             return dist_to_lrs
 
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -638,7 +637,7 @@ class EventValidation(object):
                             self.insert_route_message(row[routeid_col], 'error', error_message)
 
                 if not segm_dist:
-                    distance_to_ref = lrs_dist(point_geom, route_geom)
+                    distance_to_ref = lrs_dist(route_geom)
                     if distance_to_ref > threshold:
                         error_message = 'Koordinat pada rute {0} berjarak lebih dari {1} meter dari geometri ruas jalan.'.\
                             format(route, threshold)
@@ -949,8 +948,9 @@ class EventValidation(object):
 
         return self
 
-    def rtc_duration_check(self, duration=3, routes='ALL', routeid_col='LINKID', surv_date_col='DATE', hours_col='HOURS',
-                           minute_col='MINUTE', direction_col='DIRECTION', interval=15):
+    def rtc_duration_check(self, duration=3, routes='ALL', routeid_col='LINKID', surv_date_col='SURVEY_DATE',
+                           hours_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE', direction_col='SURVEY_DIREC',
+                           interval=15):
         """
         This class method will check the RTC survey direction for every available route in the input table.
         :param duration: The survey duration (in days), the default is 3 days.
@@ -994,8 +994,8 @@ class EventValidation(object):
 
         return self
 
-    def rtc_time_interval_check(self, interval=15, routes='ALL', routeid_col='LINKID', surv_date_col='DATE',
-                                hours_col='HOURS', minute_col='MINUTE', direction_col='DIRECTION'):
+    def rtc_time_interval_check(self, interval=15, routes='ALL', routeid_col='LINKID', surv_date_col='SURVEY_DATE',
+                                hours_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE', direction_col='SURVEY_DIREC'):
         """
         This class method will check the RTC survey time interval.
         :param interval: The survey interval time (in minutes), the default value is 15 minutes.
