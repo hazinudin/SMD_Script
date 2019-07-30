@@ -541,6 +541,7 @@ class EventValidation(object):
         :param input_projection: The coordinate system used to project the lat and long value from the input table
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
+        :param monotonic_check: If True then the check also include a monotonic check.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
