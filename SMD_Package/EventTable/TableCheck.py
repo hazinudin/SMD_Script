@@ -959,9 +959,29 @@ class EventValidation(object):
         :param surv_date_col: The survey date column in the event DataFrame.
         :param hours_col: The hours column in the event DataFrame.
         :param minute_col: The minute column in the event DataFrame.
+        :param direction_col: The survey direction column of the input table.
+        :param interval: The interval duration in minutes.
         :return:
         """
+        def timestamp_col(date, hour, minute, col='_timestamp'):
+            """
+            This function will populate a column with a timestamp data for every row.
+            :param date: Date column of the input table.
+            :param hour: Hour column of the input table.
+            :param minute: Minute column of the input table.
+            :param col: The timestamp column.
+            :return:
+            """
+            for index, row in df_route_dir.iterrows():
+                row_date = row[date]
+                row_hour = row[hour]
+                row_minute = row[minute]
+                df_route_dir.loc[index, [col]] = self.rtc_time_stamp(row_date, row_hour, row_minute)
+
+            df_route_dir[col] = pd.to_datetime(df_route_dir[col])
+
         df = self.copy_valid_df()  # Create a copy of input table DataFrame
+        df['_timestamp'] = pd.Series(None)
 
         if routes == 'ALL':
             pass
@@ -970,14 +990,15 @@ class EventValidation(object):
 
         for route, direction in self.route_lane_tuple(df, routeid_col, direction_col):  # Iterate over all available route
             df_route_dir = df.loc[(df[routeid_col] == route) & (df[direction_col] == direction)].reset_index()  # Create a route and lane DataFrame
+            timestamp_col(surv_date_col, hours_col, minute_col)
 
-            survey_start_index = df_route_dir[surv_date_col].idxmin()  # The survey start row index
+            survey_start_index = df_route_dir['_timestamp'].idxmin()  # The survey start row index
             survey_start_date = df_route_dir.at[survey_start_index, surv_date_col]  # The survey start date
             survey_start_hour = df_route_dir.at[survey_start_index, hours_col]  # The survey start hours
             survey_start_minutes = df_route_dir.at[survey_start_index, minute_col] - interval  # The survey start minutes
             start_timestamp = self.rtc_time_stamp(survey_start_date, survey_start_hour, survey_start_minutes)
 
-            survey_end_index = df_route_dir[surv_date_col].idxmax()  # The survey end row index
+            survey_end_index = df_route_dir['_timestamp'].idxmax()  # The survey end row index
             survey_end_date = df_route_dir.at[survey_end_index, surv_date_col]  # The survey end date
             survey_end_hour = df_route_dir.at[survey_end_index, hours_col]  # The survey end hours
             survey_end_minutes = df_route_dir.at[survey_end_index, minute_col]  # The survey end minutes
