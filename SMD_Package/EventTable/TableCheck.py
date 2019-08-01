@@ -1044,10 +1044,9 @@ class EventValidation(object):
                 row_timestamp_isof = row_timestamp.date().isoformat()
 
                 if index == 0:
-                    # The survey start time
-                    start_timestamp = row_timestamp
+                    pass
                 else:
-                    delta_start_end = (row_timestamp - start_timestamp).seconds/60  # Interval in minutes
+                    delta_start_end = (row_timestamp - start_timestamp).total_seconds()/60  # Interval in minutes
 
                     if delta_start_end != interval:  # If the delta does not match the requirement
                         end_time_str = row_timestamp.strftime('%d/%m/%Y %H:%M')  # Start time in string format
