@@ -4,7 +4,7 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, verify_balai, \
-    read_input_excel
+    read_input_excel, convert_and_trim
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -81,11 +81,11 @@ if (header_check_result is None) & (dtype_check_result is None):
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes
-    passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
 
     SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
 
-    if len(passed_routes_row) != 0:  # If there is an route with no error, then write to GDB
+    if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
+        passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
         gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails)
 
     # FOR ARCMAP USAGE ONLY #
