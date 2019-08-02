@@ -73,6 +73,7 @@ if (header_check_result is None) & (dtype_check_result is None):
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     valid_routes = EventCheck.valid_route
 
+    EventCheck.range_domain_check()
     EventCheck.coordinate_check(routes=valid_routes, segm_dist=False, lat_col='RTC_LAT', long_col='RTC_LONG',
                                 monotonic_check=False)
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
