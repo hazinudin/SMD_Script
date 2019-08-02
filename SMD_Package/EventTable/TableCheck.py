@@ -274,16 +274,22 @@ class EventValidation(object):
                 df[status_col] = pd.Series(None)  # Create an empty column for storing row status
 
                 # The upper value mask
-                if eq_upper:
-                    upper_mask = df[column] > upper_bound
+                if upper_bound is None:
+                    upper_mask = False
                 else:
-                    upper_mask = df[column] >= upper_bound
+                    if eq_upper:
+                        upper_mask = df[column] > upper_bound
+                    else:
+                        upper_mask = df[column] >= upper_bound
 
                 # The lower value mask
-                if eq_lower:
-                    lower_mask = df[column] < lower_bound
+                if lower_bound is None:
+                    lower_mask = False
                 else:
-                    lower_mask = df[column] <= lower_bound
+                    if eq_lower:
+                        lower_mask = df[column] < lower_bound
+                    else:
+                        lower_mask = df[column] <= lower_bound
 
                 # Give the error status for the lower and upper mask
                 df.loc[upper_mask | lower_mask, [status_col]] = 'error'
