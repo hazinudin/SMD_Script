@@ -1453,6 +1453,63 @@ class EventValidation(object):
 
         return self
 
+    def fwd_dropid_check(self, dropid_col, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                         survey_dir='SURVEY_DIREC', id_count=3, starts_at=1, routes='ALL'):
+        """
+        This class method will check for drop ID repetition pattern. Single segment should has a drop id pattern starting
+        from 0 and has an increment pattern of 1.
+        :param dropid_col: The Drop ID column in the event DataFrame.
+        :param routeid_col: The Route ID column in the event DataFrame.
+        :param from_m_col: The From Measure column in the event DataFrame.
+        :param to_m_col: The To Measure column in the event DataFrame.
+        :param id_count: The Drop ID count for every segment.
+        :param starts_at: The value that the Drop ID sequence starts.
+        :param routes: The Routes selection.
+        :return:
+        """
+        df = self.copy_valid_df()  # Create a copy of valid DataFrame.
+
+        if routes == 'ALL':  # Check for route request
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        route_list = self.route_lane_tuple(df, routeid_col, None, route_only=True)
+        for route in route_list:
+            df_route = df.loc[df[routeid_col] == route]  # The DataFrame with only selected route
+            df_group = df_route.groupby(by=[routeid_col, from_m_col, to_m_col, survey_dir])
+
+            for name, group in df_group:
+                drop_ids = group[dropid_col]
+
+                from_m = name[1]
+                to_m = name[2]
+                direction = name[3]
+
+                seq_list = drop_ids.tolist()  # The sequence as list object
+                seq_start = drop_ids.min()  # The start value of the drop id sequence
+                seq_len = len(drop_ids)  # The len of the drop id sequence
+
+                seq_diff = np.diff(seq_list)  # The difference between value in drop id sequence
+                all_1_diff = np.all(seq_diff == 1)  # Check if all the difference is 1
+
+                if seq_start != starts_at:
+                    error_message = "Rute {0} pada segmen {1}-{2} di arah survey {3} memiliki pola drop id yang tidak diawali oleh nilai {4}".\
+                        format(route, from_m, to_m, direction, starts_at)
+                    self.insert_route_message(route, 'error', error_message)
+
+                if seq_len != id_count:
+                    error_message = "Rute {0} pada segmen {1}-{2} di arah survey {3} memiliki jumlah drop id yang tidak sama dengan {4}".\
+                        format(route, from_m, to_m, direction, id_count)
+                    self.insert_route_message(route, 'error', error_message)
+
+                if not all_1_diff:
+                    error_message = "Rute {0} pada segmen {1}-{2} di arah survey {3} memiliki pola yang tidak berurutan (memiliki interval lebih dari 1)".\
+                        format(route, from_m, to_m, direction)
+                    self.insert_route_message(route, 'error', error_message)
+
+        return self
+
     def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
                            comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
                            lane_codes='LANE_CODE', from_m_col='STA_FROM', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
