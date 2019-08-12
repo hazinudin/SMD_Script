@@ -80,7 +80,7 @@ if (header_check_result is None) & (dtype_check_result is None):
     EventCheck.range_domain_check(lane_code='SURVEY_DIREC')
     EventCheck.coordinate_check(routes=valid_routes, segm_dist=False, lat_col='DEFL_LAT', long_col='DEFL_LONG',
                                 monotonic_check=False)
-    EventCheck.fwd_dropid_check('DROP_ID')
+    EventCheck.fwd_dropid_check()
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes

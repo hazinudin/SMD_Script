@@ -1453,7 +1453,7 @@ class EventValidation(object):
 
         return self
 
-    def fwd_dropid_check(self, dropid_col, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+    def fwd_dropid_check(self, dropid_col='DROP_ID', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                          survey_dir='SURVEY_DIREC', id_count=3, starts_at=1, routes='ALL'):
         """
         This class method will check for drop ID repetition pattern. Single segment should has a drop id pattern starting
