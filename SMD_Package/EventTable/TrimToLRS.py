@@ -55,14 +55,18 @@ def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, 
             df_route_lane['_diff'] = df_route_lane[to_m_col] - lrs_max_m  # Create a difference col
 
             outbound_meas = df_route_lane.loc[df_route_lane['_diff'] > 0]  # All row which lies outside the lRS max m
-            closest_to = outbound_meas[to_m_col].idxmin()  # Find the index of closest to_m
-            drop_ind = outbound_meas.index.tolist()  # The row which completely out of bound
-            drop_ind.remove(closest_to)
 
-            # Replace the closest value to_m with LRS Max Measurement value
-            df.loc[closest_to, [to_m_col]] = lrs_max_m
-            # Drop all the row which is completely out of range
-            df.drop(drop_ind, inplace=True)
+            if len(outbound_meas) != 0:
+                closest_to = outbound_meas[to_m_col].idxmin()  # Find the index of closest to_m
+                drop_ind = outbound_meas.index.tolist()  # The row which completely out of bound
+                drop_ind.remove(closest_to)
+
+                # Replace the closest value to_m with LRS Max Measurement value
+                df.loc[closest_to, [to_m_col]] = lrs_max_m
+                # Drop all the row which is completely out of range
+                df.drop(drop_ind, inplace=True)
+            else:
+                pass
 
     return df
 
