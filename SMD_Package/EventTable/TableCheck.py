@@ -1854,6 +1854,7 @@ class EventValidation(object):
 
         if len(df) != 0:
             routes = df.loc[df['status'] == passed_status]['linkid'].unique().tolist()
-            return routes
+            routes_intersect = np.intersect1d(routes, self.valid_route).tolist()
+            return routes_intersect
         else:
             return list()
