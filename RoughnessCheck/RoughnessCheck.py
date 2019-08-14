@@ -36,11 +36,12 @@ BalaiRouteTable = smd_config['table_names']['balai_route_table']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester', 'routes'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 Semester = InputDetails['semester']
 KodeBalai = InputDetails["balai"]
+RouteReq = InputDetails["routes"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = roughness_config['column_details']  # Load the roughness column details dictionary
@@ -98,6 +99,7 @@ year_sem_check_result = EventCheck.year_and_semester_check(DataYear, Semester)
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
+    EventCheck.route_selection(selection=RouteReq)
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
