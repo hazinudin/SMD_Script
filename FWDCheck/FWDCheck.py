@@ -29,10 +29,11 @@ dbConnection = smd_config['smd_database']['instance']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'routes'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 KodeBalai = InputDetails["balai"]
+RouteReq = InputDetails["routes"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = rtc_config['column_details']  # Load the roughness column details dictionary
@@ -75,12 +76,13 @@ dtype_check_result = EventCheck.dtype_check_result
 if (header_check_result is None) & (dtype_check_result is None):
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
+    EventCheck.route_selection(selection=RouteReq)
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check(lane_code='SURVEY_DIREC')
     EventCheck.coordinate_check(routes=valid_routes, segm_dist=False, lat_col='DEFL_LAT', long_col='DEFL_LONG',
                                 monotonic_check=False)
-    EventCheck.fwd_dropid_check()
+    EventCheck.fwd_dropid_check(routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes

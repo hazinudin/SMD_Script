@@ -29,11 +29,11 @@ dbConnection = smd_config['smd_database']['instance']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'routes'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
-DataSemester = InputDetails['semester']
 KodeBalai = InputDetails["balai"]
+RouteReq = InputDetails["routes"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = rtc_config['column_details']  # Load the roughness column details dictionary
@@ -71,6 +71,7 @@ dtype_check_result = EventCheck.dtype_check_result
 if (header_check_result is None) & (dtype_check_result is None):
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
+    EventCheck.route_selection(selection=RouteReq)
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
@@ -78,7 +79,6 @@ if (header_check_result is None) & (dtype_check_result is None):
                                 monotonic_check=False)
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
     EventCheck.rtc_time_interval_check(routes=valid_routes)  # The RTC survey time interval check.
-    ErrorMessageList = EventCheck.error_list  # Get all the error list from the TableCheck object
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes

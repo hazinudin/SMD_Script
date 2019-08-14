@@ -37,10 +37,11 @@ RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'routes'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 KodeBalai = InputDetails["balai"]
+RouteReq = InputDetails["routes"]
 
 # All the column details in the roughness_config.json
 ColumnDetails = pci_config['column_details']  # Load the roughness column details dictionary
@@ -84,6 +85,7 @@ year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_
 if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
+    EventCheck.route_selection(selection=RouteReq)
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
@@ -91,7 +93,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
     EventCheck.coordinate_check(routes=valid_routes, at_start=False)  # Check the input coordinate
-    EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth)
+    EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth,
+                             routes=valid_routes)
     EventCheck.pci_val_check(routes=valid_routes)
     EventCheck.pci_surftype_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNISurfaceType,
                                   routes=valid_routes)
