@@ -249,6 +249,40 @@ class EventValidation(object):
 
         return self
 
+    def route_selection(self, selection='ALL'):
+        """
+        This class method will modify valid_route class attribute based on the selection parameter. If the selection
+        parameter is 'ALL' then the valid_route will not be modified.
+        :param selection: The route selection.
+        :return:
+        """
+        if selection == 'ALL':
+            return self
+        else:
+            if type(selection) == str or type(selection) == unicode:
+                route_exist = np.any(np.in1d(self.valid_route, selection))
+                if route_exist:  # Check if the requested route exist in the valid route list
+                    self.valid_route = [selection]
+                else:
+                    error_message = '{0} tidak termasuk di dalam kode ruas valid yang terdapat di dalam tabel input.'.\
+                        format(selection)
+                    self.insert_route_message(selection, 'error', error_message)
+                    self.valid_route = list()  # Return an empty list
+
+            elif type(selection) == list:
+                route_exist = np.any(np.in1d(self.valid_route, selection))
+                if route_exist:  # Check in any of the requested routes exist in the valid route list
+                    route_intersect = np.intersect1d(self.valid_route, selection).tolist()
+                    self.valid_route = route_intersect
+                else:  # If all the requested routes does not exist in the valid route list
+                    for missing_route in selection:
+                        error_message = '{0} tidak termasuk di dalam kode ruas valid yang terdapat di dalam tabel input.'.\
+                            format(missing_route)
+                        self.insert_route_message(missing_route, 'error', error_message)
+                        self.valid_route = list()  # Return an empty list
+
+        return self
+
     def range_domain_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                            lane_code='LANE_CODE'):
         """
