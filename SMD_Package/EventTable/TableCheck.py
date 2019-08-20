@@ -1079,9 +1079,14 @@ class EventValidation(object):
             df_route_dir.reset_index(inplace=True)  # Reset the index
 
             for index, row in df_route_dir.iterrows():
-                row_timestamp = self.rtc_time_stamp(row[surv_date_col], row[hours_col], row[minute_col])
+                row_date = row[surv_date_col]
+                row_hour = row[hours_col]
+                row_minute = row[minute_col]
+
+                row_timestamp = self.rtc_time_stamp(row_date, row_hour, row_minute)
+                row_timestamp_start = self.rtc_time_stamp(row_date, row_hour, (row_minute-interval))
                 date_timestamp_isof = row[surv_date_col].date().isoformat()
-                row_timestamp_isof = row_timestamp.date().isoformat()
+                row_timestamp_isof = row_timestamp_start.date().isoformat()
 
                 if index == 0:
                     pass
@@ -1097,7 +1102,7 @@ class EventValidation(object):
 
                 if date_timestamp_isof != row_timestamp_isof:  # Find the date which does not match with the hours
                     result = "Waktu survey RTC di rute {0} {1} pada tanggal {2} jam {3} menit {4} seharusnya memiliki tanggal {5}.".\
-                        format(route, direction, date_timestamp_isof, row[hours_col], row[minute_col], row_timestamp_isof)
+                        format(route, direction, date_timestamp_isof, row_hour, row_minute, row_timestamp_isof)
                     self.insert_route_message(route, 'error', result)
 
                 start_timestamp = row_timestamp
