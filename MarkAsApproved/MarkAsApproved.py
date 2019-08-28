@@ -6,7 +6,7 @@ import os
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, Exists, env, ListFields, management, da
 sys.path.append('E:\SMD_Script')
-from SMD_Package import input_json_check
+from SMD_Package import input_json_check, output_message
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -77,5 +77,5 @@ if TableExists:
 
 else:  # If the requested table does not exist
     error_message = "Tabel {0} tidak dapat ditemukan.".format(TableName)
-    SetParameterAsText(1, error_message)
+    SetParameterAsText(1, output_message('Failed', error_message))
     sys.exit(0)
