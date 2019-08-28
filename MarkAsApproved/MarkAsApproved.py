@@ -50,9 +50,9 @@ env.workspace = dbConnection  # Setting up the environment for ArcPy
 
 # Check for RouteReq type
 if type(RouteReq) == str or type(RouteReq) == unicode:
-    RouteReq = [RouteReq]
+    RouteReq = [str(RouteReq)]
 if type(RouteReq) == list:
-    pass
+    RouteReq = [str(x) for x in RouteReq]
 
 # Check if the Table Exist
 TableExists = Exists(TableName)
@@ -61,12 +61,12 @@ if TableExists:
     table_fields = [x.name for x in ListFields(TableName)]  # Get all the fields from the table
     list_query = strlist_to_querylist(RouteReq)
     processed_routes = list()  # List for storing processed routes
+    da_clause = "{0} IN {1}".format(RouteIDColumn, list_query)
 
-    if ApprovedField not in table_fields: # If the field does not exist in the table
+    if ApprovedField not in table_fields:  # If the field does not exist in the table
         management.AddField(TableName, ApprovedField, 'INTEGER')
 
-    with da.UpdateCursor(TableName, [RouteIDColumn, ApprovedField],
-                         where_clause="{0}IN{1}".format(RouteIDColumn, RouteReq)) as cursor:
+    with da.UpdateCursor(TableName, [RouteIDColumn, ApprovedField], where_clause=da_clause) as cursor:
         for row in cursor:
             row[1] = 1  # Update the approved value row
             route = row[0]
