@@ -5,6 +5,7 @@ import sys
 import os
 import json
 from arcpy import GetParameterAsText, SetParameterAsText, Exists, env, ListFields, management, da
+from pandas import DataFrame, Series
 sys.path.append('E:\SMD_Script')
 from SMD_Package import input_json_check, output_message
 
@@ -60,7 +61,7 @@ TableExists = Exists(TableName)
 if TableExists:
     table_fields = [x.name for x in ListFields(TableName)]  # Get all the fields from the table
     list_query = strlist_to_querylist(RouteReq)
-    processed_routes = list()  # List for storing processed routes
+    existed_routes = list()  # List for storing processed routes
     da_clause = "{0} IN {1}".format(RouteIDColumn, list_query)
 
     if ApprovedField not in table_fields:  # If the field does not exist in the table
@@ -72,8 +73,16 @@ if TableExists:
             route = row[0]
             cursor.updateRow(row)
 
-            if route not in processed_routes:
-                processed_routes.append(route)  # Append the route
+            if route not in existed_routes:
+                existed_routes.append(route)  # Append the route
+
+    # Check for a route which was not processed
+    result_df = DataFrame(RouteReq, columns=['linkid'])
+    result_df['status'] = Series('Route does not exist', index=result_df.index)
+    result_df.loc[result_df['linkid'].isin(existed_routes), ['status']] = 'Route exist'
+
+    result_msg = result_df.to_dict('records')
+    SetParameterAsText(1, output_message('Succeeded', result_msg))
 
 else:  # If the requested table does not exist
     error_message = "Tabel {0} tidak dapat ditemukan.".format(TableName)
