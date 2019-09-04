@@ -3,26 +3,27 @@ This script provide the function and class used by coordinate check class method
 """
 from arcpy import Point, PointGeometry
 
+
 class InputPoint(object):
     def __init__(self, x, y, projection='4326'):
         """
-
-        :param x:
-        :param y:
-        :param projection:
+        This class used to process input point coordinates.
+        :param x: Input longitude.
+        :param y: Input latitude.
+        :param projection: The projection used by the input coordinates.
         """
         point_obj = Point(x, y)
         self.point_geom = PointGeometry(point_obj).projectAs(projection)  # The input point geometry
 
     def distance_to_segment(self, from_m, to_m, lane, route_geom, segm_start=False, to_meter_conversion=10):
         """
-
-        :param from_m:
-        :param to_m:
-        :param lane:
-        :param route_geom:
-        :param segm_start:
-        :param to_meter_conversion:
+        This method calculate the distance from input point to specified segment in the LRS network.
+        :param from_m: From measure value.
+        :param to_m: To measure value.
+        :param lane: The lane where the point lies.
+        :param route_geom: The LRS route geometry. Polyline object geometry
+        :param segm_start: If True then the segment end point is defined at start, if False then end point is at the end.
+        :param to_meter_conversion: The conversion factor to meter.
         :return:
         """
         lane_type = str(lane[0])
@@ -56,8 +57,8 @@ class InputPoint(object):
 
     def distance_to_centerline(self, route_geom):
         """
-
-        :param route_geom:
+        This method calculate the distance from input point to a nearest point in LRS route geometry.
+        :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
         dist_to_centerline = self.point_geom.distanceTo(route_geom)
@@ -65,8 +66,8 @@ class InputPoint(object):
 
     def point_meas_on_route(self, route_geom):
         """
-
-        :param route_geom:
+        The measurement value of point geometry on the LRS route geometry.
+        :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
         point_meas = route_geom.measureOnLine(self.point_geom)
