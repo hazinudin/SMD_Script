@@ -659,7 +659,7 @@ class EventValidation(object):
 
                 # If segment distance is True then the distance will be calculated to segment end point
                 if segm_dist:
-                    distance_to_ref = ref_point_dist(row, route_max_m, df_route, route_geom)
+                    distance_to_ref = ref_point_dist(row, route_max_m, df_route, route_geom)  # distance to a segment
                     if distance_to_ref is None:
                         pass
                     if distance_to_ref > threshold:
@@ -677,7 +677,7 @@ class EventValidation(object):
                             self.insert_route_message(row[routeid_col], 'error', error_message)
 
                 if not segm_dist:
-                    distance_to_ref = lrs_dist(route_geom)
+                    distance_to_ref = lrs_dist(route_geom)  # distance to LRS center line
                     if distance_to_ref > threshold:
                         error_message = 'Koordinat pada rute {0} berjarak lebih dari {1} meter dari geometri ruas jalan.'.\
                             format(route, threshold)
