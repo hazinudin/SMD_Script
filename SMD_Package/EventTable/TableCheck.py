@@ -631,8 +631,10 @@ class EventValidation(object):
 
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
-        df['measureOnLine'] = pd.Series(np.nan, dtype=np.float)  # Create a new column for storing coordinate m-value
-        error_i = []  # list for storing the row with error
+        df['measureOnLine'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Column for storing coordinate m-value
+        df['segDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to segment column
+        df['rniDistance'] = pd.Series(np.nan, dytpe=np.float, index=df.index)  # Input coords distance to RNI column
+        df['lrsDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to LRS column
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -662,19 +664,8 @@ class EventValidation(object):
                     distance_to_ref = ref_point_dist(row, route_max_m, df_route, route_geom)  # distance to a segment
                     if distance_to_ref is None:
                         pass
-                    if distance_to_ref > threshold:
-                        error_i.append(index)  # Append the index of row with coordinate error
-                        if at_start:
-                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik awal segmen.'. \
-                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                            self.error_list.append(error_message)
-                            self.insert_route_message(row[routeid_col], 'error', error_message)
-
-                        if not at_start:
-                            error_message = 'Koordinat awal segmen {0}-{1} di lajur {2} pada rute {3} berjarak lebih dari {4} meter dari titik akhir segmen.'. \
-                                format(row[from_m_col], row[to_m_col], row[lane_code], route, threshold)
-                            self.error_list.append(error_message)
-                            self.insert_route_message(row[routeid_col], 'error', error_message)
+                    elif distance_to_ref is not None:
+                        df_route.loc[index, ['segDistance']] = distance_to_ref  # Insert the distance value to df
 
                 if not segm_dist:
                     distance_to_ref = lrs_dist(route_geom)  # distance to LRS center line
