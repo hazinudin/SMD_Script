@@ -565,7 +565,8 @@ class EventValidation(object):
 
         return self
 
-    def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
+    def coordinate_check(self, rni_table, rni_routeid, rni_from_col, rni_to_col, rni_lane_code, rni_lat, rni_long,
+                         routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
                          threshold=30, at_start=False, monotonic_check=True, segm_dist=True):
         """
@@ -629,6 +630,15 @@ class EventValidation(object):
             dist_to_lrs = point_geom.distanceTo(lrs_geom)
             return dist_to_lrs
 
+        def get_rni(route_selection):
+            """
+            This function will return a RNI DataFrame based on the route query
+            :return:
+            """
+            table = event_fc_to_df(rni_table, [rni_routeid, rni_from_col, rni_to_col, rni_lane_code, rni_lat, rni_long],
+                                route_selection, rni_routeid, self.sde_connection, is_table=True)
+            return table
+
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
         df['measureOnLine'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Column for storing coordinate m-value
@@ -645,6 +655,7 @@ class EventValidation(object):
         for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
             df_route = df.loc[df[routeid_col] == route, [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
+            df_rni = get_rni(route)  # The RNI DataFrame for current route
 
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
             route_spat_ref = route_geom.spatialReference
