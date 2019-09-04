@@ -567,7 +567,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=True, monotonic_check=True, segm_dist=True):
+                         threshold=30, at_start=False, monotonic_check=True, segm_dist=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
