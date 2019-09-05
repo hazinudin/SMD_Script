@@ -61,8 +61,8 @@ class InputPoint(object):
         :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
-        dist_to_centerline = self.point_geom.distanceTo(route_geom)
-        return dist_to_centerline
+        dist_to_center_line = self.point_geom.distanceTo(route_geom)
+        return dist_to_center_line
 
     def point_meas_on_route(self, route_geom):
         """
@@ -72,3 +72,40 @@ class InputPoint(object):
         """
         point_meas = route_geom.measureOnLine(self.point_geom)
         return point_meas
+
+
+class PointProperties(object):
+    """
+    This class is used to process the input point distance to a specified point of reference
+    and also point's measurement pattern.
+    """
+    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col):
+        """
+        Initialization.
+        :param data_frame: The input DataFrame with distance column.
+        :param from_m_col: The from measure column in the input DataFrame.
+        :param to_m_col: The to measure column in the input DataFrame.
+        :param lane_code_col: The lane code column in the input DataFrame.
+        """
+        self.df = data_frame
+        self.from_m_col = from_m_col
+        self.to_m_col = to_m_col
+        self.lane_code_col = lane_code_col
+
+    def find_distance_error(self, distance_column, window=5, threshold=30):
+        """
+        This class method find error related to distance error.
+        :param distance_column:
+        :param window:
+        :param threshold:
+        :return:
+        """
+        pass
+
+    def find_non_monotonic(self, measure_column):
+        """
+        This class method find any error related to measurement value pattern.
+        :param measure_column:
+        :return:
+        """
+        pass
