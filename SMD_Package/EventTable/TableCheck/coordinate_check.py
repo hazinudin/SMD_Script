@@ -2,6 +2,7 @@
 This script provide the function and class used by coordinate check class method in the EventValidation Class.
 """
 from arcpy import Point, PointGeometry
+import numpy as np
 
 
 class InputPoint(object):
@@ -100,7 +101,10 @@ class PointProperties(object):
         :param threshold:
         :return:
         """
-        pass
+        distance_array = self.df[distance_column].to_numpy()  # The column distance in array
+        ranges = _find_error_runs(distance_array, window, threshold)
+
+        return ranges
 
     def find_non_monotonic(self, measure_column):
         """
@@ -109,3 +113,20 @@ class PointProperties(object):
         :return:
         """
         pass
+
+
+def _find_error_runs(array, window, threshold):
+    above_threshold = np.concatenate(([0], (array > threshold).view(np.int8), [0]))  # The array with padding
+    abs_diff = np.abs(np.diff(above_threshold))
+    ranges = np.where(abs_diff == 1)[0].reshape(-1, 2)
+    list_ranges = list()
+
+    for range_window in ranges:  # Iterate over all available range
+        range_len = range_window[1]-range_window[0]
+        if range_len >= window:
+            list_ranges.append(range_window.tolist())
+
+    if len(list_ranges) == 0:  # Check if the list ranges is empty.
+        return None
+    else:
+        return ranges
