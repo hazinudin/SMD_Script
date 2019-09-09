@@ -106,13 +106,25 @@ class FindCoordinateError(object):
 
         return ranges
 
-    def find_non_monotonic(self, measure_column):
+    def find_non_monotonic(self, measure_column, route):
         """
         This class method find any error related to measurement value pattern.
         :param measure_column:
         :return:
         """
-        pass
+        lanes = self.df[self.lane_code_col].unique().tolist()
+        errors = list()
+        for lane in lanes:
+            df_lane = self.df.loc[self.df[self.lane_code_col] == lane]  # Create a DataFrame for every available lane
+            df_lane.sort_values(by=[self.from_m_col, self.to_m_col], inplace=True)  # Sort the DataFrame
+            monotonic_check = np.diff(df_lane[measure_column]) > 0
+            check_unique = np.unique(monotonic_check)
+
+            if check_unique.all():  # Check whether the result only contain True
+                return None  # This means OK
+            elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
+                error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
+                errors.append(error_message)
 
 
 def _find_error_runs(df, column, window, threshold):
