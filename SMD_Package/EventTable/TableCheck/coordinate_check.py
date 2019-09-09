@@ -96,10 +96,10 @@ class PointProperties(object):
     def find_distance_error(self, distance_column, window=5, threshold=30):
         """
         This class method find error related to distance error.
-        :param distance_column:
-        :param window:
-        :param threshold:
-        :return:
+        :param distance_column: The distance from input point to a reference point.
+        :param window: The minimal window for error detection.
+        :param threshold: The distance threshold for error detection.
+        :return: If there is no error detected then None will be returned, otherwise a list object will be returned
         """
         distance_array = self.df[distance_column].to_numpy()  # The column distance in array
         ranges = _find_error_runs(distance_array, window, threshold)
