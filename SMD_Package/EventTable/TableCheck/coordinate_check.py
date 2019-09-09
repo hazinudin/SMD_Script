@@ -125,6 +125,7 @@ class FindCoordinateError(object):
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
                 error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
                 errors.append(error_message)
+                return errors
 
 
 def _find_error_runs(df, column, window, threshold):
