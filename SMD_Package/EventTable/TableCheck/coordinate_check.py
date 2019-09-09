@@ -102,6 +102,9 @@ class FindCoordinateError(object):
         :return: If there is no error detected then None will be returned, otherwise a list object will be returned
         """
         runs = _find_error_runs(self.df, distance_column, window, threshold)
+        ranges = _run_to_range(runs)
+
+        return ranges
 
     def find_non_monotonic(self, measure_column):
         """
@@ -136,3 +139,15 @@ def _find_error_runs(df, column, window, threshold):
             runs.append(run_index)
 
     return runs
+
+
+def _run_to_range(runs_list):
+    error_ranges = list()
+
+    for run in runs_list:
+        run_starts = run[0]
+        run_ends = run[len(run) - 1]
+        index_range = [run_starts, run_ends]
+        error_ranges.append(index_range)
+
+    return error_ranges
