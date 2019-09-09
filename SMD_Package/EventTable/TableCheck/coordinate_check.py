@@ -75,7 +75,7 @@ class InputPoint(object):
         return point_meas
 
 
-class PointProperties(object):
+class FindCoordinateError(object):
     """
     This class is used to process the input point distance to a specified point of reference
     and also point's measurement pattern.
@@ -101,10 +101,7 @@ class PointProperties(object):
         :param threshold: The distance threshold for error detection.
         :return: If there is no error detected then None will be returned, otherwise a list object will be returned
         """
-        distance_array = self.df[distance_column].to_numpy()  # The column distance in array
-        ranges = _find_error_runs(distance_array, window, threshold)
-
-        return ranges
+        runs = _find_error_runs(self.df, distance_column, window, threshold)
 
     def find_non_monotonic(self, measure_column):
         """
@@ -115,18 +112,27 @@ class PointProperties(object):
         pass
 
 
-def _find_error_runs(array, window, threshold):
-    above_threshold = np.concatenate(([0], (array > threshold).view(np.int8), [0]))  # The array with padding
-    abs_diff = np.abs(np.diff(above_threshold))
-    ranges = np.where(abs_diff == 1)[0].reshape(-1, 2)
-    list_ranges = list()
+def _find_error_runs(df, column, window, threshold):
+    runs = list()  # Runs list result
+    error_rows = df.loc[df[column] > threshold]
+    error_ind = error_rows.index.tolist()  # Find row with value above the threshold
+    padded_ind = np.concatenate(([0], error_ind, [0]))  # Add zero at start and end of the array
+    ind_diff = np.diff(padded_ind)
 
-    for range_window in ranges:  # Iterate over all available range
-        range_len = range_window[1]-range_window[0]
-        if range_len >= window:
-            list_ranges.append(range_window.tolist())
-
-    if len(list_ranges) == 0:  # Check if the list ranges is empty.
-        return None
+    if ind_diff[0] == 1:  # This means there is a run a the beginning
+        error_runs_end = list([0])
+        error_runs_end = error_runs_end + np.where(ind_diff != 1)[0].tolist()
     else:
-        return ranges
+        error_runs_end = np.where(ind_diff != 1)[0].tolist()
+
+    runs_count = len(error_runs_end) - 1  # The total count of runs found in the column
+
+    for runs_end in range(0, runs_count):
+        start = error_runs_end[runs_end]
+        end = error_runs_end[runs_end+1]
+        run_index = error_rows.index[start:end].tolist()
+
+        if len(run_index) >= window:  # Check the runs length
+            runs.append(run_index)
+
+    return runs
