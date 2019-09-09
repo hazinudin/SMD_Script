@@ -52,7 +52,8 @@ class InputPoint(object):
             return None
         else:
             segment_endpoint = route_geom.positionAlongLine(point_meas)  # The end point of a segment
-            distance_to_ref = self.point_geom.distanceTo(segment_endpoint)  # Distance from input point to endpoint
+            reprojected_point = self._reproject_point_to_route(route_geom, self.point_geom)
+            distance_to_ref = reprojected_point.distanceTo(segment_endpoint)  # Distance from input point to endpoint
 
         return distance_to_ref
 
@@ -62,7 +63,8 @@ class InputPoint(object):
         :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
-        dist_to_center_line = self.point_geom.distanceTo(route_geom)
+        reprojected_point = self._reproject_point_to_route(route_geom, self.point_geom)
+        dist_to_center_line = reprojected_point.distanceTo(route_geom)
         return dist_to_center_line
 
     def point_meas_on_route(self, route_geom):
@@ -71,8 +73,16 @@ class InputPoint(object):
         :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
-        point_meas = route_geom.measureOnLine(self.point_geom)
+        reprojected_point = self._reproject_point_to_route(route_geom, self.point_geom)
+        point_meas = route_geom.measureOnLine(reprojected_point)
         return point_meas
+
+    @staticmethod
+    def _reproject_point_to_route(route_geom, point_geom):
+        route_spat_ref = route_geom.spatialReference
+        point_geom_projected = point_geom.projectAs(route_spat_ref)
+
+        return point_geom_projected
 
 
 class FindCoordinateError(object):

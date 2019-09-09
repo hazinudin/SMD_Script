@@ -568,7 +568,8 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=False, monotonic_check=True, segm_dist=True):
+                         threshold=30, at_start=False, monotonic_check=True, segm_dist=True, comparison='LRS',
+                         window=5):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -584,13 +585,14 @@ class EventValidation(object):
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param monotonic_check: If True then the check also include a monotonic check.
         :param segm_dist: If True then the check will measure the distance from the input point to the segment's end.
+        :param comparison: Coordinate data used to check for error. ('LRS' or 'LRS-RNI')
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
         df['measureOnLine'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Column for storing coordinate m-value
         df['segDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to segment column
-        df['rniDistance'] = pd.Series(np.nan, dytpe=np.float, index=df.index)  # Input coords distance to RNI column
+        df['rniDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to RNI column
         df['lrsDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to LRS column
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
@@ -601,7 +603,9 @@ class EventValidation(object):
         # Iterate for every requested routes
         for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
-            df_route = df.loc[df[routeid_col] == route, [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]]
+            column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]
+            calculation_column = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
+            df_route = df.loc[df[routeid_col] == route, (column_selection+calculation_column)]
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
 
             # Iterate over all available segment in the route
@@ -633,30 +637,16 @@ class EventValidation(object):
                             format(route, threshold)
                         self.insert_route_message(route, 'error', error_message)
 
-            if monotonic_check:
-                for lane in df_route[lane_code].unique().tolist():
-                    df_lane = df_route.loc[df_route[lane_code] == lane]  # Create a DataFrame for every available lane
-                    df_lane.sort_values(by=[from_m_col, to_m_col], inplace=True)  # Sort the DataFrame
-                    monotonic_check = np.diff(df_lane['measureOnLine']) > 0
-                    check_unique = np.unique(monotonic_check)
-
-                    if check_unique.all():  # Check whether the result only contain True
-                        pass  # This means OK
-                    elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                        error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
-                    else:  # If not entirely False then give the segment which has the faulty measurement
-                        faulty_index = np.where(monotonic_check is False)  # Get the index of the faulty segment
-                        faulty_segment = df_lane.loc[faulty_index]  # DataFrame of all faulty segment
-
-                        for index, row in faulty_segment.iterrows():  # Iterate for all available faulty segment
-                            from_meas = row[from_m_col]
-                            to_meas = row[to_m_col]
-                            error_message = 'Segmen {0}-{1} pada lane {1} di rute {2} memiliki arah survey yang tidak monoton.'.\
-                                format(from_meas, to_meas, lane, route)
-                            self.error_list.append(error_message)
-                            self.insert_route_message(route, 'error', error_message)
+            coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
+            if segm_dist and (comparison == 'LRS'):
+                lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
+            if monotonic_check and segm_dist:
+                monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
+                if monotonic_error is None:
+                    pass
+                else:
+                    for error_msg in monotonic_error:
+                        self.insert_route_message(route, 'error', error_msg)
 
         return self
 
