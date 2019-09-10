@@ -111,10 +111,27 @@ class FindCoordinateError(object):
         :param threshold: The distance threshold for error detection.
         :return: If there is no error detected then None will be returned, otherwise a list object will be returned
         """
-        runs = _find_error_runs(self.df, distance_column, window, threshold)
-        ranges = _run_to_range(runs)
+        lanes = self.df[self.lane_code_col].unique().tolist()
+        errors = dict()
+        for lane in lanes:
+            df_lane = self.df.loc[self.df[self.lane_code_col] == lane]
+            df_lane.sort_values(by=[self.from_m_col, self.to_m_col], inplace=True)
+            df_lane.reset_index(inplace=True)
+            runs = _find_error_runs(df_lane, distance_column, window, threshold)  # Find runs
+            index_ranges = _run_to_range(runs)  # Convert run to range
 
-        return ranges
+            for index_range in index_ranges:
+                range_start = index_range[0]
+                range_end = index_range[1]
+                meas_start = df_lane.at[range_start, self.from_m_col]
+                meas_end = df_lane.at[range_end, self.to_m_col]
+
+                if lane not in errors.keys():
+                    errors[lane] = list()
+
+                errors[lane].append([meas_start, meas_end])  # Append the value
+
+            return errors
 
     def find_non_monotonic(self, measure_column, route):
         """
