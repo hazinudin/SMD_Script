@@ -640,6 +640,15 @@ class EventValidation(object):
             coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
             if segm_dist and (comparison == 'LRS'):
                 lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
+
+                for lane in lrs_dist_error.keys():
+                    errors = lrs_dist_error[lane]
+
+                    for range_error in errors:
+                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}.".\
+                            format(route, lane, range_error[0], range_error[1], threshold)
+                        self.insert_route_message(route, 'error', error_message)
+
             if monotonic_check and segm_dist:
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
                 if monotonic_error is None:
