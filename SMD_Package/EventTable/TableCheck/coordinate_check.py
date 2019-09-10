@@ -131,7 +131,7 @@ class FindCoordinateError(object):
 
                 errors[lane].append([meas_start, meas_end])  # Append the value
 
-            return errors
+        return errors
 
     def find_non_monotonic(self, measure_column, route):
         """
@@ -148,11 +148,12 @@ class FindCoordinateError(object):
             check_unique = np.unique(monotonic_check)
 
             if check_unique.all():  # Check whether the result only contain True
-                return None  # This means OK
+                pass  # This means OK
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
                 error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
                 errors.append(error_message)
-                return errors
+
+        return errors
 
 
 def _find_error_runs(df, column, window, threshold):

@@ -639,7 +639,7 @@ class EventValidation(object):
 
             coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
             if segm_dist and (comparison == 'LRS'):
-                lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
+                lrs_dist_error = coordinate_error.find_distance_error('segDistance', window=window, threshold=threshold)
 
                 for lane in lrs_dist_error.keys():
                     errors = lrs_dist_error[lane]
