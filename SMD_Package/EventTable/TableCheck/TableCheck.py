@@ -387,6 +387,34 @@ class EventValidation(object):
 
         return self
 
+    def survey_year_check(self, data_year, survey_date_col='SURVEY_DATE', routeid_col='LINKID', from_m_col='STA_FROM',
+                          to_m_col='STA_TO', lane_code='LANE_CODE'):
+        """
+        This function checks for consistency between the stated data year and survey date year.
+        :param survey_date_col:
+        :param data_year:
+        :param routeid_col:
+        :param from_m_col:
+        :param to_m_col:
+        :param lane_code:
+        :return:
+        """
+        df = self.copy_valid_df()
+        df['_year'] = pd.DatetimeIndex(df[survey_date_col]).year  # Create a year column
+        error_rows = df.loc[df['_year'] != data_year]
+
+        for index, row in error_rows.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            lane = row[lane_code]
+
+            error_msg = 'Rute {0} pada segmen {1}-{2} {3} memiliki tanggal survey dengan tahun yang berbeda dengan tahun data.'.\
+                format(route, from_m, to_m, lane)
+            self.insert_route_message(route, 'error', error_msg)
+
+        return self
+
     def segment_duplicate_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                                 lane_code='LANE_CODE', drop=True):
         """
