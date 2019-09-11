@@ -387,6 +387,36 @@ class EventValidation(object):
 
         return self
 
+    def segment_duplicate_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                                lane_code='LANE_CODE', drop=True):
+        """
+        This function checks for any duplicate segment determined by the keys defined in the parameter.
+        :param routeid_col: The Route ID column
+        :param from_m_col: The From Measure column
+        :param to_m_col: The To Measure column
+        :param lane_code: The Lane Code column
+        :param drop: If true then the duplicated rows will be dropped from the DataFrame.
+        :return:
+        """
+        keys = [routeid_col, from_m_col, to_m_col, lane_code]
+
+        duplicate_rows = self.df_valid[self.df_valid.duplicated(keys, keep='first')]
+        duplicate_index = duplicate_rows.index
+
+        for index, row in duplicate_rows.iterrows():
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            route = row[routeid_col]
+            lane = row[lane_code]
+
+            error_message = 'Segmen {0}-{1} {2} pada rute {3} memiliki duplikat.'.format(from_m, to_m, lane, route)
+            self.insert_route_message(route, 'error', error_message)
+
+        if drop:
+            self.df_valid.drop(duplicate_index, inplace=True)  # Drop duplicated rows
+
+        return self
+
     def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FROM',
                           to_m_col='STA_TO', lane_code='LANE_CODE', length_col='SEGMENT_LENGTH'):
         """

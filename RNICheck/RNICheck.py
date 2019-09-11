@@ -92,6 +92,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     EventCheck.route_selection(selection=RouteReq)
+    EventCheck.segment_duplicate_check()
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
