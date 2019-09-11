@@ -5,7 +5,7 @@
     "STA_TO":{"dtype":"double"},
     "SEGMENT_LENGTH":{"dtype":"double"},
     "LANE_CODE":{"dtype":"string"},
-    "SURF_TYPE":{"dtype":"integer"},
+    "SURF_TYPE":{"dtype":"integer", "range":{"upper":21, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}},
     "SURF_YEAR":{"dtype":"integer", "range":{"upper":2019, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
     "LANE_WIDTH":{"dtype":"double", "range":{"upper":3.6, "lower":2.75, "eq_lower":true, "eq_upper":true, "review":"upper"}},
     "SHTYPE_L":{"dtype":"integer"},
