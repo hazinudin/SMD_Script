@@ -626,7 +626,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=False, monotonic_check=True, segm_dist=True, comparison='LRS',
+                         threshold=30, at_start=False, monotonic_check=True, segment_data=True, comparison='LRS',
                          window=5):
         """
         This function checks whether if the segment starting coordinate located not further than
@@ -642,7 +642,7 @@ class EventValidation(object):
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param monotonic_check: If True then the check also include a monotonic check.
-        :param segm_dist: If True then the check will measure the distance from the input point to the segment's end.
+        :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
         :param comparison: Coordinate data used to check for error. ('LRS' or 'LRS-RNI')
         :return:
         """
@@ -676,7 +676,7 @@ class EventValidation(object):
                 input_point = coords_check.InputPoint(x, y, projection=input_projection)  # InputPoint object
 
                 # If segment distance is True then the distance will be calculated to segment end point
-                if segm_dist:
+                if segment_data:
                     distance_to_segm = input_point.distance_to_segment(from_m, to_m, lane, route_geom, at_start)  # distance to a segment
                     distance_to_lrs = input_point.distance_to_centerline(route_geom)  # distance to LRS center line
                     point_meas_on_lrs = input_point.point_meas_on_route(route_geom)  # point measure value on LRS
@@ -688,7 +688,7 @@ class EventValidation(object):
                         df_route.loc[index, ['lrsDistance']] = distance_to_lrs
                         df_route.loc[index, ['measureOnLine']] = point_meas_on_lrs
 
-                if not segm_dist:
+                if not segment_data:
                     distance_to_ref = input_point.distance_to_centerline(route_geom)  # distance to LRS center line
                     if distance_to_ref > threshold:
                         error_message = 'Koordinat pada rute {0} berjarak lebih dari {1} meter dari geometri ruas jalan.'.\
@@ -696,8 +696,9 @@ class EventValidation(object):
                         self.insert_route_message(route, 'error', error_message)
 
             coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
-            if segm_dist and (comparison == 'LRS'):
-                lrs_dist_error = coordinate_error.find_distance_error('segDistance', window=window, threshold=threshold)
+
+            if segment_data and (comparison == 'LRS'):
+                lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
 
                 for lane in lrs_dist_error.keys():
                     errors = lrs_dist_error[lane]
@@ -707,7 +708,6 @@ class EventValidation(object):
                             format(route, lane, range_error[0], range_error[1], threshold)
                         self.insert_route_message(route, 'error', error_message)
 
-            if monotonic_check and segm_dist:
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
                 if monotonic_error is None:
                     pass
