@@ -625,9 +625,8 @@ class EventValidation(object):
         return self
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
-                         from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=False, segment_data=True, comparison='LRS',
-                         window=5):
+                         from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
+                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -638,7 +637,7 @@ class EventValidation(object):
         :param from_m_col: The From Measure column in the input table.
         :param to_m_col: The To Measure column in the input table.
         :param lane_code: The lane code column in the input table.
-        :param input_projection: The coordinate system used to project the lat and long value from the input table
+        :param spatial_ref: The coordinate system used to project the lat and long value from the input table
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
@@ -668,13 +667,13 @@ class EventValidation(object):
                                                                                               from_m=_x[from_m_col],
                                                                                               to_m=_x[to_m_col],
                                                                                               lane=_x[lane_code],
-                                                                                              projections=input_projection,
+                                                                                              projections=spatial_ref,
                                                                                               at_start=at_start), axis=1)
             if not segment_data:
                 df_route[added_cols] = df_route.apply(lambda _x: coords_check.distance_series(_x[lat_col],
                                                                                               _x[long_col],
                                                                                               route_geom,
-                                                                                              projections=input_projection,
+                                                                                              projections=spatial_ref,
                                                                                               ), axis=1)
 
             coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
