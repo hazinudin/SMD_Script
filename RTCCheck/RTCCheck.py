@@ -75,8 +75,8 @@ if (header_check_result is None) & (dtype_check_result is None):
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
-    EventCheck.coordinate_check(routes=valid_routes, segment_data=False, lat_col='RTC_LAT', long_col='RTC_LONG',
-                                monotonic_check=False)
+    EventCheck.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
+                                long_col='RTC_LONG')
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
     EventCheck.rtc_time_interval_check(routes=valid_routes)  # The RTC survey time interval check.
 
