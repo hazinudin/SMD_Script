@@ -626,7 +626,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', input_projection='4326',
-                         threshold=30, at_start=False, monotonic_check=True, segment_data=True, comparison='LRS',
+                         threshold=30, at_start=False, segment_data=True, comparison='LRS',
                          window=5):
         """
         This function checks whether if the segment starting coordinate located not further than
@@ -641,17 +641,12 @@ class EventValidation(object):
         :param input_projection: The coordinate system used to project the lat and long value from the input table
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
-        :param monotonic_check: If True then the check also include a monotonic check.
         :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
         :param comparison: Coordinate data used to check for error. ('LRS' or 'LRS-RNI')
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
-        df['measureOnLine'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Column for storing coordinate m-value
-        df['segDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to segment column
-        df['rniDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to RNI column
-        df['lrsDistance'] = pd.Series(np.nan, dtype=np.float, index=df.index)  # Input coords distance to LRS column
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -662,40 +657,44 @@ class EventValidation(object):
         for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
             column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]
-            calculation_column = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
-            df_route = df.loc[df[routeid_col] == route, (column_selection+calculation_column)]
+            added_cols = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
+            df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
 
-            # Iterate over all available segment in the route
-            for index, row in df_route.iterrows():
-                x = row[long_col]  # The x coordinate
-                y = row[lat_col]  # They y coordinate
-                from_m = row[from_m_col]  # The from measure value
-                to_m = row[to_m_col]  # The to measure value
-                lane = row[lane_code]  # The point's lane
-                input_point = coords_check.InputPoint(x, y, projection=input_projection)  # InputPoint object
-
-                # If segment distance is True then the distance will be calculated to segment end point
-                if segment_data:
-                    distance_to_segm = input_point.distance_to_segment(from_m, to_m, lane, route_geom, at_start)  # distance to a segment
-                    distance_to_lrs = input_point.distance_to_centerline(route_geom)  # distance to LRS center line
-                    point_meas_on_lrs = input_point.point_meas_on_route(route_geom)  # point measure value on LRS
-
-                    if distance_to_segm is None:
-                        pass
-                    elif distance_to_segm is not None:
-                        df_route.loc[index, ['segDistance']] = distance_to_segm  # Insert the distance value to df
-                        df_route.loc[index, ['lrsDistance']] = distance_to_lrs
-                        df_route.loc[index, ['measureOnLine']] = point_meas_on_lrs
-
-                if not segment_data:
-                    distance_to_ref = input_point.distance_to_centerline(route_geom)  # distance to LRS center line
-                    if distance_to_ref > threshold:
-                        error_message = 'Koordinat pada rute {0} berjarak lebih dari {1} meter dari geometri ruas jalan.'.\
-                            format(route, threshold)
-                        self.insert_route_message(route, 'error', error_message)
+            if segment_data:
+                df_route[added_cols] = df_route.apply(lambda _x: coords_check.distance_series(_x[lat_col],
+                                                                                              _x[long_col],
+                                                                                              route_geom,
+                                                                                              from_m=_x[from_m_col],
+                                                                                              to_m=_x[to_m_col],
+                                                                                              lane=_x[lane_code],
+                                                                                              projections=input_projection,
+                                                                                              at_start=at_start), axis=1)
+            if not segment_data:
+                df_route[added_cols] = df_route.apply(lambda _x: coords_check.distance_series(_x[lat_col],
+                                                                                              _x[long_col],
+                                                                                              route_geom,
+                                                                                              projections=input_projection,
+                                                                                              ), axis=1)
 
             coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
+
+            if not segment_data:
+                errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
+
+                if (from_m_col is None) or (to_m_col is None) or (lane_code is None):
+                    if len(errors) != 0:
+                        error_message = "Rute {0} memiliki koordinat yang berjarak lebih dari {1}m dari geometri ruas.".\
+                            format(route, threshold)
+                        self.insert_route_message(route, 'error', error_message)
+                else:
+                    for index, row in errors.iterrows():
+                        from_m = row[from_m_col]
+                        to_m = row[to_m_col]
+                        lane = row[lane_code]
+                        error_message = "Rute {0} pada segmen {1}-{2} {3} memiliki koordinat yang berjarak lebih dari {4}m dari geometri rute.".\
+                            format(route, from_m, to_m, lane)
+                        self.insert_route_message(route, 'error', error_message)
 
             if segment_data and (comparison == 'LRS'):
                 lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
