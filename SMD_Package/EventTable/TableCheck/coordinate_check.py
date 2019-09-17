@@ -3,6 +3,35 @@ This script provide the function and class used by coordinate check class method
 """
 from arcpy import Point, PointGeometry
 import numpy as np
+from pandas import Series
+
+
+def distance_series(latitude, longitude, route_geom, projections='4326', from_m=None, to_m=None, lane=None,
+                    at_start=False):
+    """
+    This function create a series which will be appended to a Pandas DataFrame.
+    :param latitude: The latitude value.
+    :param longitude: The longitude value.
+    :param route_geom: The route geometry.
+    :param projections: The point projections.
+    :param from_m: From measurement value.
+    :param to_m: To measurement value.
+    :param lane: The lane code.
+    :param at_start: If true then the reference point is the starting point of a segment. Otherwise, the end point will
+    be used as a reference point.
+    :return:
+    """
+    input_point = InputPoint(longitude, latitude, projections)  # Initialized InputPoint class
+    lrs_distance = input_point.distance_to_centerline(route_geom)
+    meas_value = np.nan
+    segment_distance = np.nan
+    rni_distance = np.nan
+
+    if (from_m is not None) or (to_m is not None) or (lane is not None):  # If the measurement column is not available
+        segment_distance = input_point.distance_to_segment(from_m, to_m, lane, route_geom, segm_start=at_start)
+        meas_value = input_point.point_meas_on_route(route_geom)
+
+    return Series([segment_distance, rni_distance, lrs_distance, meas_value])
 
 
 class InputPoint(object):
