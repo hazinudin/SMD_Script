@@ -7,7 +7,8 @@ from pandas import Series
 
 
 def distance_series(latitude, longitude, route_geom, projections='4326', from_m=None, to_m=None, lane=None,
-                    at_start=False):
+                    at_start=False, rni_df=None, rni_from_m=None, rni_to_m=None, rni_lane_code=None,
+                    rni_lat=None, rni_long=None):
     """
     This function create a series which will be appended to a Pandas DataFrame.
     :param latitude: The latitude value.
@@ -19,7 +20,13 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
     :param lane: The lane code.
     :param at_start: If true then the reference point is the starting point of a segment. Otherwise, the end point will
     be used as a reference point.
-    :return:
+    :param rni_df: RNI DataFrame
+    :param rni_from_m: RNI from measure column
+    :param rni_to_m: RNI to measure column
+    :param rni_lane_code: RNI lane code
+    :param rni_lat: RNI latitude column
+    :param rni_long: RNI longitude column
+    :return: Pandas Series.
     """
     input_point = InputPoint(longitude, latitude, projections)  # Initialized InputPoint class
     lrs_distance = input_point.distance_to_centerline(route_geom)
@@ -30,6 +37,10 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
     if (from_m is not None) or (to_m is not None) or (lane is not None):  # If the measurement column is not available
         segment_distance = input_point.distance_to_segment(from_m, to_m, lane, route_geom, segm_start=at_start)
         meas_value = input_point.point_meas_on_route(route_geom)
+
+        if rni_df is not None:
+            rni_distance = input_point.distance_to_rni(from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code,
+                                                       rni_lat, rni_long)
 
     return Series([segment_distance, rni_distance, lrs_distance, meas_value])
 
@@ -42,8 +53,7 @@ class InputPoint(object):
         :param y: Input latitude.
         :param projection: The projection used by the input coordinates.
         """
-        point_obj = Point(x, y)
-        self.point_geom = PointGeometry(point_obj).projectAs(projection)  # The input point geometry
+        self.point_geom = self._point_geom(x, y, projection=projection)
 
     def distance_to_segment(self, from_m, to_m, lane, route_geom, segm_start=False, to_meter_conversion=10):
         """
@@ -106,12 +116,42 @@ class InputPoint(object):
         point_meas = route_geom.measureOnLine(reprojected_point)
         return point_meas
 
+    def distance_to_rni(self, from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code, rni_lat, rni_long):
+        """
+        This method calculate the input point distance to a specified RNI segment coordinate.
+        :param from_m: From measure value of the input point
+        :param to_m: To measure value of the input point
+        :param lane: Lane of the input point
+        :param rni_df: The RNI DataFrame
+        :param rni_from_m: The RNI from measure column
+        :param rni_to_m: The RNI to measure column
+        :param rni_lane_code: The RNI lane code column
+        :param rni_lat: The RNI latitude column
+        :param rni_long: The RNI longitude column
+        :return:
+        """
+        to_m_condition = rni_df[rni_to_m] == to_m
+        from_m_condition = rni_df[rni_from_m] == from_m
+        lane_condition = rni_df[rni_lane_code] == lane
+
+        segment_coords = rni_df.loc[from_m_condition & to_m_condition & lane_condition, [rni_long, rni_lat]].to_numpy
+        segment_x = segment_coords[0]
+        segment_y = segment_coords[1]
+        segment_point = self._point_geom(segment_x, segment_y)
+
+        return self.point_geom.distanceTo(segment_point)
+
     @staticmethod
     def _reproject(reference_geom, point_geom):
         route_spat_ref = reference_geom.spatialReference
         point_geom_projected = point_geom.projectAs(route_spat_ref)
 
         return point_geom_projected
+
+    @staticmethod
+    def _point_geom(x, y, projection='4326'):
+        point_obj = Point(x, y)
+        return PointGeometry(point_obj).projectAs(projection)  # The input point geometry
 
 
 class FindCoordinateError(object):
