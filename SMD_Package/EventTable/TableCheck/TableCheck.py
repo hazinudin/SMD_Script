@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.EventTable.Kemantapan import Kemantapan
 from SMD_Package.EventTable.RNITable import RNIRouteDetails
-import coordinate_check as coords_check
+import coordinate
 
 
 def read_input_excel(event_table_path):
@@ -661,22 +661,22 @@ class EventValidation(object):
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
 
             if segment_data:
-                df_route[added_cols] = df_route.apply(lambda _x: coords_check.distance_series(_x[lat_col],
-                                                                                              _x[long_col],
-                                                                                              route_geom,
-                                                                                              from_m=_x[from_m_col],
-                                                                                              to_m=_x[to_m_col],
-                                                                                              lane=_x[lane_code],
-                                                                                              projections=spatial_ref,
-                                                                                              at_start=at_start), axis=1)
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            from_m=_x[from_m_col],
+                                                                                            to_m=_x[to_m_col],
+                                                                                            lane=_x[lane_code],
+                                                                                            projections=spatial_ref,
+                                                                                            at_start=at_start), axis=1)
             if not segment_data:
-                df_route[added_cols] = df_route.apply(lambda _x: coords_check.distance_series(_x[lat_col],
-                                                                                              _x[long_col],
-                                                                                              route_geom,
-                                                                                              projections=spatial_ref,
-                                                                                              ), axis=1)
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            projections=spatial_ref,
+                                                                                            ), axis=1)
 
-            coordinate_error = coords_check.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
+            coordinate_error = coordinate.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
 
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
