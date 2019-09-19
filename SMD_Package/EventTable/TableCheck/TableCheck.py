@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.EventTable.Kemantapan import Kemantapan
 from SMD_Package.EventTable.RNITable import RNIRouteDetails
+from SMD_Package.load_config import Configs
 import coordinate
 
 
@@ -51,6 +52,7 @@ class EventValidation(object):
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
+        self.config = Configs()
 
     def header_check(self):
         """
@@ -641,11 +643,18 @@ class EventValidation(object):
         :param threshold: The maximum tolerated distance for a submitted coordinate (in meters)
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
-        :param comparison: Coordinate data used to check for error. ('LRS' or 'LRS-RNI')
+        :param comparison: Coordinate data used to check for error. ('LRS' or 'RNI-LRS')
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()
+        rni_table = self.config.table_names['rni']
+        rni_routeid = self.config.table_fields['rni']['route_id']
+        rni_from_m = self.config.table_fields['rni']['from_measure']
+        rni_to_m = self.config.table_fields['rni']['to_measure']
+        rni_lane = self.config.table_fields['rni']['lane_code']
+        rni_long = self.config.table_fields['rni']['longitude']
+        rni_lat = self.config.table_fields['rni']['latitude']
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -659,8 +668,13 @@ class EventValidation(object):
             added_cols = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
             df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
+            rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat], route, rni_routeid,
+                                    self.sde_connection, True)
+            rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * 100, index=rni_df.index).astype(int)
+            rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * 100, index=rni_df.index).astype(int)
 
-            if segment_data:
+            # Add distance column based on the comparison request
+            if segment_data and (comparison == 'LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
                                                                                             route_geom,
@@ -669,6 +683,21 @@ class EventValidation(object):
                                                                                             lane=_x[lane_code],
                                                                                             projections=spatial_ref,
                                                                                             at_start=at_start), axis=1)
+            if segment_data and (comparison == 'RNI-LRS'):
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            from_m=_x[from_m_col],
+                                                                                            to_m=_x[to_m_col],
+                                                                                            lane=_x[lane_code],
+                                                                                            projections=spatial_ref,
+                                                                                            at_start=at_start,
+                                                                                            rni_df=rni_df,
+                                                                                            rni_from_m=rni_from_m,
+                                                                                            rni_to_m=rni_to_m,
+                                                                                            rni_lane_code=rni_lane,
+                                                                                            rni_lat=rni_lat,
+                                                                                            rni_long=rni_long), axis=1)
             if not segment_data:
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
@@ -677,7 +706,6 @@ class EventValidation(object):
                                                                                             ), axis=1)
 
             coordinate_error = coordinate.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
-
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
 
@@ -700,6 +728,24 @@ class EventValidation(object):
 
                 for lane in lrs_dist_error.keys():
                     errors = lrs_dist_error[lane]
+
+                    for range_error in errors:
+                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}.".\
+                            format(route, lane, range_error[0], range_error[1], threshold)
+                        self.insert_route_message(route, 'error', error_message)
+
+                monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
+                if monotonic_error is None:
+                    pass
+                else:
+                    for error_msg in monotonic_error:
+                        self.insert_route_message(route, 'error', error_msg)
+
+            if segment_data and (comparison == 'RNI-LRS'):
+                double_check_error = coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window,
+                                                                            threshold=threshold)
+                for lane in double_check_error.keys():
+                    errors = double_check_error[lane]
 
                     for range_error in errors:
                         error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}.".\
