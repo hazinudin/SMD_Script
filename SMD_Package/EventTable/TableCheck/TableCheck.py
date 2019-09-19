@@ -166,6 +166,21 @@ class EventValidation(object):
         else:
             return self.header_check_result
 
+    def capitalize_string(self, string_type='string'):
+        """
+        This class method will capitalize all value in any text column.
+        :return:
+        """
+        string_cols = []
+        for col, details in self.column_details.items():
+            dtype = details['dtype']
+
+            if dtype == string_type:
+                string_cols.append(col)
+
+        self.df_valid[string_cols] = self.df_valid[string_cols].apply(lambda x: x.str.upper())
+        return self
+
     def year_and_semester_check(self, year_input, semester_input, year_col='SURVEY_YEAR', sem_col='SURVEY_SMS',
                                 routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE',
                                 year_check_only=False):
