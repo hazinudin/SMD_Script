@@ -7,7 +7,7 @@ class Configs(object):
         """
         This class will load all the first level keys as class attributes.
         """
-        file_path = os.path.join(os.getcwd(), '..', config_file)
+        file_path = os.path.join(os.getcwd(), config_file)
 
         with open(file_path) as config_f:  # Open the config file in the root directory
             config_dict = json.load(config_f)
