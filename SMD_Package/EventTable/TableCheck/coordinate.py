@@ -3,7 +3,7 @@ This script provide the function and class used by coordinate check class method
 """
 from arcpy import Point, PointGeometry
 import numpy as np
-from pandas import Series
+from pandas import Series, DataFrame
 
 
 def distance_series(latitude, longitude, route_geom, projections='4326', from_m=None, to_m=None, lane=None,
@@ -134,12 +134,17 @@ class InputPoint(object):
         from_m_condition = rni_df[rni_from_m] == from_m
         lane_condition = rni_df[rni_lane_code] == lane
 
-        segment_coords = rni_df.loc[from_m_condition & to_m_condition & lane_condition, [rni_long, rni_lat]].to_numpy
-        segment_x = segment_coords[0]
-        segment_y = segment_coords[1]
-        segment_point = self._point_geom(segment_x, segment_y)
+        segment = rni_df.loc[from_m_condition & to_m_condition & lane_condition, [rni_long, rni_lat]]
 
-        return self.point_geom.distanceTo(segment_point)
+        if len(segment) != 0:  # If the segment does not exist
+            segment_coords = segment.values[0]
+            segment_x = segment_coords[0]
+            segment_y = segment_coords[1]
+            segment_point = self._point_geom(segment_x, segment_y)
+
+            return self.point_geom.distanceTo(segment_point)
+        else:
+            return np.nan
 
     @staticmethod
     def _reproject(reference_geom, point_geom):
@@ -171,6 +176,35 @@ class FindCoordinateError(object):
         self.from_m_col = from_m_col
         self.to_m_col = to_m_col
         self.lane_code_col = lane_code_col
+
+    def distance_double_check(self, column1, column2, window=5, threshold=30):
+        """
+
+        :param column1:
+        :param column2:
+        :param window:
+        :param threshold:
+        :return:
+        """
+        col1_error = self.find_distance_error(column1, window=window, threshold=threshold)
+        col2_error = self.find_distance_error(column2, window=window, threshold=threshold)
+
+        for lane, runs in col1_error.items():
+            if lane in col2_error:
+                runs1 = col1_error[lane]
+                runs2_df = DataFrame(col2_error[lane], columns=['from', 'to'])
+
+                for run in runs1:
+                    run_index = runs1.index(run)
+                    start = run[0]
+                    end = run[1]
+
+                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df >= end)]
+
+                    if not existin2:  # If there is no overlay then pop the current runs
+                        col1_error[lane].pop(run_index)
+
+        return col1_error
 
     def find_distance_error(self, distance_column, window=5, threshold=30):
         """
