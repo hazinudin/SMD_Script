@@ -50,6 +50,7 @@ class EventValidation(object):
         self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
+        self.capitalize_string()  # Capitalize every column with string data type
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
         self.config = Configs()
