@@ -14,7 +14,7 @@
     "lrs_network":"SMD.LRS_NETWORK_2019",
     "balai_table":"SMD.MAP_BALAI_PROV",
     "balai_route_table":"SMD.MAP_BALAI_ROUTE",
-    "rni": "SMD.RNI_2018"
+    "rni": "SMD.RNI_2019"
   },
   "table_fields":{
     "lrs_network":{
@@ -25,10 +25,12 @@
     "rni":{
       "route_id":"LINKID",
       "lane_code":"LANE_CODE",
-      "from_measure":"FROMMEASURE",
-      "to_measure":"TOMEASURE",
-      "surface_type":"SURFTYPE",
-      "lane_width":"LANE_WIDTH"
+      "from_measure":"STA_FROM",
+      "to_measure":"STA_TO",
+      "surface_type":"SURF_TYPE",
+      "lane_width":"LANE_WIDTH",
+      "longitude":"STATO_LONG",
+      "latitude":"STATO_LAT"
     },
     "balai_table":{
       "prov_code":"NO_PROV",
