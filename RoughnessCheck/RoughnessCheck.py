@@ -106,7 +106,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
     EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNI-LRS')
     EventCheck.lane_code_check(RNIEventTable, routes=valid_routes, rni_route_col=RNIRouteID)
 
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
