@@ -6,7 +6,7 @@
     "referer":"https://gisserver.binamarga.pu.go.id:6443/arcgis/admin"
   },
   "smd_database":{
-    "instance":"SMD@GEODBBM 144.sde",
+    "instance":"SMD@10.10.1.97.sde",
     "username":"SMD",
     "password":"SMD123M"
   },
