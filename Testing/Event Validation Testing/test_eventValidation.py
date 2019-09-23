@@ -1,9 +1,11 @@
 from unittest import TestCase
 import os
 import json
+import time
 
 from SMD_Package import input_json_check, read_input_excel, EventValidation, GetRoutes
 from arcpy import env
+import pandas as pd
 
 os.chdir('E:\SMD_Script')
 
@@ -35,8 +37,8 @@ class TestEventValidation(TestCase):
 
         return roughness_config
 
-    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/Test File/RoughValid_240911B.xlsx", "balai":"7", "year":2019, "semester":1}',
-                         data_type='ROUGHNESS'):
+    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/Test File/RoughValid_240911B.xlsx", "balai":"7", "year":2019, "semester":1, "routes":"ALL"}',
+                         data_type='ROUGHNESS', multiply_row=None):
 
         if data_type == 'ROUGHNESS':
             data_config = self.read_roughconfig()
@@ -60,11 +62,15 @@ class TestEventValidation(TestCase):
 
         # Read the input table
         input_df = read_input_excel(table_path)  # Read the excel file
+
+        if multiply_row is not None:
+            input_df = pd.concat([input_df]*multiply_row, ignore_index=True)
+
         event_check = EventValidation(input_df, column_details, lrs_network, lrs_network_rid, db_connection)
 
         return event_check
 
-    def test_year_and_semester_check(self):
+    def _test_year_and_semester_check(self):
         check = self.validation_class()  # Create the class
 
         check.year_and_semester_check(2017, 1)
@@ -83,7 +89,7 @@ class TestEventValidation(TestCase):
         self.assertTrue(len(check.route_results) == 0., 'Matched year only and not semester semester (year only test)')
         check.route_results = {}
 
-    def test_route_domain(self):
+    def _test_route_domain(self):
         check = self.validation_class()  # Create the EventValidation class
 
         balai_code = '7'
@@ -98,7 +104,7 @@ class TestEventValidation(TestCase):
         self.assertTrue(len(check.route_results) != 0, 'Invalid')
         check.route_results = {}
 
-    def test_range_domain_check(self):
+    def _test_range_domain_check(self):
         check = self.validation_class()
 
         check.df_string['IRI'] = 3.1
@@ -123,18 +129,10 @@ class TestEventValidation(TestCase):
         self.assertTrue(len(check.altered_route_result()) == 0, 'Lower than the lower bound value')
         check.route_results = {}
 
-    #
-    # def test_segment_len_check(self):
-    #     self.fail()
-    #
-    # def test_measurement_check(self):
-    #     self.fail()
-    #
-    # def test_coordinate_check(self):
-    #     self.fail()
-    #
-    # def test_lane_code_check(self):
-    #     self.fail()
-    #
-    # def test_lane_direction_check(self):
-    #     self.fail()
+    def test_coordinate_segment(self):
+        check = self.validation_class(multiply_row=12)
+        check.coordinate_check(comparison='RNIseg-LRS')
+
+    def test_coordinate_line(self):
+        check = self.validation_class(multiply_row=12)
+        check.coordinate_check(comparison='RNIline-LRS')
