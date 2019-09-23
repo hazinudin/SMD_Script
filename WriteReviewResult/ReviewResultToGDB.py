@@ -43,7 +43,7 @@ DataSemester = InputDetails["semester"]
 
 # The input Event Table Columns
 inputRouteID = 'LINKID'
-inputFromM = 'STA_FR'
+inputFromM = 'STA_FROM'
 inputToM = 'STA_TO'
 inputLaneCode = 'LANE_CODE'
 
@@ -87,5 +87,5 @@ else:  # If other than that, the process will be terminated with an error messag
 
 # Start writing the input table to GDB
 convert_and_trim(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode, LrsNetwork, LrsNetworkRID, dbConnection)
-gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails, new_table=True)
+gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails)
 SetParameterAsText(1, output_message("Succeeded", ""))
