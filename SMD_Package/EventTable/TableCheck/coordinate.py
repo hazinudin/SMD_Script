@@ -1,14 +1,14 @@
 """
 This script provide the function and class used by coordinate check class method in the EventValidation Class.
 """
-from arcpy import Point, PointGeometry
+from arcpy import Point, PointGeometry, Polyline, Array, SpatialReference
 import numpy as np
 from pandas import Series, DataFrame
 
 
 def distance_series(latitude, longitude, route_geom, projections='4326', from_m=None, to_m=None, lane=None,
                     at_start=False, rni_df=None, rni_from_m=None, rni_to_m=None, rni_lane_code=None,
-                    rni_lat=None, rni_long=None):
+                    rni_lat=None, rni_long=None, rni_polyline=None):
     """
     This function create a series which will be appended to a Pandas DataFrame.
     :param latitude: The latitude value.
@@ -26,6 +26,7 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
     :param rni_lane_code: RNI lane code
     :param rni_lat: RNI latitude column
     :param rni_long: RNI longitude column
+    :param rni_polyline: RNI data as polyline.
     :return: Pandas Series.
     """
     input_point = InputPoint(longitude, latitude, projections)  # Initialized InputPoint class
@@ -38,11 +39,29 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
         segment_distance = input_point.distance_to_segment(from_m, to_m, lane, route_geom, segm_start=at_start)
         meas_value = input_point.point_meas_on_route(route_geom)
 
-        if rni_df is not None:
+        if (rni_df is not None) and (rni_polyline is None):  # Comparison to RNI segment coordinate
             rni_distance = input_point.distance_to_rni(from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code,
                                                        rni_lat, rni_long)
 
+        if (rni_df is not None) and (rni_polyline is not None):  # Comparison to RNI as a polyline
+            rni_distance = input_point.distance_to_centerline(rni_polyline)
+
     return Series([segment_distance, rni_distance, lrs_distance, meas_value])
+
+
+def to_polyline(dataframe, sorting_col, long_col, lat_col, projections='4326'):
+    if dataframe.empty:
+        return None
+    else:
+        dataframe.sort_values(by=sorting_col, inplace=True)
+        dataframe['Point'] = dataframe.apply(lambda x: Point(x[long_col], x[lat_col]), axis=1)
+        coord_array = dataframe['Point'].values.tolist()
+        arcpy_ar = Array(coord_array)
+        spat_ref = SpatialReference(int(projections))
+
+        line = Polyline(arcpy_ar).projectAs(spat_ref)
+
+        return line
 
 
 class InputPoint(object):

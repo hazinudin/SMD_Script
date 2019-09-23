@@ -699,7 +699,7 @@ class EventValidation(object):
                                                                                             lane=_x[lane_code],
                                                                                             projections=spatial_ref,
                                                                                             at_start=at_start), axis=1)
-            if segment_data and (comparison == 'RNI-LRS'):
+            if segment_data and (comparison == 'RNIseg-LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
                                                                                             route_geom,
@@ -714,6 +714,24 @@ class EventValidation(object):
                                                                                             rni_lane_code=rni_lane,
                                                                                             rni_lat=rni_lat,
                                                                                             rni_long=rni_long), axis=1)
+            if segment_data and (comparison == 'RNIline-LRS'):
+                rni_line = coordinate.to_polyline(rni_df, rni_from_m, rni_long, rni_lat, projections=spatial_ref)
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            from_m=_x[from_m_col],
+                                                                                            to_m=_x[to_m_col],
+                                                                                            lane=_x[lane_code],
+                                                                                            projections=spatial_ref,
+                                                                                            at_start=at_start,
+                                                                                            rni_df=rni_df,
+                                                                                            rni_from_m=rni_from_m,
+                                                                                            rni_to_m=rni_to_m,
+                                                                                            rni_lane_code=rni_lane,
+                                                                                            rni_lat=rni_lat,
+                                                                                            rni_long=rni_long,
+                                                                                            rni_polyline=rni_line), axis=1)
+
             if not segment_data:
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
@@ -757,7 +775,7 @@ class EventValidation(object):
                     for error_msg in monotonic_error:
                         self.insert_route_message(route, 'error', error_msg)
 
-            if segment_data and (comparison == 'RNI-LRS'):
+            if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
                 double_check_error = coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window,
                                                                             threshold=threshold)
                 for lane in double_check_error.keys():
