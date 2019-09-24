@@ -47,12 +47,12 @@ RouteReq = InputDetails["routes"]
 ColumnDetails = pci_config['column_details']  # Load the roughness column details dictionary
 OutputTable = "SMD.PCI_{0}".format(DataYear)
 RouteIDCol = 'LINKID'
-FromMCol = "STA_FR"
+FromMCol = "STA_FROM"
 ToMCol = "STA_TO"
 CodeLane = "LANE_CODE"
-LongitudeCol = 'LONGITUDE'
-LatitudeCol = 'LATITUDE'
-AltitudeCol = 'ALTITUDE'
+LongitudeCol = 'STATO_LONG'
+LatitudeCol = 'STATO_LAT'
+AltitudeCol = 'STATO_ALT'
 
 # GetAllRoute result containing all route from a Balai
 env.workspace = dbConnection
@@ -86,13 +86,14 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     EventCheck.route_selection(selection=RouteReq)
+    EventCheck.segment_duplicate_check()
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
     EventCheck.lane_direction_check()
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
-    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
-    EventCheck.coordinate_check(routes=valid_routes, at_start=False)  # Check the input coordinate
+    EventCheck.measurement_check(routes=valid_routes)
+    EventCheck.coordinate_check(routes=valid_routes, at_start=False, comparison='RNIline-LRS')
     EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth,
                              routes=valid_routes)
     EventCheck.pci_val_check(routes=valid_routes)
