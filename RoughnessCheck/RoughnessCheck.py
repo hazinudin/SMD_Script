@@ -4,7 +4,6 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim, create_patch
-from pprint import pprint
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -48,12 +47,12 @@ ColumnDetails = roughness_config['column_details']  # Load the roughness column 
 SearchRadius = roughness_config['search_radius']
 IRIColumn = "IRI"
 RouteIDCol = 'LINKID'
-FromMCol = "STA_FR"
+FromMCol = "STA_FROM"
 ToMCol = "STA_TO"
 CodeLane = "LANE_CODE"
-LongitudeCol = 'LONGITUDE'
-LatitudeCol = 'LATITUDE'
-AltitudeCol = 'ALTITUDE'
+LongitudeCol = 'STATO_LONG'
+LatitudeCol = 'STATO_LAT'
+AltitudeCol = 'STATO_ALT'
 
 # The GDB table which store all the valid table row
 OutputGDBTable = 'SMD.ROUGHNESS_{0}_{1}'.format(Semester, DataYear)
@@ -105,26 +104,19 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.range_domain_check()
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
-    EventCheck.measurement_check(RNIEventTable, RNIRouteID, RNIToMeasure, routes=valid_routes)
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNI-LRS')
-    EventCheck.lane_code_check(RNIEventTable, routes=valid_routes, rni_route_col=RNIRouteID)
+    EventCheck.measurement_check(routes=valid_routes)
+    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNIline-LRS')
+    EventCheck.lane_code_check(routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
     passed_routes = EventCheck.passed_routes
 
-    if len(passed_routes) != 0:  # Only process the route which passed the Error check.
-        # The only function that will result a ToBeReviewed Message.
-        EventCheck.compare_kemantapan(RNIEventTable, RNISurfaceType, IRIColumn, CompTable, CompFromMeasure,
-                                      CompToMeasure, CompRouteID, CompLaneCode, CompIRI, routes=passed_routes)
-
-        passed_routes = EventCheck.passed_routes  # Refresh the list of all passed routes list
-
-        if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
-            passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
-            passed_routes_row = create_patch(passed_routes_row, LrsNetwork, LrsNetworkRID)
-            convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                             dbConnection)
-            gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+    if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
+        passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
+        passed_routes_row = create_patch(passed_routes_row, LrsNetwork, LrsNetworkRID)
+        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
+                         dbConnection)
+        gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.
         errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
