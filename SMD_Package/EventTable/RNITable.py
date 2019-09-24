@@ -54,8 +54,8 @@ class RNIRouteDetails(object):
         return length_percentage
 
 
-def rni_segment_dissolve(df_rni, groupby_field, agg_field, route_id_field, from_m_field='FROMMEASURE',
-                         to_m_field='TOMEASURE', agg='unique'):
+def rni_segment_dissolve(df_rni, groupby_field, agg_field, route_id_field, from_m_field='STA_FROM',
+                         to_m_field='STA_TO', agg='unique'):
     """
     Dissolve the segment in RNI table if the segment has a same lane code combination with the
     next segment in single route. This function return a dictionary with a groupby group as a key=(route_id, code_lane)

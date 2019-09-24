@@ -357,8 +357,8 @@ balaiRouteTable = config['table_names']['balai_route_table']
 
 # The RNI Table Details
 rniTable = config['table_names']['rni']
-rniSearchField = ['LINKID', 'FROMMEASURE', 'TOMEASURE', 'LANE_CODE']
-rniGroupbyField = ['LINKID', 'FROMMEASURE', 'TOMEASURE']
+rniSearchField = ['LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODE']
+rniGroupbyField = ['LINKID', 'STA_FROM', 'STA_TO']
 rniCodeLane = config['table_fields']['rni']['lane_code']
 rniRouteID = config['table_fields']['rni']['route_id']
 
@@ -411,10 +411,9 @@ if ConnectionCheck.all_connected:
     # Create a Pandas dataframe from the RNI table in geodatabase
     RNI_df = event_fc_to_df(rniTable, rniSearchField, routeList, rniRouteID, dbConnection,
                             is_table=True)
-    RNI_df_rename = RNI_df.rename(columns={'FROMMEASURE': 'STA_FROM', 'TOMEASURE': 'STA_TO'})
     DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
 
-    available_rni = np.array(RNI_df_rename['LINKID'].tolist())
+    available_rni = np.array(RNI_df['LINKID'].tolist())
     request_route = np.array(routeList)
     missing_rni = np.setdiff1d(request_route, available_rni).tolist()
 
@@ -437,10 +436,10 @@ if ConnectionCheck.all_connected:
     current_year = datetime.now().year
     RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year), return_segment=False)  # Create the polyline shapefile
     RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
-    RouteGeometries.create_rni_csv(RNI_df_rename)  # Create the RNI DataFrame
+    RouteGeometries.create_rni_csv(RNI_df)  # Create the RNI DataFrame
 
     SetParameterAsText(1, RouteGeometries.output_message())
-    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2018".format(req_type, req_codes)).zip_output)
+    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2019".format(req_type, req_codes)).zip_output)
 
 else:
     SetParameterAsText(1, output_message("Failed", "Required table are missing.{0}".format(ConnectionCheck.missing_table)))
