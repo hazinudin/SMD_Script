@@ -50,10 +50,12 @@ class EventValidation(object):
         self.df_valid = None  # df_valid is pandas DataFrame which has the correct data type and value for all columns
         self.header_check_result = self.header_check()  # The header checking result
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
-        self.capitalize_string()  # Capitalize every column with string data type
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
         self.config = Configs()
+
+        if self.header_check_result is None:
+            self.capitalize_string()  # Capitalize every column with string data type
 
     def header_check(self):
         """
@@ -533,7 +535,7 @@ class EventValidation(object):
 
         return self
 
-    def measurement_check(self, rni_table, rni_routeid, rni_to_m, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
+    def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI'):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
@@ -543,6 +545,10 @@ class EventValidation(object):
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a valid DataFrame with matching DataType with requirement
         groupby_cols = [routeid_col, from_m_col, to_m_col]
+
+        rni_table = self.config.table_names['rni']
+        rni_routeid = self.config.table_fields['rni']['route_id']
+        rni_to_m = self.config.table_fields['rni']['to_measure']
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -795,9 +801,8 @@ class EventValidation(object):
 
         return self
 
-    def lane_code_check(self, rni_table, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
-                        to_m_col='STA_TO', rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
-                        rni_lane_code='LANE_CODE', find_no_match=False):
+    def lane_code_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
+                        to_m_col='STA_TO', find_no_match=False):
         """
         This function checks the lane code combination for all segment in the input table, the segment interval value
         has to be the same with interval value in the RNI Table.
@@ -807,7 +812,7 @@ class EventValidation(object):
         :param routeid_col: The Route ID column in the input table.
         :param from_m_col: Column in the input table which contain the From Measurement value.
         :param to_m_col: Column in the input table which  contain the To Measurement value.
-        :param rni_route_col: The Route ID column in the RNI Table.
+        :param rni_routeid: The Route ID column in the RNI Table.
         :param rni_from_col: The From Measure column in the RNI Table.
         :param rni_to_col: The To Measure column in the RNI Table.
         :param rni_lane_code: The lane code column in the RNI Table.
@@ -820,6 +825,12 @@ class EventValidation(object):
         df[to_m_col] = pd.Series(df[to_m_col]).astype(int)
         env.workspace = self.sde_connection  # Setting up the SDE Connection workspace
 
+        rni_table = self.config.table_names['rni']
+        rni_routeid = self.config.table_fields['rni']['route_id']
+        rni_from_col = self.config.table_fields['rni']['from_measure']
+        rni_to_col = self.config.table_fields['rni']['to_measure']
+        rni_lane_code = self.config.table_fields['rni']['lane_code']
+
         if routes == 'ALL':  # If 'ALL' then process all available route in input table
             pass
         else:
@@ -831,8 +842,8 @@ class EventValidation(object):
             df_route = df.loc[df[routeid_col] == route]  # Create a DataFrame containing only selected routes
 
             # The RNI DataFrame
-            search_field = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
-            df_rni = event_fc_to_df(rni_table, search_field, route, rni_route_col, self.sde_connection, is_table=True,
+            search_field = [rni_routeid, rni_from_col, rni_to_col, rni_lane_code]
+            df_rni = event_fc_to_df(rni_table, search_field, route, rni_routeid, self.sde_connection, is_table=True,
                                     orderby=None)
             df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).round(2).astype(int)
             df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).round(2).astype(int)
@@ -844,7 +855,7 @@ class EventValidation(object):
             else:
                 # Create the join key for both DataFrame
                 input_merge_key = [routeid_col, from_m_col, to_m_col]
-                rni_merge_key = [rni_route_col, rni_from_col, rni_to_col]
+                rni_merge_key = [rni_routeid, rni_from_col, rni_to_col]
 
                 # Create a groupby DataFrame
                 input_groupped = df_route.groupby(by=input_merge_key)[lane_code].unique().reset_index()
