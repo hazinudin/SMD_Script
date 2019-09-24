@@ -18,7 +18,7 @@ def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, lr
     """
 
     df = dataframe
-    _convert_measurement(df, from_m_col, to_m_col)  # Convert the measurement
+    _convert_measurement(df, from_m_col, to_m_col, conversion=conversion)  # Convert the measurement
     _trim_event_table(df, routeid_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace)  # Trim the event table
 
     return df
