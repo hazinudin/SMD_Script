@@ -78,7 +78,7 @@ def request_check(get_all_route_result, route_request_type, all_route_res_code='
 
 class DictionaryToFeatureClass(object):
 
-    def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict, outpath=env.scratchFolder,
+    def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict=None, outpath=env.scratchFolder,
                  missing_route=None, missing_msg='Data RNI tidak ditemukan'):
         """
         Define LRS Network for the geometry shape source
@@ -93,8 +93,10 @@ class DictionaryToFeatureClass(object):
         self.spatial_reference = Describe(lrs_network).spatialReference
 
         route_list = []
-        for segment in self.segment_dict:
-            route_list.append(str(segment[0]))
+        if self.segment_dict is not None:
+            for segment in self.segment_dict:
+                route_list.append(str(segment[0]))
+
         self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
         self.route_list = route_list
         self.missing_route = missing_route
@@ -104,6 +106,57 @@ class DictionaryToFeatureClass(object):
         self.point_output = None
         self.csv_output = None
         self.zip_output = None
+
+    def create_centerline(self, feature_class_name, missing_route, include_missing=True):
+        routes = self.route_list
+        shapefile_name = "{0}.shp".format(feature_class_name)  # The name of the output feature class (.shp)
+        # Create new empty shapefile
+        CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
+                                      spatial_reference=self.spatial_reference)
+
+        if include_missing:
+            routes = routes + missing_route
+
+        field_name_and_type = {
+            'LINKID': 'TEXT',
+            'ROUTE_NAME': 'TEXT',
+            'LINTAS': 'TEXT'
+        }
+
+        # Insert cursor field
+        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'LINTAS']
+
+        # Add new field to the shapefile
+        for field_name in field_name_and_type:
+            field_type = field_name_and_type[field_name]
+            AddField_management("{0}\{1}".format(self.outpath, shapefile_name), field_name, field_type)
+
+        # Create an insert cursor
+        insert_cursor = da.InsertCursor("{0}\{1}".format(self.outpath, shapefile_name), insert_field)
+
+        polyline_feature_count = 0  # Count inserted polyline feature
+
+        for route_id in routes:
+            # Iterate over the LRS network feature class to get the route shape geometry
+            with da.SearchCursor(self.lrs_network, ['SHAPE@', 'ROUTE_NAME', 'ID_LINTAS'],
+                                 where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))as search_cursor:
+                for search_row in search_cursor:
+
+                    route_geom = search_row[0]  # The whole route geometry
+                    route_name = search_row[1]
+                    route_lintas = search_row[2]
+
+                    # Creating new row object to be inserted to the ShapeFile
+                    new_row = [route_geom, route_id, route_name, route_lintas]
+                    insert_cursor.insertRow(new_row)
+                    polyline_feature_count += 1
+
+        # Return the polyline attribute
+        self.polyline_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
+        self.polyline_count = polyline_feature_count  # Shapefile feature count
+        self.polyline_fc_name = shapefile_name  # Shapefile name
+
+        return self
 
     def create_segment_polyline(self, feature_class_name, return_segment=True):
         """
@@ -411,11 +464,15 @@ if ConnectionCheck.all_connected:
     # Create a Pandas dataframe from the RNI table in geodatabase
     RNI_df = event_fc_to_df(rniTable, rniSearchField, routeList, rniRouteID, dbConnection,
                             is_table=True)
-    DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
+    DissolvedSegmentDict = None
 
-    available_rni = np.array(RNI_df['LINKID'].tolist())
-    request_route = np.array(routeList)
-    missing_rni = np.setdiff1d(request_route, available_rni).tolist()
+    if RNI_df.empty:
+        missing_rni = routeList
+    else:
+        available_rni = np.array(RNI_df['LINKID'].tolist())
+        request_route = np.array(routeList)
+        missing_rni = np.setdiff1d(request_route, available_rni).tolist()
+        DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
 
     # Create the shapefile from the segment created by the dissolve segment function
     RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
@@ -434,7 +491,7 @@ if ConnectionCheck.all_connected:
         req_codes = str(input_details["codes"])
 
     current_year = datetime.now().year
-    RouteGeometries.create_segment_polyline("SegmenRuas_"+str(current_year), return_segment=False)  # Create the polyline shapefile
+    RouteGeometries.create_centerline("SegmenRuas_"+str(current_year), missing_rni)  # Create the polyline shapefile
     RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
     RouteGeometries.create_rni_csv(RNI_df)  # Create the RNI DataFrame
 
