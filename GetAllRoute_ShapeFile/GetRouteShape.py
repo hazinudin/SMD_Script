@@ -3,16 +3,12 @@ This script get all route shape and create a new Shapefile, from the specified r
 from GetAllRoute script.
 """
 
-from arcpy import env, GetParameterAsText, SetParameter, da, CreateFeatureclass_management, AddField_management, \
-    Describe, PointGeometry, SetParameterAsText, Exists, AddMessage
-import os
+from arcpy import env, GetParameterAsText, SetParameter, SetParameterAsText, Exists
 import sys
-import json
-import zipfile
-import numpy as np
 from datetime import datetime
-sys.path.append('E:\SMD_Script')
-from SMD_Package import rni_segment_dissolve, GetRoutes, event_fc_to_df, input_json_check, output_message, verify_balai
+import os
+from SMD_Package import GetRoutes, input_json_check, output_message, verify_balai, download, Configs
+os.chdir('E:/SMD_Script')
 
 
 class SDE_TableConnection(object):
@@ -43,384 +39,32 @@ class SDE_TableConnection(object):
         self.missing_table = missing_table
 
 
-def request_check(get_all_route_result, route_request_type, all_route_res_code='code', all_route_res_routes='routes'):
-    """
-    This function check the route request type, whether if the requested routes is in the Get All Route result, if the
-    requested routes does not exist in the Get All Route result then the script will not proceed creating the shapefile
-    """
-    # Extract all route from the GetAllRoute script
-    all_routes_str = []  # Contain all route from the GetAllRoute script in string not unicode
-    for routes_and_codes in get_all_route_result:
-        code = routes_and_codes[all_route_res_code]
-        all_routes_unicd = routes_and_codes[all_route_res_routes]
-
-        str_routes = [str(x) for x in all_routes_unicd]
-        all_routes_str += all_routes_str + str_routes
-
-    # Start checking the request
-    if route_request_type == 'ALL':
-        return all_routes_str
-    else:
-        if type(route_request_type) == unicode:
-            requested_routes = [(str(route_request_type))]
-        if type(route_request_type) == list:
-            requested_routes = [str(a) for a in route_request_type]
-
-    # Check for any intersection between available route from Get All Result and the requested route
-    route_intersection = set(all_routes_str).intersection(requested_routes)
-
-    if len(route_intersection) == 0:
-        return None  # If there is no intersection between the Get All Result and the requested routes, then return None
-    else:
-        route_interection_list = list(route_intersection)
-        return route_interection_list
-
-
-class DictionaryToFeatureClass(object):
-
-    def __init__(self, lrs_network, lrs_routeid, lrs_routename, segment_dict=None, outpath=env.scratchFolder,
-                 missing_route=None, missing_msg='Data RNI tidak ditemukan'):
-        """
-        Define LRS Network for the geometry shape source
-        Segment dictionary from the segment dissolve process
-        The default outpath is the env.scratchFolder
-        """
-        self.lrs_network = lrs_network
-        self.lrs_routeid = lrs_routeid
-        self.lrs_routename = lrs_routename
-        self.segment_dict = segment_dict
-        self.outpath = outpath
-        self.spatial_reference = Describe(lrs_network).spatialReference
-
-        route_list = []
-        if self.segment_dict is not None:
-            for segment in self.segment_dict:
-                route_list.append(str(segment[0]))
-
-        if len(route_list) == 0:
-            self.route_list_sql = str(missing_route).strip('[]')
-        else:
-            self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
-
-        self.route_list = route_list
-        self.missing_route = missing_route
-        self.missing_msg = missing_msg
-
-        self.polyline_output = None
-        self.point_output = None
-        self.csv_output = None
-        self.zip_output = None
-
-    def create_centerline(self, feature_class_name, include_missing=True):
-        routes = self.route_list
-        shapefile_name = "{0}.shp".format(feature_class_name)  # The name of the output feature class (.shp)
-        # Create new empty shapefile
-        CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
-                                      spatial_reference=self.spatial_reference)
-
-        if include_missing:
-            routes = routes + self.missing_route
-
-        field_name_and_type = {
-            'LINKID': 'TEXT',
-            'ROUTE_NAME': 'TEXT',
-            'LINTAS': 'TEXT'
-        }
-
-        # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'LINTAS']
-
-        # Add new field to the shapefile
-        for field_name in field_name_and_type:
-            field_type = field_name_and_type[field_name]
-            AddField_management("{0}\{1}".format(self.outpath, shapefile_name), field_name, field_type)
-
-        # Create an insert cursor
-        insert_cursor = da.InsertCursor("{0}\{1}".format(self.outpath, shapefile_name), insert_field)
-
-        polyline_feature_count = 0  # Count inserted polyline feature
-
-        for route_id in routes:
-            # Iterate over the LRS network feature class to get the route shape geometry
-            with da.SearchCursor(self.lrs_network, ['SHAPE@', 'ROUTE_NAME', 'ID_LINTAS'],
-                                 where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))as search_cursor:
-                for search_row in search_cursor:
-
-                    route_geom = search_row[0]  # The whole route geometry
-                    route_name = search_row[1]
-                    route_lintas = search_row[2]
-
-                    # Creating new row object to be inserted to the ShapeFile
-                    new_row = [route_geom, route_id, route_name, route_lintas]
-                    insert_cursor.insertRow(new_row)
-                    polyline_feature_count += 1
-
-        # Return the polyline attribute
-        self.polyline_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
-        self.polyline_count = polyline_feature_count  # Shapefile feature count
-        self.polyline_fc_name = shapefile_name  # Shapefile name
-
-        return self
-
-    def create_segment_polyline(self, feature_class_name, return_segment=True):
-        """
-        This function gets all the shape from every segments from the LRS network feature class, then write it to a
-        output shapefile.
-        """
-        shapefile_name = "{0}.shp".format(feature_class_name)  # The name of the output feature class (.shp)
-        # Create new empty shapefile
-        CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POLYLINE', has_m='ENABLED',
-                                      spatial_reference=self.spatial_reference)
-
-        if return_segment:  # The segmented Polyline ShapeFile
-            # Define field names and types for the new shapefile
-            field_name_and_type = {
-                'LINKID': 'TEXT',
-                'STA_FROM': 'DOUBLE',
-                'STA_TO': 'DOUBLE',
-                'LANE_CODES': 'TEXT'
-            }
-
-            # Insert cursor field
-            insert_field = ['SHAPE@', 'LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODES']
-
-        else:  # The whole route Polyline ShapeFile
-            # Define field names and types for the new shapefile
-            field_name_and_type = {
-                'LINKID': 'TEXT',
-                'ROUTE_NAME': 'TEXT',
-                'LINTAS': 'TEXT'
-            }
-
-            # Insert cursor field
-            insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'LINTAS']
-
-        # Add new field to the shapefile
-        for field_name in field_name_and_type:
-            field_type = field_name_and_type[field_name]
-            AddField_management("{0}\{1}".format(self.outpath, shapefile_name), field_name, field_type)
-
-        # Create an insert cursor
-        insert_cursor = da.InsertCursor("{0}\{1}".format(self.outpath, shapefile_name), insert_field)
-
-        polyline_feature_count = 0  # Count inserted polyline feature
-        route_list = []
-
-        # Iterate over available segment group
-        for segment in self.segment_dict:
-            route_id = str(segment[0])
-            lane_codes = segment[1].strip('[]').replace('u', '')
-
-            # Iterate over the LRS network feature class to get the route shape geometry
-            with da.SearchCursor(self.lrs_network, ['SHAPE@', 'ROUTE_NAME', 'ID_LINTAS'],
-                                 where_clause="{0} = '{1}'".format(self.lrs_routeid, route_id))as search_cursor:
-
-                if return_segment:  # If the request is to create a segment ShapeFile
-                    for search_row in search_cursor:
-                        # The whole route geometry
-                        route_geom = search_row[0]
-
-                        # Get the segment geometry based on the segment from measure and to measure
-                        for segment_measurement in self.segment_dict[segment]:
-                            from_m_km = segment_measurement[0]  # From measure in kilometers
-                            to_m_km = segment_measurement[1]  # To measure in kilometers
-
-                            from_m_meter = segment_measurement[0]*1000  # From measure in meters
-                            to_m_meter = segment_measurement[1]*1000  # To measure in meters
-
-                            # Geometry object of the segment
-                            segment_geom_obj = route_geom.segmentAlongLine(from_m_meter, to_m_meter)
-
-                            # Start inserting new row to the ShapeFile
-                            new_row = [segment_geom_obj, route_id, from_m_km, to_m_km, lane_codes]
-                            insert_cursor.insertRow(new_row)
-                            polyline_feature_count += 1
-
-                else:  # If the request is to create a whole route ShapeFile
-                    for search_row in search_cursor:
-
-                        # Check if the route already being written to ShapeFile.
-                        if route_id in route_list:
-                            pass
-                        else:  # If the route has not been written to ShapeFile.
-                            route_list.append(route_id)  # Append the route id
-                            route_geom = search_row[0]  # The whole route geometry
-                            route_name = search_row[1]
-                            route_lintas = search_row[2]
-
-                            # Creating new row object to be inserted to the ShapeFile
-                            new_row = [route_geom, route_id, route_name, route_lintas]
-                            insert_cursor.insertRow(new_row)
-                            polyline_feature_count += 1
-
-        # Check if there is route with missing data
-        if self.missing_route is not None:
-            for route in self.missing_route:
-                message = self.missing_msg
-                new_row = [None, route, message, message]
-                insert_cursor.insertRow(new_row)
-                polyline_feature_count += 1
-
-        # Return the polyline attribute
-        self.polyline_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
-        self.polyline_count = polyline_feature_count  # Shapefile feature count
-        self.polyline_fc_name = shapefile_name  # Shapefile name
-
-    def create_start_end_point(self, feature_class_name, include_missing=False):
-        """
-        This function creates a shapefile containing the start and end point for every requested routes
-        """
-        shapefile_name = '{0}.shp'.format(feature_class_name)  # The output feature class name (.shp)
-        # Create a new empty shapefile
-        CreateFeatureclass_management(self.outpath, shapefile_name, geometry_type='POINT',
-                                      spatial_reference=self.spatial_reference)
-
-        # Define field name and type for the new shapefile
-        field_name_and_type = {
-            'LINKID': 'TEXT',
-            'ROUTE_NAME': 'TEXT',
-            'KETERANGAN': 'TEXT',
-            'STA_LAT': 'TEXT',
-            'STA_LONG': 'TEXT',
-        }
-
-        # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'KETERANGAN', 'STA_LAT', 'STA_LONG']
-
-        # Add new field to the shapefile
-        for field_name in field_name_and_type:
-            field_type = field_name_and_type[field_name]
-            AddField_management("{0}\{1}".format(self.outpath, shapefile_name), field_name, field_type)
-
-        # Create an insert cursor for the newly created point shapefile
-        insert_cursor = da.InsertCursor("{0}\{1}".format(self.outpath, shapefile_name), insert_field)
-
-        point_feature_count = 0
-
-        # Iterate over the LRS Network feature class
-        with da.SearchCursor(self.lrs_network, ['SHAPE@', self.lrs_routeid, self.lrs_routename],
-                             where_clause="{0} IN ({1})".format(self.lrs_routeid, self.route_list_sql)) as search_cursor:
-            for search_row in search_cursor:
-                # Start and end point converted to arcpy point geometry object
-                start_point_geom = PointGeometry(search_row[0].firstPoint).projectAs(self.spatial_reference)
-                last_point_geom = PointGeometry(search_row[0].lastPoint).projectAs(self.spatial_reference)
-
-                for end_point in [start_point_geom, last_point_geom]:
-                    # Re-project the point geometry with WGS 1984 coordinate system
-                    point_gcs = end_point.projectAs('4326')
-                    point_gcs_dict = json.loads(point_gcs.JSON)
-                    x_coord = point_gcs_dict["x"]
-                    y_coord = point_gcs_dict["y"]
-                    route_id = search_row[1]
-                    route_name = search_row[2]
-
-                    if end_point == start_point_geom:
-                        new_row = [end_point, route_id, route_name, 'Awal ruas', x_coord, y_coord]
-                    else:
-                        new_row = [end_point, route_id, route_name, 'Akhir ruas', x_coord, y_coord]
-
-                    insert_cursor.insertRow(new_row)
-                    point_feature_count += 1
-
-        # Check if there is route with missing data
-        if self.missing_route is not None and include_missing:
-            for route in self.missing_route:
-                message = self.missing_msg
-                new_row = [None, route, message, message, 0, 0]
-                insert_cursor.insertRow(new_row)
-                point_feature_count += 1
-
-        # Return the point attribute
-        self.point_output = "{0}\{1}".format(self.outpath, shapefile_name)  # Shapefile path + name
-        self.point_feature_count = point_feature_count  # Shapefile feature count
-        self.point_fc_name = shapefile_name  # Shapefile name
-
-    def create_rni_csv(self, rni_df):
-        df = rni_df  # The RNI DataFrame
-        self.csv_output = "{0}/{1}".format(self.outpath, 'RNITable.csv')
-        df.to_csv(self.csv_output)  # Creating the CSV file from the DataFrame
-
-        return self
-
-    def output_message(self):
-        """
-        This function will create the output message from this class
-        result_format = {"requested_routes":route_list, "polyline_fc":polyline feature class name,
-        "polyline_count":count, "point_fc":point feature class name, "point_count":count}
-        """
-        result = {
-            "requested_routes": self.route_list,
-            "polyline_fc": self.polyline_fc_name,
-            "point_fc": self.point_fc_name
-        }
-
-        if self.polyline_count == 0 or self.point_feature_count == 0:
-            output_json_string = output_message("Empty output", result)
-        else:
-            output_json_string = output_message("Succeeded", result)
-
-        return output_json_string
-
-    def create_zipfile(self, zipfile_name):
-        """
-        This class method will create a zipfile within the scratchFolder directory of the class.
-        :return:
-        """
-
-        zip_output = zipfile_name  # The zip file name
-        zip_output_path = '{0}/{1}'.format(self.outpath, zip_output)  # The zip file target directory
-
-        with zipfile.ZipFile(zip_output_path+'.zip', 'w') as newzip:  # Creating new empty zip file
-            for fc_name in [self.polyline_fc_name, self.point_fc_name]:  # Iterate over the ShapeFile output
-                fc_name = fc_name.replace('.shp', '')
-                # Iterate for every file component of the ShapeFile
-                for file_extension in ['.cpg', '.dbf', '.shp', '.shx', '.prj']:
-                    # Insert every file component to the archive
-                    newzip.write('{0}/{1}'.format(self.outpath, fc_name+file_extension), fc_name+file_extension)
-
-            newzip.write(self.csv_output, 'RNI_table.csv')
-
-        self.zip_output = zip_output_path+'.zip'
-        return self
-
-
-# Change the directory
-os.chdir('E:/SMD_Script')
-
 # Get the script parameter
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON, result from GetAllRoute and config JSON
 input_details = input_json_check(inputJSON, 1, req_keys=['type', 'codes'])
 
-with open('smd_config.json') as config_f:
-    config = json.load(config_f)
-
-
-# Tabel and column used in this script
+config = Configs()
 
 # The LRS Network Table Details
-lrsNetwork = config['table_names']['lrs_network']
-lrsNetwork_RouteID = config['table_fields']['lrs_network']['route_id']
-lrsNetwork_RouteName = config['table_fields']['lrs_network']['route_name']
+lrsNetwork = config.table_names['lrs_network']
+lrsNetwork_RouteID = config.table_fields['lrs_network']['route_id']
+lrsNetwork_RouteName = config.table_fields['lrs_network']['route_name']
 
 # The Balai Table
-balaiTable = config['table_names']['balai_table']
-balaiProvCol = config['table_fields']['balai_table']['prov_code']
-balaiBalaiCol = config['table_fields']['balai_table']['balai_code']
+balaiTable = config.table_names['balai_table']
+balaiProvCol = config.table_fields['balai_table']['prov_code']
+balaiBalaiCol = config.table_fields['balai_table']['balai_code']
 
 # The Balai Route Table
-balaiRouteTable = config['table_names']['balai_route_table']
+balaiRouteTable = config.table_names['balai_route_table']
 
 # The RNI Table Details
-rniTable = config['table_names']['rni']
-rniSearchField = ['LINKID', 'STA_FROM', 'STA_TO', 'LANE_CODE']
-rniGroupbyField = ['LINKID', 'STA_FROM', 'STA_TO']
-rniCodeLane = config['table_fields']['rni']['lane_code']
-rniRouteID = config['table_fields']['rni']['route_id']
+rniTable = config.table_names['rni']
 
 # The SDE Database Connection
-dbConnection = config['smd_database']['instance']
+dbConnection = config.smd_database['instance']
 
 # Set the environment workspace
 env.workspace = dbConnection
@@ -465,22 +109,8 @@ elif input_details['type'] == 'routes':  # If the input type is 'routes' then us
 ConnectionCheck = SDE_TableConnection(env.workspace, [rniTable, lrsNetwork])
 if ConnectionCheck.all_connected:
 
-    # Create a Pandas dataframe from the RNI table in geodatabase
-    RNI_df = event_fc_to_df(rniTable, rniSearchField, routeList, rniRouteID, dbConnection,
-                            is_table=True)
-    DissolvedSegmentDict = None
-
-    if RNI_df.empty:
-        missing_rni = routeList
-    else:
-        available_rni = np.array(RNI_df['LINKID'].tolist())
-        request_route = np.array(routeList)
-        missing_rni = np.setdiff1d(request_route, available_rni).tolist()
-        DissolvedSegmentDict = rni_segment_dissolve(RNI_df, rniGroupbyField, rniCodeLane, rniRouteID)
-
     # Create the shapefile from the segment created by the dissolve segment function
-    RouteGeometries = DictionaryToFeatureClass(lrsNetwork, lrsNetwork_RouteID, lrsNetwork_RouteName,
-                                               DissolvedSegmentDict, missing_route=missing_rni)
+    RouteGeometries = download.LRSShapeFile(routeList)
 
     if input_details["type"] == "balai":
         req_type = 'Balai'
@@ -495,12 +125,14 @@ if ConnectionCheck.all_connected:
         req_codes = str(input_details["codes"])
 
     current_year = datetime.now().year
-    RouteGeometries.create_centerline("SegmenRuas_"+str(current_year))  # Create the polyline shapefile
-    RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
-    RouteGeometries.create_rni_csv(RNI_df)  # Create the RNI DataFrame
+    RouteGeometries.centerline_shp("SegmenRuas_"+str(current_year))  # Create the polyline shapefile
+    RouteGeometries.lrs_endpoint_shp("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
+    download.rni_to_csv(routeList, 'RNITable.csv')
+    zip_file = RouteGeometries.create_zipfile("Data_{0}_{1}_{2}".format(req_type, req_codes, current_year),
+                                              added_file=['RNITable.csv']).zip_output
 
     SetParameterAsText(1, RouteGeometries.output_message())
-    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_{2}".format(req_type, req_codes, current_year)).zip_output)
+    SetParameter(2, zip_file)
 
 else:
     SetParameterAsText(1, output_message("Failed", "Required table are missing.{0}".format(ConnectionCheck.missing_table)))
