@@ -97,7 +97,11 @@ class DictionaryToFeatureClass(object):
             for segment in self.segment_dict:
                 route_list.append(str(segment[0]))
 
-        self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
+        if len(route_list) == 0:
+            self.route_list_sql = str(missing_route).strip('[]')
+        else:
+            self.route_list_sql = str(route_list).strip('[]')  # Contain route list without square bracket '01001','01002'..
+
         self.route_list = route_list
         self.missing_route = missing_route
         self.missing_msg = missing_msg
@@ -107,7 +111,7 @@ class DictionaryToFeatureClass(object):
         self.csv_output = None
         self.zip_output = None
 
-    def create_centerline(self, feature_class_name, missing_route, include_missing=True):
+    def create_centerline(self, feature_class_name, include_missing=True):
         routes = self.route_list
         shapefile_name = "{0}.shp".format(feature_class_name)  # The name of the output feature class (.shp)
         # Create new empty shapefile
@@ -115,7 +119,7 @@ class DictionaryToFeatureClass(object):
                                       spatial_reference=self.spatial_reference)
 
         if include_missing:
-            routes = routes + missing_route
+            routes = routes + self.missing_route
 
         field_name_and_type = {
             'LINKID': 'TEXT',
@@ -262,7 +266,7 @@ class DictionaryToFeatureClass(object):
         self.polyline_count = polyline_feature_count  # Shapefile feature count
         self.polyline_fc_name = shapefile_name  # Shapefile name
 
-    def create_start_end_point(self, feature_class_name):
+    def create_start_end_point(self, feature_class_name, include_missing=False):
         """
         This function creates a shapefile containing the start and end point for every requested routes
         """
@@ -319,7 +323,7 @@ class DictionaryToFeatureClass(object):
                     point_feature_count += 1
 
         # Check if there is route with missing data
-        if self.missing_route is not None:
+        if self.missing_route is not None and include_missing:
             for route in self.missing_route:
                 message = self.missing_msg
                 new_row = [None, route, message, message, 0, 0]
@@ -491,12 +495,12 @@ if ConnectionCheck.all_connected:
         req_codes = str(input_details["codes"])
 
     current_year = datetime.now().year
-    RouteGeometries.create_centerline("SegmenRuas_"+str(current_year), missing_rni)  # Create the polyline shapefile
+    RouteGeometries.create_centerline("SegmenRuas_"+str(current_year))  # Create the polyline shapefile
     RouteGeometries.create_start_end_point("AwalAkhirRuas_"+str(current_year))  # Create the point shapefile
     RouteGeometries.create_rni_csv(RNI_df)  # Create the RNI DataFrame
 
     SetParameterAsText(1, RouteGeometries.output_message())
-    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_2019".format(req_type, req_codes)).zip_output)
+    SetParameter(2, RouteGeometries.create_zipfile("Data_{0}_{1}_{2}".format(req_type, req_codes, current_year)).zip_output)
 
 else:
     SetParameterAsText(1, output_message("Failed", "Required table are missing.{0}".format(ConnectionCheck.missing_table)))
