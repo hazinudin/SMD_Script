@@ -1,9 +1,9 @@
 # Initialize Package
-from EventTable.TableCheck import *
-from EventTable.RNITable import *
-from EventTable.TrimToLRS import convert_and_trim
-from EventTable.Kemantapan import *
-from EventTable.CreatePatch import *
+from event_table.checks import *
+from event_table.RNITable import *
+from SMD_Package.event_table.measurement.trim_convert import convert_and_trim
+from event_table.Kemantapan import *
+from event_table.CreatePatch import *
 from FCtoDataFrame import event_fc_to_df
 from OutputMessage import *
 from GetRoute import *

@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
-from SMD_Package.EventTable.Kemantapan import Kemantapan
-from SMD_Package.EventTable.RNITable import RNIRouteDetails
+from SMD_Package.event_table.Kemantapan import Kemantapan
+from SMD_Package.event_table.RNITable import RNIRouteDetails
 from SMD_Package.load_config import Configs
 import coordinate
 
