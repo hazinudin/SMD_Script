@@ -115,8 +115,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
         if len(passed_routes) != 0:
             passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
-            convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                             dbConnection)
+            convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork)
             gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.

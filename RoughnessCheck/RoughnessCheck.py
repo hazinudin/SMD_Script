@@ -114,8 +114,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
         passed_routes_row = create_patch(passed_routes_row, LrsNetwork, LrsNetworkRID)
-        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                         dbConnection)
+        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, fit_to='RNI')
         gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.
