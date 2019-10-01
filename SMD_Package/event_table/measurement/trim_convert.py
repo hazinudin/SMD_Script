@@ -1,7 +1,10 @@
 from arcpy import env, da
+from SMD_Package.load_config import Configs
+from SMD_Package.event_table.lrs import route_geometry
+from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 
-def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace, conversion=100):
+def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, conversion=100, fit_to='LRS'):
     """
     This function will convert the input DataFrame to the specified conversion and trim the input DataFrame measurement
     column to fit the LRS Maximum measurement value.
@@ -10,21 +13,16 @@ def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, lr
     :param from_m_col: The From Measurement column of the event table.
     :param to_m_col: The To Measurement column of the event table.
     :param lane_code: The Lane Code column of the evne table.
-    :param lrs_network: The LRS Network Feature Class.
-    :param lrs_routeid: LRS Network RouteID column.
-    :param workspace: The SDE Connection.
     :param conversion:  Conversion factor.
     :return: Modified DataFrame.
     """
-
     df = dataframe
     _convert_measurement(df, from_m_col, to_m_col, conversion=conversion)  # Convert the measurement
-    _trim_event_table(df, routeid_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace)  # Trim the event table
-
+    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to)
     return df
 
 
-def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, lrs_routeid, workspace):
+def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None):
     """
     This function will trim event table to fit the LRS Network Max Measurement.
     :param dataframe: The event DataFrame
@@ -37,6 +35,15 @@ def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, 
     """
 
     df = dataframe  # Create a DataFrame variable
+    config = Configs()
+    lrs_network = config.table_names['lrs_network']
+    lrs_routeid = config.table_fields['lrs_network']['route_id']
+    rni_table = config.table_names['rni']
+    rni_routeid = config.table_fields['rni']['route_id']
+    rni_to_col = config.table_fields['rni']['to_measure']
+    rni_lane_code = config.table_fields['rni']['lane_code']
+    workspace = config.smd_database['instance']
+
     routes = df[routeid_col].unique().tolist()  # All the routes in the input DataFrame
     env.workspace = workspace
 
@@ -44,15 +51,20 @@ def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, 
         df_route = df.loc[df[routeid_col] == route]  # Create a DataFrame for a single route
         lanes = df_route[lane_code].unique().tolist()  # List of lanes
 
-        for lane in lanes:
-            df_route_lane = df_route.loc[df_route[lane_code] == lane]  # Lane in route DataFrame.
-            lrs_query = "{0} = '{1}'".format(lrs_routeid, route)
-            with da.SearchCursor(lrs_network, 'SHAPE@', where_clause=lrs_query) as cur:
-                for row in cur:
-                    lrs_geom = row[0]
+        if fit_to == 'LRS':
+            lrs_geom = route_geometry(route, lrs_network, lrs_routeid)
+        elif fit_to == 'RNI':
+            rni_df = event_fc_to_df(rni_table, [rni_to_col, rni_lane_code], route, rni_routeid, workspace,
+                                    is_table=True)
 
-            lrs_max_m = lrs_geom.lastPoint.M  # The route LRS Max Measurement value
-            df_route_lane['_diff'] = df_route_lane[to_m_col] - lrs_max_m  # Create a difference col
+        for lane in lanes:
+            if fit_to == 'LRS':
+                max_m = lrs_geom.lastPoint.M
+            elif fit_to == 'RNI':
+                max_m = rni_df.loc[rni_df[rni_lane_code] == lane, rni_to_col].max()
+
+            df_route_lane = df_route.loc[df_route[lane_code] == lane]  # Lane in route DataFrame.
+            df_route_lane['_diff'] = df_route_lane[to_m_col] - max_m  # Create a difference col
 
             outbound_meas = df_route_lane.loc[df_route_lane['_diff'] > 0]  # All row which lies outside the lRS max m
 
@@ -62,7 +74,7 @@ def _trim_event_table(dataframe, routeid_col, to_m_col, lane_code, lrs_network, 
                 drop_ind.remove(closest_to)
 
                 # Replace the closest value to_m with LRS Max Measurement value
-                df.loc[closest_to, [to_m_col]] = lrs_max_m
+                df.loc[closest_to, [to_m_col]] = max_m
                 # Drop all the row which is completely out of range
                 df.drop(drop_ind, inplace=True)
             else:
