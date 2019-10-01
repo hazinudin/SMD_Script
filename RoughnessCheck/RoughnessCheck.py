@@ -4,6 +4,7 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim, create_patch
+from SMD_Package.event_table.measurement.adjustment import Adjust
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -33,6 +34,7 @@ BalaiRouteTable = smd_config['table_names']['balai_route_table']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
+forceWrite = GetParameterAsText(1)
 
 # Load the input JSON
 InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester', 'routes'])
@@ -53,6 +55,7 @@ CodeLane = "LANE_CODE"
 LongitudeCol = 'STATO_LONG'
 LatitudeCol = 'STATO_LAT'
 AltitudeCol = 'STATO_ALT'
+SegmentLength = 'SEGMENT_LENGTH'
 
 # The GDB table which store all the valid table row
 OutputGDBTable = 'SMD.ROUGHNESS_{0}_{1}'.format(Semester, DataYear)
@@ -83,10 +86,10 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTabl
 try:
     InputDF = read_input_excel(TablePath)  # Read the excel file
 except IOError:  # If the file path is invalid
-    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    SetParameterAsText(2, output_message("Failed", "Invalid file directory"))  # Throw an error message
     sys.exit(0)  # Stop the script
 if InputDF is None:  # If the file format is not .xlsx
-    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    SetParameterAsText(2, output_message("Failed", "File is not in .xlsx format"))
     sys.exit(0)  # Stop the script
 
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
@@ -105,7 +108,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
     EventCheck.measurement_check(routes=valid_routes)
-    EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNIline-LRS')
+    if str(forceWrite) != 'true':
+        EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNIline-LRS')
     EventCheck.lane_code_check(routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
@@ -114,17 +118,20 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
         passed_routes_row = create_patch(passed_routes_row, LrsNetwork, LrsNetworkRID)
-        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, fit_to='RNI')
-        gdb_table_writer(dbConnection, passed_routes_row, OutputGDBTable, ColumnDetails, new_table=False)
+        adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
+        if str(forceWrite) == 'true':
+            adjust.survey_direction()
+        adjust.trim_to_reference(fit_to='RNI')  # Trim and convert to reference
+        gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.
         errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
         reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
         all_msg = errors + reviews
-        SetParameterAsText(1, output_message("Succeeded", all_msg))
+        SetParameterAsText(2, output_message("Succeeded", all_msg))
     else:
         # Write the JSON Output string.
-        SetParameterAsText(1, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
+        SetParameterAsText(2, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
@@ -138,13 +145,13 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
-    SetParameterAsText(1, output_message("Rejected", year_sem_check_result))
+    SetParameterAsText(2, output_message("Rejected", year_sem_check_result))
 
 elif year_sem_check_result is None:
     # There must be an error with dtype check or header check
-    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+    SetParameterAsText(2, output_message("Rejected", dtype_check_result))
 
 else:
     # There is an error with dtype check and year sem check
     dtype_check_result.append(year_sem_check_result)
-    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+    SetParameterAsText(2, output_message("Rejected", dtype_check_result))

@@ -22,7 +22,7 @@ class Adjust(object):
         workspace = config.smd_database['instance']
         env.workspace = workspace
 
-    def survey_direction(self, lat_col, long_col, segment_len):
+    def survey_direction(self, lat_col='STATO_LAT', long_col='STATO_LONG', segment_len='SEGMENT_LENGTH'):
         dist_column = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
 
         for route in self.df[self.routeid].unique().tolist():

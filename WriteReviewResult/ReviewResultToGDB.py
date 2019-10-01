@@ -1,6 +1,7 @@
 import sys
 sys.path.append('E:/SMD_Script')
 from SMD_Package import gdb_table_writer, read_input_excel, input_json_check, output_message, convert_and_trim
+from SMD_Package.event_table.measurement.adjustment import Adjust
 from arcpy import GetParameterAsText, env, SetParameterAsText, AddMessage
 import numpy as np
 import json
@@ -72,20 +73,22 @@ if type(Routes) is list:  # If the inputted routes is a list
         sys.exit(0)  # Stop the script
 
 # Determine the output table based on the specified data type
+adjust = Adjust(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode)
 if str(DataType) == "IRI":  # If the data is IRI/Roughness
     data_config = load_config_data('RoughnessCheck/roughness_config.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
+    adjust.trim_to_reference(fit_to='RNI')
 elif str(DataType) == "RNI":  # If the data is RNI
     data_config = load_config_data('RNICheck/rni_config.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
+    adjust.trim_to_reference(fit_to='LRS')
 else:  # If other than that, the process will be terminated with an error message.
     message = 'Data type {0} is not supported'.format(DataType)
     SetParameterAsText(1, output_message("Failed", message))
     sys.exit(0)
 
 # Start writing the input table to GDB
-convert_and_trim(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode, LrsNetwork, LrsNetworkRID, dbConnection)
-gdb_table_writer(dbConnection, InputDF, OutputGDBTable, ColumnDetails)
+gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails)
 SetParameterAsText(1, output_message("Succeeded", ""))

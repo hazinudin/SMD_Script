@@ -4,7 +4,8 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, \
-    read_input_excel, verify_balai, convert_and_trim
+    read_input_excel, verify_balai
+from SMD_Package.event_table.measurement.adjustment import Adjust
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
@@ -35,6 +36,7 @@ RNISurfaceType = smd_config['table_fields']['rni']['surface_type']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
+forceWrite = GetParameterAsText(1)
 
 # Load the input JSON
 InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'routes'])
@@ -70,10 +72,10 @@ if len(code_check_result) != 0:  # If there is an error
 try:
     InputDF = read_input_excel(TablePath)  # Read the excel file
 except IOError:  # If the file path is invalid
-    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    SetParameterAsText(2, output_message("Failed", "Invalid file directory"))  # Throw an error message
     sys.exit(0)  # Stop the script
 if InputDF is None:  # If the file format is not .xlsx
-    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    SetParameterAsText(2, output_message("Failed", "File is not in .xlsx format"))
     sys.exit(0)  # Stop the script
 
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
@@ -93,7 +95,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.lane_direction_check()
     EventCheck.segment_len_check(routes=valid_routes)  # Check the segment length validity
     EventCheck.measurement_check(routes=valid_routes)
-    EventCheck.coordinate_check(routes=valid_routes, at_start=False, comparison='RNIline-LRS')
+    if str(forceWrite) != 'true':
+        EventCheck.coordinate_check(routes=valid_routes, at_start=False, comparison='RNIline-LRS')
     EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth,
                              routes=valid_routes)
     EventCheck.pci_val_check(routes=valid_routes)
@@ -103,13 +106,15 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes
 
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+    SetParameterAsText(2, output_message("Checked", EventCheck.altered_route_result()))
 
     if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
-        convert_and_trim(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane, LrsNetwork, LrsNetworkRID,
-                         dbConnection)
-        gdb_table_writer(dbConnection, passed_routes_row, OutputTable, ColumnDetails)
+        adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
+        if str(forceWrite) == 'true':
+            adjust.survey_direction()
+        adjust.trim_to_reference(fit_to='RNI')  # Trim and convert to reference
+        gdb_table_writer(dbConnection, adjust.df, OutputTable, ColumnDetails)
 
     # FOR ARCMAP USAGE ONLY #
     msg_count = 1
@@ -123,13 +128,13 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
 elif dtype_check_result is None:
     # There must be an error with semester and year check
-    SetParameterAsText(1, output_message("Rejected", year_sem_check_result))
+    SetParameterAsText(2, output_message("Rejected", year_sem_check_result))
 
 elif year_sem_check_result is None:
     # There must be an error with dtype check or header check
-    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+    SetParameterAsText(2, output_message("Rejected", dtype_check_result))
 
 else:
     # There is an error with dtype check and year sem check
     dtype_check_result.append(year_sem_check_result)
-    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+    SetParameterAsText(2, output_message("Rejected", dtype_check_result))
