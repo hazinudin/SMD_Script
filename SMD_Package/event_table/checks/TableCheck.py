@@ -536,7 +536,7 @@ class EventValidation(object):
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
-                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI'):
+                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=True):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -591,7 +591,7 @@ class EventValidation(object):
                 pass
 
             # If the largest To Measure value is less than the selected comparison then there is a gap at the end
-            elif (max_to_meas < comparison) and not(np.isclose(max_to_meas, comparison, rtol=0.01)):
+            elif (max_to_meas < comparison) and not(np.isclose(max_to_meas, comparison, rtol=0.01)) and (not ignore_end_gap):
                 # Create an error message
                 error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
                     format(route, max_to_meas, comparison)
