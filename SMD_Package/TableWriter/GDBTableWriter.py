@@ -36,9 +36,10 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
             for _ in del_cursor:
                 del_cursor.deleteRow()  # If the route already exist in the table then delete the whole route row
 
-        cursor = da.InsertCursor(table_name, cols_dtype.keys())  # Create an insert cursor
-        for index, row in df_route.iterrows():  # Iterate over available rows
-            row_object = []  # Create the new row object
-            for col_name in cols_dtype.keys():
-                row_object.append(row[col_name])
-            cursor.insertRow(row_object)  # Insert the new row
+        with da.InsertCursor(table_name, cols_dtype.keys()) as insert_cursor:  # Create an insert cursor
+            for index, row in df_route.iterrows():  # Iterate over available rows
+                row_object = []  # Create the new row object
+                for col_name in cols_dtype.keys():
+                    row_object.append(row[col_name])
+
+                insert_cursor.insertRow(row_object)  # Insert the new row
