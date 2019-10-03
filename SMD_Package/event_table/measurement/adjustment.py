@@ -3,7 +3,7 @@ from SMD_Package.event_table.checks.coordinate import FindCoordinateError, dista
 from SMD_Package.event_table.lrs import route_geometry
 from SMD_Package.load_config import Configs
 from flip import flip_measurement
-from trim_convert import convert_and_trim
+from trim_convert import convert_and_trim, _convert_measurement
 
 
 class Adjust(object):
@@ -48,4 +48,8 @@ class Adjust(object):
     def trim_to_reference(self, fit_to='LRS'):
         convert_and_trim(self.df, self.routeid, self.from_m, self.to_m, self.lane_code, conversion=self.conversion,
                          fit_to=fit_to)
+        return self
+
+    def convert(self, conversion=100):
+        _convert_measurement(self.df, self.from_m, self.to_m, conversion=conversion)
         return self
