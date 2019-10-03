@@ -1,5 +1,6 @@
 from arcpy import da, env, ListFields, AddMessage
 from pandas import DataFrame
+import numpy as np
 
 
 def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
@@ -61,9 +62,10 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
 
     # Create the numpy array of the requested table or feature class from GeoDataBase
     table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause,
-                                               sql_clause=sql_clause)
+                                               sql_clause=sql_clause, null_value=-9999)
 
     # Creating DataFrame from the numpy array
     df = DataFrame(table_search)
+    df.replace(-9999, np.nan, inplace=True)
 
     return df  # Return the DataFrame
