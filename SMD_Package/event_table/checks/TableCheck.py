@@ -1901,7 +1901,10 @@ class EventValidation(object):
         """
         result_list = []  # The list object to store the dictionary
         failed_routes = self.route_results.keys()
-        passed_routes_row = self.df_valid.loc[~self.df_valid[routeid_col].isin(failed_routes), routeid_col].unique().tolist()
+
+        select_failed = ~self.df_valid[routeid_col].isin(failed_routes)
+        is_valid_route = self.df_valid[routeid_col].isin(self.valid_route)
+        passed_routes_row = self.df_valid.loc[select_failed & is_valid_route, routeid_col].unique().tolist()
 
         for route in failed_routes:
             messages = self.route_results[route][message_type]
