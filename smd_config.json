@@ -21,7 +21,7 @@
       "route_id":"ROUTEID",
       "route_name":"ROUTE_NAME",
       "prov_code":"NOPROP",
-      "lintas":"LINTAS_NAME"
+      "lintas":"NAME_LINTAS"
     },
     "rni":{
       "route_id":"LINKID",

@@ -77,7 +77,8 @@ class LRSShapeFile(object):
 
             # Creating new row object to be inserted to the ShapeFile
             new_row = [route_geom, route_id, route_name, route_lintas]
-            insert_cursor.insertRow(new_row)
+            no_null = [val if val is not None else "Data tidak tersedia." for val in new_row]
+            insert_cursor.insertRow(no_null)
             polyline_feature_count += 1
 
         self.polyline_count = polyline_feature_count

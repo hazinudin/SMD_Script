@@ -1,5 +1,7 @@
 from SMD_Package import Configs, event_fc_to_df
 from arcpy import env
+import numpy as np
+from pandas import DataFrame, concat
 
 
 def rni_to_csv(routes, file_name, outpath=env.scratchFolder):
@@ -15,6 +17,14 @@ def rni_to_csv(routes, file_name, outpath=env.scratchFolder):
     env.workspace = smd_config.smd_database['instance']
 
     rni_df = event_fc_to_df(rni_table, rni_search_col, routes, rni_route_id, env.workspace, is_table=True)
-    rni_df.to_csv('{0}/{1}'.format(outpath, file_name))
+    missing_route = np.setdiff1d(routes, rni_df[rni_route_id].tolist())
+    msg = "Data RNI tidak tersedia"
+    missing_df = DataFrame(columns=rni_df.columns)
+
+    for route in missing_route:
+        missing_df.loc[len(missing_df)] = [route, msg, msg, msg]
+
+    added = concat([rni_df, missing_df])
+    added.to_csv('{0}/{1}'.format(outpath, file_name), index=False)
 
     return
