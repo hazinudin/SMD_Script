@@ -40,7 +40,9 @@
     "route_id":"LINKID",
     "from_measure":"FROMMEASURE",
     "to_measure":"TOMEASURE",
-    "surface_type":"SURFTYPE"
+    "surface_type":"SURFTYPE",
+    "lane_code":"LANE_CODE",
+    "lane_width":"LANE_WIDTH"
   },
   "search_radius":30,
   "roadtype_details":{

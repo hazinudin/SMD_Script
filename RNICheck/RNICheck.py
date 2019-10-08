@@ -52,6 +52,8 @@ CompRouteID = rni_config['compare_table']['route_id']
 CompFromM = rni_config['compare_table']['from_measure']
 CompToM = rni_config['compare_table']['to_measure']
 CompSurfaceType = rni_config['compare_table']['surface_type']
+CompLaneCode = rni_config['compare_table']['lane_code']
+CompLaneWidth = rni_config['compare_table']['lane_width']
 
 # The input Table Column
 RouteIDCol = 'LINKID'
@@ -109,9 +111,9 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes = EventCheck.passed_routes
 
     if len(passed_routes) != 0:  # Only process the route which passed the Error check.
-        EventCheck.rni_compare_surftype_len(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNISurfaceType,
-                                            2018, RNILaneCode, routes=passed_routes)
-        EventCheck.rni_compare_surfwidth(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneWidth, 2018,
+        EventCheck.rni_compare_surftype_len(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType,
+                                            2018, CompLaneCode, routes=passed_routes)
+        EventCheck.rni_compare_surfwidth(ComparisonTable, CompRouteID, CompFromM, CompToM, CompLaneWidth, 2018,
                                          routes=passed_routes)
 
         passed_routes = EventCheck.passed_routes  # Refresh the all passed routes list
@@ -131,7 +133,10 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         SetParameterAsText(2, output_message("Succeeded", all_msg))
     else:
         # Write the JSON Output string.
-        SetParameterAsText(2, output_message("Succeeded", EventCheck.altered_route_result(include_valid_routes=True)))
+        errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
+        reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
+        all_msg = errors + reviews
+        SetParameterAsText(2, output_message("Succeeded", all_msg))
 
     # FOR ARCMAP USAGE ONLY#
     msg_count = 1
