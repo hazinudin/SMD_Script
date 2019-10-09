@@ -1237,7 +1237,7 @@ class EventValidation(object):
             if len(df_comp) == 0:
                 # If the route does not exist in the comparison table
                 result = 'Rute {0} tidak terdapat pada data tahun {1}.'.format(route, year_comp)
-                self.insert_route_message(route, 'error', result)
+                self.insert_route_message(route, 'ToBeReviewed', result)
                 continue
 
             for _, lane in self.route_lane_tuple(df_route, rni_route_col, rni_lane_code):
@@ -1247,7 +1247,7 @@ class EventValidation(object):
                 if len(df_comp_lane) == 0:
                     # If the lane does not exist in the comparison table
                     result = 'Tidak terdapat lane {0} pada rute {1} di tahun {2}'.format(lane, route, year_comp)
-                    self.insert_route_message(route, 'error', result)
+                    self.insert_route_message(route, 'ToBeReviewed', result)
                     continue
 
                 comp_surftype_len = RNIRouteDetails(df_comp_lane, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col)
@@ -1306,7 +1306,7 @@ class EventValidation(object):
 
             if len(df_comp) == 0:
                 result = 'Rute {0} tidak terdapat pada data tahun {1}.'.format(route, year_comp)
-                self.insert_route_message(route, 'error', result)
+                self.insert_route_message(route, 'ToBeReviewed', result)
                 continue
 
             input_surfwidth = RNIRouteDetails(df_route, rni_route_col, rni_from_col, rni_to_col, rni_lane_width,
@@ -1960,5 +1960,23 @@ class EventValidation(object):
             routes = df.loc[df['status'] == passed_status]['linkid'].unique().tolist()
             routes_intersect = np.intersect1d(routes, self.valid_route).tolist()
             return routes_intersect
+        else:
+            return list()
+
+    @property
+    def no_error_route(self):
+        """
+        This property contain a list of all routes without any error message (verfied and ToBeReviewed)
+        :return:
+        """
+        errors = self.altered_route_result(include_valid_routes=True)
+        reviews = self.altered_route_result(message_type='ToBeReviewed')
+        df = pd.DataFrame(errors+reviews)
+        error_status = 'error'
+
+        if len(df) != 0:
+            routes = df.loc[df['status'] != error_status]['linkid'].unique().tolist()
+            intersect = np.intersect1d(routes, self.valid_route).tolist()
+            return intersect
         else:
             return list()

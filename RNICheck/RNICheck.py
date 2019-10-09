@@ -108,7 +108,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
 
     valid_df = EventCheck.copy_valid_df()  # Create the valid DataFrame copy
-    passed_routes = EventCheck.passed_routes
+    passed_routes = EventCheck.no_error_route
 
     if len(passed_routes) != 0:  # Only process the route which passed the Error check.
         EventCheck.rni_compare_surftype_len(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType,
@@ -134,9 +134,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     else:
         # Write the JSON Output string.
         errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
-        reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
-        all_msg = errors + reviews
-        SetParameterAsText(2, output_message("Succeeded", all_msg))
+        SetParameterAsText(2, output_message("Succeeded", errors))
 
     # FOR ARCMAP USAGE ONLY#
     msg_count = 1
