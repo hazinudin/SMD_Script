@@ -99,7 +99,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.segment_duplicate_check()
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check()
+    EventCheck.range_domain_check(routes=valid_routes)
     EventCheck.survey_year_check(DataYear)
     EventCheck.segment_len_check(routes=valid_routes)
     EventCheck.measurement_check(routes=valid_routes, compare_to='LRS')

@@ -304,11 +304,12 @@ class EventValidation(object):
 
         return self
 
-    def range_domain_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+    def range_domain_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                            lane_code='LANE_CODE'):
         """
         This function checks every value in a specified data column, to match the specified range value defined by
         parameter upper and lower (lower < [value] < upper).
+        :param routes: Route selection.
         :param routeid_col: The Route ID column in the input table.
         :param from_m_col: The From Measure column in the input table.
         :param to_m_col: The To Measure column in the input table.
@@ -316,6 +317,11 @@ class EventValidation(object):
         :return: self
         """
         df = self.copy_valid_df()
+
+        if routes == 'ALL':
+            pass
+        else:
+            df = self.selected_route_df(df, routes, routeid_col=routeid_col)
 
         for column in self.column_details.keys():
             if 'range' in self.column_details[column].keys():
