@@ -102,7 +102,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.range_domain_check(routes=valid_routes)
     EventCheck.survey_year_check(DataYear)
     EventCheck.segment_len_check(routes=valid_routes)
-    EventCheck.measurement_check(routes=valid_routes, compare_to='LRS')
+    EventCheck.measurement_check(routes=valid_routes, compare_to='LRS', ignore_end_gap=False)
     if str(forceWrite) != 'true':
         EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False)
     EventCheck.rni_roadtype_check(RoadTypeDetails, routes=valid_routes)
