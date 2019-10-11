@@ -1,4 +1,4 @@
-from arcpy import env, da, Point, PointGeometry, AddMessage
+from arcpy import env, da
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -7,27 +7,6 @@ from SMD_Package.event_table.Kemantapan import Kemantapan
 from SMD_Package.event_table.RNITable import RNIRouteDetails
 from SMD_Package.load_config import Configs
 import coordinate
-
-
-def read_input_excel(event_table_path):
-    """
-    This function will read the submitted excel file by the SMD user, the file format has to be '.xls' or '.xlsx', if
-    any other file format is submitted then this function will return None.
-    :param event_table_path: The excel file path.
-    :return: Pandas DataFrame or NoneType.
-    """
-    file_format = str(event_table_path)[-4:]
-    if file_format in ['xls', 'xlsx']:
-
-        df_self_dtype = pd.read_excel(event_table_path)
-        s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
-        del df_self_dtype
-
-        df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
-        df_string.columns = df_string.columns.str.upper()  # Uppercase all the column name
-        return df_string  # df_string is DataFrame which contain all data in string format
-    else:
-        return None
 
 
 class EventValidation(object):
