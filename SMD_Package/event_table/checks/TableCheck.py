@@ -1954,14 +1954,9 @@ class EventValidation(object):
         This property contain a list of all routes without any error message (verfied and ToBeReviewed)
         :return:
         """
-        errors = self.altered_route_result(include_valid_routes=True)
-        reviews = self.altered_route_result(message_type='ToBeReviewed')
-        df = pd.DataFrame(errors+reviews)
-        error_status = 'error'
-
-        if len(df) != 0:
-            routes = df.loc[df['status'] != error_status]['linkid'].unique().tolist()
-            intersect = np.intersect1d(routes, self.valid_route).tolist()
+        error_routes = self.failed_routes
+        if len(error_routes) != 0:
+            intersect = np.setdiff1d(self.valid_route, error_routes).tolist()
             return intersect
         else:
             return list()
