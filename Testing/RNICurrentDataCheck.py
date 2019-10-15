@@ -4,7 +4,8 @@ import json
 from arcpy import GetParameterAsText, SetParameterAsText, AddMessage, env, SetParameter
 from pandas import DataFrame
 sys.path.append('E:\SMD_Script')  # Import the SMD_Package package
-from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, read_input_excel, verify_balai, convert_and_trim
+from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, verify_balai, convert_and_trim
+from SMD_Package.event_table.input_excel import read_input_excel
 
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 

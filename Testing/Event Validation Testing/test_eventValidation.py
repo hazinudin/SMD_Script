@@ -3,7 +3,8 @@ import os
 import json
 import time
 
-from SMD_Package import input_json_check, read_input_excel, EventValidation, GetRoutes
+from SMD_Package import input_json_check, EventValidation, GetRoutes
+from SMD_Package.event_table.input_excel import read_input_excel
 from arcpy import env
 import pandas as pd
 
