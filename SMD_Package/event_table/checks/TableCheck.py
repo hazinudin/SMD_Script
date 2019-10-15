@@ -521,7 +521,7 @@ class EventValidation(object):
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
-                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=True):
+                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
