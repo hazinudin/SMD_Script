@@ -272,7 +272,7 @@ class FindCoordinateError(object):
             if check_unique.all():  # Check whether the result only contain True
                 pass  # This means OK
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                error_message = 'Lajur {0} pada rute {1} memiliki arah survey yang terbalik.'.format(lane, route)
+                error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas.'.format(lane, route)
                 errors.append(error_message)
 
         return errors
