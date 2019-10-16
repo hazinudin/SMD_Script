@@ -86,13 +86,23 @@ class EventValidation(object):
             for col in self.column_details:  # Iterate over every column in required col dict
                 col_name = col  # Column name
                 col_dtype = self.column_details[col]['dtype']  # Column data types
+                allow_null = False
+                null_input = df[col_name].isnull()  # Row with null input
+
+                if 'allow_null' in self.column_details.keys():  # If there is 'allow_null' key in the JSON
+                    allow_null = self.column_details[col]['allow_null']
 
                 if col_dtype in ["integer", "double"]:  # Check for numeric column
 
                     # Convert the column to numeric
                     # If the column contain non numerical value, then change that value to Null
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
-                    error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
+                    error_null = df[col_name].isnull()  # Null value from the coerce
+
+                    if allow_null:
+                        error_row = df.loc[~null_input & error_null, [routeid_col, col_name]]  # Null value from the coerce not from the input
+                    else:
+                        error_row = df.loc[error_null, [routeid_col, col_name]]  # Find the row with Null value
 
                     # If there is an error
                     if len(error_row) != 0:
@@ -114,7 +124,12 @@ class EventValidation(object):
                     # Convert the column to a date data type
                     # If the column contain an invalid date format, then change that value to Null
                     df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='%d/%m/%Y')
-                    error_row = df.loc[df[col_name].isnull(), [routeid_col, col_name]]  # Find the row with Null value
+
+                    if allow_null:
+                        error_row = df.loc[~null_input & error_null, [routeid_col, col_name]]  # Null value from the coerce not from the input
+                    else:
+                        error_row = df.loc[error_null, [routeid_col, col_name]]  # Find the row with Null value
+
                     error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
@@ -127,6 +142,30 @@ class EventValidation(object):
                         if write_error:
                             for index, row in error_row.iterrows():
                                 result = 'Rute {0} pada kolom {1} memiliki tanggal yang tidak sesuai dengan format baris{2}.'. \
+                                    format(row[routeid_col], col_name, index + 2)
+                                self.insert_route_message(row[routeid_col], "error", result)
+
+                            self.error_list.append(error_message)
+
+                elif col_dtype == 'string':
+
+                    if allow_null:
+                        error_row = df.loc[~null_input, [routeid_col, col_name]]  # Null value from the coerce not from the input
+                    else:
+                        error_row = df.loc[null_input, [routeid_col, col_name]]  # Find the row with Null value
+
+                    error_i = error_row.index.tolist()  # Find the index of the null
+
+                    # If there is an error
+                    if len(error_i) != 0:
+                        excel_i = [x + 2 for x in error_i]
+                        error_message = '{0} memiliki baris yang tidak diisi (Null/kosong) pada baris {1}.'\
+                            .format(col_name, str(excel_i))
+                        error_list.append(error_message)
+
+                        if write_error:
+                            for index, row in error_row.iterrows():
+                                result = 'Rute {0} pada kolom {1} memiliki baris yang tidak diisi pada baris {2}.'. \
                                     format(row[routeid_col], col_name, index + 2)
                                 self.insert_route_message(row[routeid_col], "error", result)
 
