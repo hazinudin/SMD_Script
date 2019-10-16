@@ -208,7 +208,7 @@ class FindCoordinateError(object):
         col1_error = self.find_distance_error(column1, window=window, threshold=threshold)
         col2_error = self.find_distance_error(column2, window=window, threshold=threshold)
 
-        for lane, runs in col1_error.items():
+        for lane in col1_error.keys():
             if lane in col2_error:
                 runs1 = col1_error[lane]
                 runs2_df = DataFrame(col2_error[lane], columns=['from', 'to'])
@@ -218,7 +218,7 @@ class FindCoordinateError(object):
                     start = run[0]
                     end = run[1]
 
-                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df >= end)]
+                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df >= end)].empty()
 
                     if not existin2:  # If there is no overlay then pop the current runs
                         col1_error[lane].pop(run_index)
@@ -231,7 +231,8 @@ class FindCoordinateError(object):
         :param distance_column: The distance from input point to a reference point.
         :param window: The minimal window for error detection.
         :param threshold: The distance threshold for error detection.
-        :return: If there is no error detected then None will be returned, otherwise a list object will be returned
+        :return: If there is no error detected then None will be returned, otherwise a list object will be returned.
+        {lane: [from_m, to_m, [dist, dist, dist,...]}
         """
         lanes = self.df[self.lane_code_col].unique().tolist()
         errors = dict()
@@ -247,11 +248,12 @@ class FindCoordinateError(object):
                 range_end = index_range[1]
                 meas_start = df_lane.at[range_start, self.from_m_col]
                 meas_end = df_lane.at[range_end, self.to_m_col]
+                distance_list = df_lane.at[range_start:range_end, distance_column].tolist()
 
                 if lane not in errors.keys():
                     errors[lane] = list()
 
-                errors[lane].append([meas_start, meas_end])  # Append the value
+                errors[lane].append([meas_start, meas_end, distance_list])  # Append the value
 
         return errors
 

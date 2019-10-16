@@ -789,8 +789,8 @@ class EventValidation(object):
                     errors = lrs_dist_error[lane]
 
                     for range_error in errors:
-                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}.".\
-                            format(route, lane, range_error[0], range_error[1], threshold)
+                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
+                            format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
                         self.insert_route_message(route, 'error', error_message)
 
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
@@ -807,8 +807,8 @@ class EventValidation(object):
                     errors = double_check_error[lane]
 
                     for range_error in errors:
-                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}.".\
-                            format(route, lane, range_error[0], range_error[1], threshold)
+                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
+                            format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
                         self.insert_route_message(route, 'error', error_message)
 
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
