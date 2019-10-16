@@ -420,8 +420,8 @@ class EventValidation(object):
 
                 if len(error_row) != 0:
                     for index, row in error_row.iterrows():
-                        result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada segmen {2}-{3} {4}.".\
-                            format(row[routeid_col], column, row[from_m_col], row[to_m_col], row[lane_code])
+                        result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada segmen {2}-{3} {4} yaitu {5}.".\
+                            format(row[routeid_col], column, row[from_m_col], row[to_m_col], row[lane_code], row[column])
                         self.insert_route_message(row[routeid_col], 'error', result)
 
         return self
