@@ -107,7 +107,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.range_domain_check()
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
-    EventCheck.measurement_check(routes=valid_routes)
+    EventCheck.measurement_check(routes=valid_routes, tolerance=0)
     if str(forceWrite) != 'true':
         EventCheck.coordinate_check(routes=valid_routes, threshold=SearchRadius, at_start=False, comparison='RNIline-LRS')
     EventCheck.lane_code_check(routes=valid_routes)
