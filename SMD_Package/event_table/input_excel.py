@@ -21,15 +21,15 @@ def read_input_excel(event_table_path, parameter_index=2):
             s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
             del df_self_dtype
         except IOError:  # Handle error if the file path is invalid
-            SetParameterAsText(parameter_index, output_message("Failed", "Invalid fire directory."))
+            SetParameterAsText(parameter_index, output_message("Failed", "File tidak ditemukan."))
             sys.exit(0)
         except BadZipfile:  # Handle corrupt file.
-            SetParameterAsText(parameter_index, output_message("Failed", "Corrupted excel file."))
+            SetParameterAsText(parameter_index, output_message("Failed", "File tidak dapat dibaca."))
             sys.exit(0)
 
         df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
         df_string.columns = df_string.columns.str.upper()  # Uppercase all the column name
         return df_string  # df_string is DataFrame which contain all data in string format
     else:
-        SetParameterAsText(2, output_message("Failed", "File is not in .xlsx or .xls format"))
+        SetParameterAsText(2, output_message("Failed", "Jenis file harus dalam .xlsx atau .xls"))
         sys.exit(0)

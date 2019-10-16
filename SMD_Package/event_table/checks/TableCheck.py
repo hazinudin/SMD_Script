@@ -58,11 +58,6 @@ class EventValidation(object):
             if len(missing_column) != 0:
                 error_list.append('Table input tidak memiliki kolom {0}.'.format(missing_column))
 
-            # Check if the amount of header is the same as the requirement
-            if len(table_header) != len(self.column_details.keys()):
-                excess_cols = set(table_header).difference(set(self.column_details.keys()))
-                error_list.append('Table input memiliki jumlah kolom yang berlebih {0}.'.format(excess_cols))
-
         else:
             error_list.append('Tabel input tidak berformat .xls atau .xlsx.')
 
@@ -102,7 +97,7 @@ class EventValidation(object):
                     # If there is an error
                     if len(error_row) != 0:
                         excel_i = [x + 2 for x in error_row.index.tolist()]
-                        error_message = '{0} memiliki nilai non-numeric pada baris{1}.'\
+                        error_message = '{0} memiliki nilai bukan angka (integer/decimal) pada baris {1}.'\
                             .format(col_name, str(excel_i))
                         error_list.append(error_message)
 
@@ -125,7 +120,7 @@ class EventValidation(object):
                     # If there is an error
                     if len(error_i) != 0:
                         excel_i = [x + 2 for x in error_i]
-                        error_message = '{0} memiliki tanggal yang tidak sesuai dengan format pada baris{1}.'\
+                        error_message = '{0} memiliki tanggal yang tidak sesuai dengan format (dd/mm/yyyy) pada baris{1}.'\
                             .format(col_name, str(excel_i))
                         error_list.append(error_message)
 
@@ -244,7 +239,7 @@ class EventValidation(object):
             self.error_list.append(error_message)  # Append error message
 
             for missing_route in self.missing_route:
-                result = "Rute {0} tidak ada pada domain rute balai {1}.".format(missing_route, balai_code)
+                result = "Rute {0} bukan kewenangan balai {1}.".format(missing_route, balai_code)
                 self.insert_route_message(missing_route, 'error', result)
 
         return self
@@ -373,9 +368,9 @@ class EventValidation(object):
 
                     for index, row in error_row.iterrows():
                         msg_status = row[status_col]
-                        result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6}". \
+                        result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
                             format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col], row[to_m_col],
-                                   row[lane_code])
+                                   row[lane_code], row[column])
 
                         # Insert the error message depend on the message status (as an Error or Review)
                         self.insert_route_message(row[routeid_col], msg_status, result)
@@ -495,26 +490,22 @@ class EventValidation(object):
                 error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
 
                 if len(error_i_pop_last) != 0:
-                    excel_i = [x+2 for x in error_i_pop_last]  # Create the index for excel table
-                    # Create error message
-                    error_message = 'Segmen pada baris {2} tidak memiliki panjang = {3}km atau nilai {0} dan {1} tidak sesuai dengan panjang segmen.'.\
-                        format(from_m_col, to_m_col, excel_i, segment_len)
-                    self.error_list.append(error_message)  # Append the error message
-                    self.insert_route_message(route, 'error', error_message)
-
-                # Check whether the last segment fulfill the check criteria (length should not exceed 'segment_len')
-                if last_segment_len > segment_len:
-                    # Create error message
-                    error_message = 'Segmen akhir di rute {0} pada lane {1} memiliki panjang yang lebih dari {2}km'.\
-                        format(route, lane, last_segment_statedlen)
-                    self.error_list.append(error_message)
-                    self.insert_route_message(route, 'error', error_message)
+                    for error_index in error_i_pop_last:
+                        excel_i = error_index + 2  # Create the index for excel table
+                        from_m = df_route_lane.at[error_index, from_m_col]  # The from m value
+                        to_m = df_route_lane.at[error_index, to_m_col]  # The to m value
+                        segment_real_len = df_route_lane.at[error_index, 'diff']
+                        # Create error message
+                        error_message = 'Segmen pada baris {2} memiliki {0}-{1} ({4}-{5}) dan panjang segmen segmen ({3}) yang tidak konsisten atau memiliki panjang segmen yang tidak sama dengan {6}.'.\
+                            format(from_m_col, to_m_col, excel_i, segment_real_len, from_m, to_m, segment_len)
+                        self.error_list.append(error_message)  # Append the error message
+                        self.insert_route_message(route, 'error', error_message)
 
                 # Check whether the stated length for the last segment match the actual length
                 if not np.isclose(last_segment_len, last_segment_statedlen, rtol=0.001):
                     # Create error message
-                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3}'.\
-                        format(last_interval, route, lane, length_col)
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
+                        format(last_interval, route, lane, length_col, last_segment_statedlen)
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
@@ -1058,7 +1049,7 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', result)
 
                 if input_direction != direction:
-                    result = "Rute {0} pada segmen {1}-{2} arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
+                    result = "Rute {0} pada segmen {1}-{2} memiliki arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
                         format(route, from_m, to_m, input_direction, road_type_code, direction)
                     self.insert_route_message(route, 'error', result)
 
