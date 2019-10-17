@@ -89,7 +89,7 @@ class EventValidation(object):
                 allow_null = False
                 null_input = df[col_name].isnull()  # Row with null input
 
-                if 'allow_null' in self.column_details.keys():  # If there is 'allow_null' key in the JSON
+                if 'allow_null' in self.column_details[col].keys():  # If there is 'allow_null' key in the JSON
                     allow_null = self.column_details[col]['allow_null']
 
                 if col_dtype in ["integer", "double"]:  # Check for numeric column
@@ -150,7 +150,7 @@ class EventValidation(object):
                 elif col_dtype == 'string':
 
                     if allow_null:
-                        error_row = df.loc[~null_input, [routeid_col, col_name]]  # Null value from the coerce not from the input
+                        continue
                     else:
                         error_row = df.loc[null_input, [routeid_col, col_name]]  # Find the row with Null value
 
