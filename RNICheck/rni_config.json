@@ -25,7 +25,7 @@
     "LANDUSE_L":{"dtype":"integer", "domain":[1, 2, 3, 4]},
     "LANDUSE_R":{"dtype":"integer", "domain":[1, 2, 3, 4]},
     "GRADE":{"dtype":"double", "allow_null":true},
-    "SURVEY_YEAR":{"dtype":"integer"},
+    "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":2019, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
     "SURVEY_DATE":{"dtype":"date"},
     "STATO_LONG":{"dtype":"double"},
     "STATO_LAT":{"dtype":"double"},
