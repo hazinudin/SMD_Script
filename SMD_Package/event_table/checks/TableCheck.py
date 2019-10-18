@@ -550,6 +550,12 @@ class EventValidation(object):
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
+                if last_segment_len > segment_len:
+                    # Create error message
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang lane ({3}) yang melebihi {4}km.'.\
+                        format(last_interval, route, lane, last_segment_len, segment_len)
+                self.insert_route_message(route, 'error', error_message)
+
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
