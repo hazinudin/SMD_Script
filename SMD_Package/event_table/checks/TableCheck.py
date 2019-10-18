@@ -382,21 +382,39 @@ class EventValidation(object):
                     rev_lower = review['lower']
                     rev_eq_upper = review['eq_upper']
                     rev_eq_lower = review['eq_lower']
+                    direction = review['direction']
 
-                    # The upper value mask
-                    if rev_eq_upper:
-                        rev_upper_mask = df[column] < rev_upper
-                    else:
-                        rev_upper_mask = df[column] <= rev_upper
+                    # Give the ToBeReviewed Status
+                    # Does not override any 'error' status
+                    if direction == 'inward':
+                        # The upper value mask
+                        if rev_eq_upper:
+                            rev_upper_mask = df[column] <= rev_upper
+                        else:
+                            rev_upper_mask = df[column] < rev_upper
 
-                    # The lower value mask
-                    if rev_eq_lower:
-                        rev_lower_mask = df[column] > rev_lower
-                    else:
-                        rev_lower_mask = df[column] >= rev_lower
+                        # The lower value mask
+                        if rev_eq_lower:
+                            rev_lower_mask = df[column] >= rev_lower
+                        else:
+                            rev_lower_mask = df[column] > rev_lower
 
-                    # Give the review status for the lower and upper mask
-                    df.loc[rev_upper_mask & rev_lower_mask, [status_col]] = 'ToBeReviewed'
+                        df.loc[rev_upper_mask & rev_lower_mask & df[status_col].isnull(), [status_col]] = 'ToBeReviewed'
+
+                    if direction == 'outward':
+                        # The upper value mask
+                        if rev_eq_upper:
+                            rev_upper_mask = df[column] >= rev_upper
+                        else:
+                            rev_upper_mask = df[column] > rev_upper
+
+                        # The lower value mask
+                        if rev_eq_lower:
+                            rev_lower_mask = df[column] <= rev_lower
+                        else:
+                            rev_lower_mask = df[column] < rev_lower
+
+                        df.loc[(rev_upper_mask | rev_lower_mask) & df[status_col].isnull(), [status_col]] = 'ToBeReviewed'
 
                 error_row = df.loc[df[status_col].notnull()]  # Find the faulty row
 
