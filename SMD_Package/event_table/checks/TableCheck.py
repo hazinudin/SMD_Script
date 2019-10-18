@@ -151,6 +151,8 @@ class EventValidation(object):
 
                     if allow_null:
                         continue
+                    elif col_name == routeid_col:
+                        error_row = df.loc[null_input, [col_name]]
                     else:
                         error_row = df.loc[null_input, [routeid_col, col_name]]  # Find the row with Null value
 
