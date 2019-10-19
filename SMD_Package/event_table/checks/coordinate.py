@@ -248,7 +248,7 @@ class FindCoordinateError(object):
                 range_end = index_range[1]
                 meas_start = df_lane.at[range_start, self.from_m_col]
                 meas_end = df_lane.at[range_end, self.to_m_col]
-                distance_list = df_lane.at[range_start:range_end, distance_column].tolist()
+                distance_list = df_lane.loc[range_start:range_end, distance_column].tolist()
 
                 if lane not in errors.keys():
                     errors[lane] = list()
