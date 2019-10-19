@@ -572,7 +572,7 @@ class EventValidation(object):
                     # Create error message
                     error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang lane ({3}) yang melebihi {4}km.'.\
                         format(last_interval, route, lane, last_segment_len, segment_len)
-                self.insert_route_message(route, 'error', error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
