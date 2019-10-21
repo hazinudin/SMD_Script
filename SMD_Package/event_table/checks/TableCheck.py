@@ -734,11 +734,18 @@ class EventValidation(object):
             column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]
             added_cols = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
             df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
-            route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
+            route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)  # Get LRS route geometry
             rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat], route, rni_routeid,
-                                    self.sde_connection, True)
+                                    self.sde_connection, True)  # Get the RNI table
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * 100, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * 100, index=rni_df.index).astype(int)
+
+            long_condition = (df_route[long_col] > 95) & (df_route[long_col] < 141)  # Check if the coordinate is valid
+            lat_condition = (df_route[lat_col] > -6) & (df_route[lat_col] < 11)
+            valid_coords = np.all(long_condition & lat_condition)
+
+            if not valid_coords:
+                continue
 
             # Add distance column based on the comparison request
             if segment_data and (comparison == 'LRS'):
