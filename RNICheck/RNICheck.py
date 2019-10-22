@@ -123,7 +123,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
             adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
             if str(forceWrite) == 'true':
                 adjust.survey_direction()
-            adjust.trim_to_reference(fit_to='LRS')  # Trim and convert to reference
+            adjust.convert()  # Only convert the measurement value
             gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.
