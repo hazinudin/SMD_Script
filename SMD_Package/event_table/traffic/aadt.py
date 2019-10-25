@@ -7,7 +7,7 @@ import numpy as np
 import os
 
 
-def _traffic_multiplier(dataframe, survey_date, col_prefix='VEH'):
+def _traffic_multiplier(dataframe, survey_date, col_prefix='NUM_VEH'):
     df = dataframe
     columns = df.columns.tolist()
     veh_columns = np.char.startswith(columns, col_prefix)
