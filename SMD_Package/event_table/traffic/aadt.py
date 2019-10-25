@@ -19,6 +19,6 @@ def _traffic_multiplier(dataframe, survey_date, col_prefix='VEH'):
 
     df['_day'] = df[survey_date].dt.dayofweek.astype(str)  # Create column for storing day (0 is Monday - 6 Sunday)
     df = df.join(multiplier, on='_day')
-    df[veh_columns] = df.apply(lambda x: x[veh_columns]*x[multiplier_col])  # Multiply every VEH column
+    df[veh_columns] = df.apply(lambda x: x[veh_columns]*x[multiplier_col], axis=1)  # Multiply every VEH column
 
     return df
