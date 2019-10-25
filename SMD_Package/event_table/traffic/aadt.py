@@ -7,6 +7,18 @@ import numpy as np
 import os
 
 
+def _daily_average(group, survey_time_col, col_prefix='NUM_VEH'):
+    result = dict()
+    columns = group.columns.tolist()
+    veh_masking = np.char.startswith(columns, col_prefix)
+    veh_cols = np.array(columns)[veh_masking]
+    group.set_index(survey_time_col, inplace=True)
+    sum_result = group[veh_cols].resample('1440T', label='right', base=375).sum().reset_index(drop=True)
+    daily_average = sum_result.mean()
+
+    return daily_average
+
+
 def _traffic_multiplier(dataframe, survey_date, col_prefix='NUM_VEH'):
     df = dataframe
     columns = df.columns.tolist()
