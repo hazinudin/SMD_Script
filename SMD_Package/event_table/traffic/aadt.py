@@ -23,9 +23,7 @@ class AADT(object):
     def _traffic_multiplier(self):
         df = self.df.copy(deep=True)
         survey_date = self.date_col
-        col_prefix = self.col_prefix
-        columns = df.columns.tolist()
-        veh_columns = np.char.startswith(columns, col_prefix)
+        veh_columns = self.veh_columns
         directory = os.path.dirname(__file__)
 
         with open(directory + "/traffic_multiplier.json") as f:  # Load the multiplier JSON file
