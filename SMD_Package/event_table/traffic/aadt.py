@@ -12,7 +12,12 @@ class AADT(object):
                  routeid_col='LINKID', survey_direction='SURVEY_DIREC', veh_col_prefix='NUM_VEH'):
         self.df = dataframe
         self.date_col = date_col
+        self.hour_col = hour_col
+        self.minute_col = minute_col
+        self.routeid_col = routeid_col
+        self.survey_direction = survey_direction
         self.col_prefix = veh_col_prefix
+
         self.df_multiplied = self._traffic_multiplier()
 
     def _traffic_multiplier(self):
@@ -36,3 +41,11 @@ class AADT(object):
                                           axis=1)  # Multiply every VEH column
 
         return df
+
+    @property
+    def veh_columns(self):
+        all_columns = np.array(self.df.columns.tolist())
+        veh_masking = np.char.startswith(all_columns, self.col_prefix)
+        veh_columns = all_columns[veh_masking]
+
+        return veh_columns
