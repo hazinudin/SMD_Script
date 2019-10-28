@@ -21,7 +21,7 @@
     "EV_D1":{"dtype":"double"},
     "D0_D2":{"dtype":"double"},
     "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_SURVEYOR":{"dtype":"integer"},
+    "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
   },
   "search_radius":30

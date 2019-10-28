@@ -32,7 +32,7 @@
     "FWD_D14":{"dtype":"double"},
     "FWD_D15":{"dtype":"double"},
     "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_SURVEYOR":{"dtype":"integer"},
+    "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
   },
   "search_radius":30

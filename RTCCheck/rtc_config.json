@@ -20,7 +20,7 @@
     "RTC_LAT":{"dtype":"double"},
     "RTC_LONG":{"dtype":"double"},
     "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_SURVEYOR":{"dtype":"integer"},
+    "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
   },
   "search_radius":30,
