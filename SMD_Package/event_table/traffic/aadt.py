@@ -8,7 +8,8 @@ import os
 
 
 class AADT(object):
-    def __init__(self, dataframe, date_col, hour_col, minute_col, veh_col_prefix='NUM_VEH'):
+    def __init__(self, dataframe, date_col='SURVEY_DATE', hour_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE',
+                 routeid_col='LINKID', survey_direction='SURVEY_DIREC', veh_col_prefix='NUM_VEH'):
         self.df = dataframe
         self.date_col = date_col
         self.col_prefix = veh_col_prefix
