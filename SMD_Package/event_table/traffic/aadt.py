@@ -31,9 +31,12 @@ class AADT(object):
                                                      sum().reset_index(drop=True).mean())
 
         if lane_aadt:
-            return resample_result.reset_index()  # Lane AADT
+            veh_summary = resample_result.reset_index()  # Lane AADT
         else:
-            return resample_result.reset_index().groupby(by='LINKID').sum().reset_index()  # Route AADT
+            veh_summary = resample_result.reset_index().groupby(by='LINKID').sum().reset_index()  # Route AADT
+
+        veh_summary['AADT'] = veh_summary.sum(axis=1)  # Create AADT column which sum all veh columns
+        return veh_summary
 
     def _traffic_multiplier(self):
         df = self.df.copy(deep=True)
