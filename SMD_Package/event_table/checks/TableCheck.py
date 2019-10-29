@@ -1818,7 +1818,7 @@ class EventValidation(object):
 
         return self
 
-    def copy_valid_df(self, dropna=True):
+    def copy_valid_df(self, dropna=False):
         """
         This function create a valid DataFrame from the dtype check class method, which ensures every column match the
         required DataType
