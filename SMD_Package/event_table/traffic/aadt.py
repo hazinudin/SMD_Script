@@ -22,6 +22,11 @@ class AADT(object):
         self.df_multiplied = self._traffic_multiplier()
 
     def daily_aadt(self, lane_aadt=True):
+        """
+        This class method calculate the AADT and daily average value of all VEH column.
+        :param lane_aadt: If True then the output result is lane based, if False then the result is route based.
+        :return:
+        """
         veh_columns = self.veh_columns
         df = self._add_survey_time()
         df.set_index('_survey_time', inplace=True)  # Set the survey time as index
