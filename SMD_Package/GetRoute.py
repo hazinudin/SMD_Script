@@ -82,8 +82,11 @@ class GetRoutes(object):
                 in_field = lrs_prov_code
                 search_val = prov_code[balai_prov]
 
+            where_statement = '({0} in ({1}))'.format(in_field, search_val)
+            date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)". \
+                format("FROMDATE", "TODATE")
             with da.SearchCursor(lrs_network, [lrs_routeid, lrs_route_name, lrs_lintas],
-                                 where_clause='{0} in ({1})'.format(in_field, search_val)) as search_cursor:
+                                 where_clause=where_statement + " and " + date_query) as search_cursor:
                 if codes not in balai_route_dict:
                     balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
                 else:

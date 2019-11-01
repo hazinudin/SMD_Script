@@ -34,9 +34,12 @@ class LRSShapeFile(object):
 
     @property
     def da_cursor(self):
+        date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)".\
+            format("FROMDATE", "TODATE")
+        where_statement = "({0} IN ({1}))".format(self.lrs_routeid, self.route_list_sql)
 
         cursor = da.SearchCursor(self.lrs_network, ['SHAPE@', self.lrs_routeid, self.lrs_routename, self.lrs_lintas],
-                                 where_clause="{0} IN ({1})".format(self.lrs_routeid, self.route_list_sql))
+                                 where_clause=where_statement + " and " + date_query)
 
         return cursor
 
