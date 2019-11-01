@@ -561,7 +561,8 @@ class EventValidation(object):
                         self.insert_route_message(route, 'error', error_message)
 
                 # Check whether the stated length for the last segment match the actual length
-                if not np.isclose(last_segment_len, last_segment_statedlen, atol=0.001):
+                len_statedlen_diff = last_segment_len - last_segment_statedlen
+                if len_statedlen_diff > 0.01 and (not np.isclose(len_statedlen_diff, 0.01, atol=0.001)):
                     # Create error message
                     error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
                         format(last_interval, route, lane, length_col, last_segment_statedlen)
