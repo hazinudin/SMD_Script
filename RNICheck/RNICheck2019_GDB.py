@@ -9,7 +9,7 @@ from SMD_Package.event_table.measurement.adjustment import Adjust
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
 # Load the roughness script config JSON file
-with open('RNICheck/rni_config_2019.json') as config_f:
+with open('RNICheck/rni_config_2019GDB.json') as config_f:
     rni_config = json.load(config_f)
 
 # Load the SMD config JSON file
