@@ -99,6 +99,10 @@ class EventValidation(object):
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
                     error_null = df[col_name].isnull()  # Null value from the coerce
 
+                    if 'decimal' in self.column_details[col].keys():  # If there is 'decimal' key in the JSON
+                        decimal_places = int(self.column_details[col]['decimals'])
+                        df[col_name] = df[col_name].round(decimals=decimal_places)
+
                     if allow_null:
                         error_row = df.loc[~null_input & error_null, [routeid_col, col_name]]  # Null value from the coerce not from the input
                     else:
