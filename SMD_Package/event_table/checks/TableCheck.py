@@ -1880,7 +1880,7 @@ class EventValidation(object):
         return return_list  # Return a list containing the (route, lane) tuple
 
     @staticmethod
-    def route_geometry(route, lrs_network, lrs_routeid):
+    def route_geometry(route, lrs_network, lrs_routeid, from_date_col='FROMDATE', to_date_col='TODATE'):
         """
         This static method return a Polyline object geometry from the LRS Network.
         :param route: The requested route.
@@ -1890,9 +1890,11 @@ class EventValidation(object):
         does not exist in the LRS Network then the function will return None.
         """
         where_statement = "{0}='{1}'".format(lrs_routeid, route)  # The where statement for SearchCursor
+        date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)".\
+            format(from_date_col, to_date_col)
         route_exist = False  # Variable for determining if the requested route exist in LRS Network
 
-        with da.SearchCursor(lrs_network, "SHAPE@", where_clause=where_statement) as cursor:
+        with da.SearchCursor(lrs_network, "SHAPE@", where_clause=where_statement+" and "+date_query) as cursor:
             for row in cursor:
                 route_exist = True
                 route_geom = row[0]  # The Polyline geometry object
