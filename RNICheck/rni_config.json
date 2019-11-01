@@ -7,7 +7,7 @@
     "LANE_CODE":{"dtype":"string", "domain": ["L1", "L2", "L3", "L4", "L5", "R1", "R2", "R3", "R4", "L5"]},
     "SURF_TYPE":{"dtype":"integer", "range":{"upper":21, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}},
     "SURF_YEAR":{"dtype":"integer", "range":{"upper":2019, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
-    "LANE_WIDTH":{"dtype":"double", "range":{"upper":null, "lower":0, "eq_lower":false, "eq_upper":true, "review":{"upper":3.6, "lower":2.75, "eq_lower":false, "eq_upper":true, "direction":"outward"}}},
+    "LANE_WIDTH":{"dtype":"double", "range":{"upper":null, "lower":0, "eq_lower":false, "eq_upper":true, "review":{"upper":3.6, "lower":2.75, "eq_lower":false, "eq_upper":true, "direction":"outward"}}, "decimals":1},
     "INN_L_SHTYPE":{"dtype":"integer", "domain":[0, 1, 2]},
     "OUT_L_SHTYPE":{"dtype":"integer", "domain":[0, 1, 2]},
     "INN_L_SHWIDTH":{"dtype":"integer", "range":{"upper":3.5, "lower":0, "eq_lower":true, "eq_upper":true, "review":"upper"}},
