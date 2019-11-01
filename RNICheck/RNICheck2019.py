@@ -45,7 +45,7 @@ RouteReq = InputDetails["routes"]
 # All the column details in the roughness_config.json
 ColumnDetails = rni_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rni_config['search_radius']
-OutputGDBTable = 'SMD.RNI_{0}_MANUAL'.format(DataYear)  # The GDB table which store all the valid table row
+OutputGDBTable = 'SMD.RNI_2019'.format(DataYear)  # The GDB table which store all the valid table row
 RoadTypeDetails = rni_config['roadtype_details']
 ComparisonTable = rni_config['compare_table']['table_name']
 CompRouteID = rni_config['compare_table']['route_id']
@@ -118,9 +118,7 @@ if (header_check_result is None) & (dtype_check_result is None):
 
     # Write the JSON Output string for all error.
     errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
-    reviews = EventCheck.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
-    all_msg = errors + reviews
-    SetParameterAsText(2, output_message("Succeeded", all_msg))
+    SetParameterAsText(2, output_message("Succeeded", errors))
 
     # FOR ARCMAP USAGE ONLY#
     msg_count = 1
