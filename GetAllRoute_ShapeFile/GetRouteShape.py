@@ -7,6 +7,7 @@ from arcpy import env, GetParameterAsText, SetParameter, SetParameterAsText, Exi
 import sys
 from datetime import datetime
 import os
+sys.path.append('E:/SMD_Script')
 from SMD_Package import GetRoutes, input_json_check, output_message, verify_balai, download, Configs
 os.chdir('E:/SMD_Script')
 
