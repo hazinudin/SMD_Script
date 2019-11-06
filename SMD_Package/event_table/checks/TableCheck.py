@@ -431,9 +431,14 @@ class EventValidation(object):
 
                     for index, row in error_row.iterrows():
                         msg_status = row[status_col]
-                        result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
-                            format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col], row[to_m_col],
-                                   row[lane_code], row[column])
+
+                        if from_m_col is None or to_m_col is None:
+                            result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.".\
+                                format(row[routeid_col], column, lower_bound, upper_bound, index+2)
+                        else:
+                            result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
+                                       row[to_m_col], row[lane_code], row[column])
 
                         # Insert the error message depend on the message status (as an Error or Review)
                         self.insert_route_message(row[routeid_col], msg_status, result)
@@ -444,8 +449,15 @@ class EventValidation(object):
 
                 if len(error_row) != 0:
                     for index, row in error_row.iterrows():
-                        result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada segmen {2}-{3} {4} yaitu {5}.".\
-                            format(row[routeid_col], column, row[from_m_col], row[to_m_col], row[lane_code], row[column])
+
+                        if (from_m_col is None) or (to_m_col is None):
+                            result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada baris {2}.".\
+                                format(row[routeid_col], column, index + 2)
+                        else:
+                            result = "Rute {0} memiliki nilai {1} yang tidak termasuk di dalam domain, pada segmen {2}-{3} {4} yaitu {5}.".\
+                                format(row[routeid_col], column, row[from_m_col], row[to_m_col], row[lane_code],
+                                       row[column])
+
                         self.insert_route_message(row[routeid_col], 'error', result)
 
         return self
@@ -1258,6 +1270,30 @@ class EventValidation(object):
                 start_timestamp = row_timestamp
 
         return self
+
+    def rtc_lane_vehicle(self, routes="ALL", min_width=2.5, not_allowed='NUM_VEH7C'):
+        """
+        This class method checks if column in 'not_allowed' column parameter has a value which is not zero when the
+        lane width is/or less than the minimal width (in meters).
+        :param routes: Route selection parameter.
+        :param min_width: Mini
+        :param not_allowed:
+        :return:
+        """
+        df = self.copy_valid_df()
+        if routes == "ALL":
+            pass
+        else:
+            df = self.selected_route_df(df, routes)
+
+        rni_table = self.config.table_names['rni']
+        rni_routeid = self.config.table_fields['route_id']
+        rni_from_m = self.config.table_fields['from_measure']
+        rni_to_m = self.config.table_fields['to_measure']
+        rni_lane_code = self.config.table_fields['lane_code']
+        rni_lane_w = self.config.table_fields['lane_width']
+        rni_search_field = [rni_routeid, rni_from_m, rni_to_m, rni_lane_code, rni_lane_w]
+        rni_df = event_fc_to_df(rni_table, rni_search_field, routes, rni_routeid, self.sde_connection, is_table=True)
 
     def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
                                  comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',

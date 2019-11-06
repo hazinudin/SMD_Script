@@ -74,7 +74,7 @@ if (header_check_result is None) & (dtype_check_result is None):
     EventCheck.route_selection(selection=RouteReq)
     valid_routes = EventCheck.valid_route
 
-    EventCheck.range_domain_check()
+    EventCheck.range_domain_check(from_m_col=None, to_m_col=None)
     EventCheck.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
                                 long_col='RTC_LONG')
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
