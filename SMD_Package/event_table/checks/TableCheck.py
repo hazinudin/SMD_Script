@@ -86,11 +86,15 @@ class EventValidation(object):
             for col in self.column_details:  # Iterate over every column in required col dict
                 col_name = col  # Column name
                 col_dtype = self.column_details[col]['dtype']  # Column data types
-                allow_null = False
+                allow_null = False  # If True then Null value from input will not raise an error.
+                raise_error = True  # If False then no error message will be written.
                 null_input = df[col_name].isnull()  # Row with null input
 
                 if 'allow_null' in self.column_details[col].keys():  # If there is 'allow_null' key in the JSON
                     allow_null = self.column_details[col]['allow_null']
+
+                if 'raise' in self.column_details[col].keys():  # If there is 'write_error' key in the JSON
+                    raise_error = self.column_details[col]['raise']
 
                 if col_dtype in ["integer", "double"]:  # Check for numeric column
 
@@ -109,7 +113,7 @@ class EventValidation(object):
                         error_row = df.loc[error_null, [routeid_col, col_name]]  # Find the row with Null value
 
                     # If there is an error
-                    if len(error_row) != 0:
+                    if len(error_row) != 0 and raise_error:
                         excel_i = [x + 2 for x in error_row.index.tolist()]
                         error_message = '{0} memiliki nilai bukan angka (integer/decimal) pada baris {1}.'\
                             .format(col_name, str(excel_i))
@@ -137,7 +141,7 @@ class EventValidation(object):
                     error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
-                    if len(error_i) != 0:
+                    if len(error_i) != 0 and raise_error:
                         excel_i = [x + 2 for x in error_i]
                         error_message = '{0} memiliki tanggal yang tidak sesuai dengan format (dd/mm/yyyy) pada baris{1}.'\
                             .format(col_name, str(excel_i))
@@ -163,7 +167,7 @@ class EventValidation(object):
                     error_i = error_row.index.tolist()  # Find the index of the null
 
                     # If there is an error
-                    if len(error_i) != 0:
+                    if len(error_i) != 0 and raise_error:
                         excel_i = [x + 2 for x in error_i]
                         error_message = '{0} memiliki baris yang tidak diisi (Null/kosong) pada baris {1}.'\
                             .format(col_name, str(excel_i))
