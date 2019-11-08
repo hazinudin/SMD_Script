@@ -9,7 +9,7 @@ from SMD_Package.event_table.measurement.adjustment import Adjust
 os.chdir('E:\SMD_Script')  # Change the directory to the SMD root directory
 
 # Load the roughness script config JSON file
-with open('RNICheck/rni_config_2019GDB.json') as config_f:
+with open('RNICheck/rni_config_2019App.json') as config_f:
     rni_config = json.load(config_f)
 
 # Load the SMD config JSON file
@@ -45,7 +45,7 @@ RouteReq = InputDetails["routes"]
 # All the column details in the roughness_config.json
 ColumnDetails = rni_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rni_config['search_radius']
-OutputGDBTable = 'SMD.RNI_{0}_MANUAL'.format(DataYear)  # The GDB table which store all the valid table row
+OutputGDBTable = 'SMD.RNI_{0}_APP'.format(DataYear)  # The GDB table which store all the valid table row
 RoadTypeDetails = rni_config['roadtype_details']
 ComparisonTable = rni_config['compare_table']['table_name']
 CompRouteID = rni_config['compare_table']['route_id']
