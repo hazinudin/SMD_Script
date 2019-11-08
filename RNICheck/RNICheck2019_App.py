@@ -45,7 +45,7 @@ RouteReq = InputDetails["routes"]
 # All the column details in the roughness_config.json
 ColumnDetails = rni_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rni_config['search_radius']
-OutputGDBTable = 'SMD.RNI_{0}_APP'.format(DataYear)  # The GDB table which store all the valid table row
+OutputGDBTable = 'SMD.RNI_2019_APP'  # The GDB table which store all the valid table row
 RoadTypeDetails = rni_config['roadtype_details']
 ComparisonTable = rni_config['compare_table']['table_name']
 CompRouteID = rni_config['compare_table']['route_id']
@@ -112,7 +112,7 @@ if (header_check_result is None) & (dtype_check_result is None):
         adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
         if str(forceWrite) == 'true':
             adjust.survey_direction()
-        adjust.convert()  # Convert the measurement value
+        # adjust.convert()  # Convert the measurement value
         gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
     # Write the JSON Output string for all error.
