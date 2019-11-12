@@ -12,3 +12,4 @@ import GenerateToken
 from InspectJSON import input_json_check
 from VerifyBalaiCode import verify_balai
 from TableWriter.GDBTableWriter import *
+from load_config import *

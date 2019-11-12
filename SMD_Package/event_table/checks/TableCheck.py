@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.event_table.Kemantapan import Kemantapan
 from SMD_Package.event_table.RNITable import RNIRouteDetails
-from SMD_Package.load_config import Configs
+from SMD_Package.load_config import SMDConfigs
 import coordinate
 
 
@@ -31,7 +31,7 @@ class EventValidation(object):
         self.dtype_check_result = self.dtype_check(write_error=True)  # The data type checking result
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
-        self.config = Configs()
+        self.config = SMDConfigs()
 
         if self.header_check_result is None:
             self.capitalize_string()  # Capitalize every column with string data type

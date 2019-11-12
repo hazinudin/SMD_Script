@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 import os
 sys.path.append('E:/SMD_Script')
-from SMD_Package import GetRoutes, input_json_check, output_message, verify_balai, download, Configs
+from SMD_Package import GetRoutes, input_json_check, output_message, verify_balai, download, SMDConfigs
 os.chdir('E:/SMD_Script')
 
 
@@ -46,7 +46,7 @@ inputJSON = GetParameterAsText(0)
 # Load the input JSON, result from GetAllRoute and config JSON
 input_details = input_json_check(inputJSON, 1, req_keys=['type', 'codes'])
 
-config = Configs()
+config = SMDConfigs()
 
 # The LRS Network Table Details
 lrsNetwork = config.table_names['lrs_network']

@@ -1,7 +1,7 @@
 from arcpy import env
 from SMD_Package.event_table.checks.coordinate import FindCoordinateError, distance_series
 from SMD_Package.event_table.lrs import route_geometry
-from SMD_Package.load_config import Configs
+from SMD_Package.load_config import SMDConfigs
 from flip import flip_measurement
 from trim_convert import convert_and_trim, _convert_measurement
 
@@ -16,7 +16,7 @@ class Adjust(object):
         self.conversion = 100
         self.flipped = list()  # List flipped routes
 
-        config = Configs()
+        config = SMDConfigs()
         self.lrs_network = config.table_names['lrs_network']
         self.lrs_routeid = config.table_fields['lrs_network']['route_id']
         workspace = config.smd_database['instance']

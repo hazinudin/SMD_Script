@@ -1,4 +1,4 @@
-from SMD_Package import Configs, event_fc_to_df
+from SMD_Package import SMDConfigs, event_fc_to_df
 from arcpy import env
 import numpy as np
 from pandas import DataFrame, concat
@@ -6,7 +6,7 @@ from pandas import DataFrame, concat
 
 def rni_to_csv(routes, file_name, outpath=env.scratchFolder):
 
-    smd_config = Configs()
+    smd_config = SMDConfigs()
     rni_table = smd_config.table_names['rni']
     rni_route_id = smd_config.table_fields['rni']['route_id']
     rni_from_m = smd_config.table_fields['rni']['from_measure']

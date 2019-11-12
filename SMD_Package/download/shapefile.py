@@ -1,5 +1,5 @@
 from arcpy import Describe, CreateFeatureclass_management, AddField_management, da, env, PointGeometry
-from SMD_Package import Configs, output_message
+from SMD_Package import SMDConfigs, output_message
 import json
 import zipfile
 
@@ -12,7 +12,7 @@ class LRSShapeFile(object):
         Segment dictionary from the segment dissolve process
         The default outpath is the env.scratchFolder
         """
-        smd_config = Configs()
+        smd_config = SMDConfigs()
         self.lrs_network = smd_config.table_names['lrs_network']
         self.lrs_routeid = smd_config.table_fields['lrs_network']['route_id']
         self.lrs_routename = smd_config.table_fields['lrs_network']['route_name']

@@ -1,5 +1,5 @@
 from arcpy import env, da
-from SMD_Package.load_config import Configs
+from SMD_Package.load_config import SMDConfigs
 from SMD_Package.event_table.lrs import route_geometry
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 
@@ -35,7 +35,7 @@ def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None):
     """
 
     df = dataframe  # Create a DataFrame variable
-    config = Configs()
+    config = SMDConfigs()
     lrs_network = config.table_names['lrs_network']
     lrs_routeid = config.table_fields['lrs_network']['route_id']
     rni_table = config.table_names['rni']
