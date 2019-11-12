@@ -1567,7 +1567,7 @@ class EventValidation(object):
                            routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID', from_m_col='STA_FROM',
                            to_m_col='STA_TO', lane_code='LANE_CODE'):
         """
-
+        This class method check the consistency between segment's surface type and its AS_x and RG_x value.
         :param rni_table:
         :param rni_route_col:
         :param rni_from_col:
