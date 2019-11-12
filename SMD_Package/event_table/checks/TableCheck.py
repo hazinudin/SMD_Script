@@ -1606,16 +1606,15 @@ class EventValidation(object):
 
             return df_surf.set_index('code')
 
-        def row_allzero(row_series, mask):
+        def col_allnull(row_series, mask):
             """
-            This function will determine whether a row contain only zero value.
+            This function will determine whether a row contain only Null value.
             :param row_series: The row series from a DataFrame.
             :param mask: Column masking.
             :return:
             """
             row = row_series[mask]
-            row_zero = row.mask(row == 0)
-            result = np.all(row_zero.isnull())
+            result = np.all(row.isnull())  # Check if all column contain only Null value
 
             return result
 
@@ -1653,32 +1652,29 @@ class EventValidation(object):
                 input_key = [routeid_col, from_m_col, to_m_col, lane_code]
                 rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
                 merge = pd.merge(df_route, df_rni, how='inner', left_on=input_key, right_on=rni_key)
-                merge_surf = merge.join(df_surf, on=rni_surf_type)
+                merge_surf = merge.join(df_surf, on=rni_surf_type, how='inner')
 
             for index, row in merge_surf.iterrows():
                 from_m = row[from_m_col]
                 to_m = row[to_m_col]
                 lane = row[lane_code]
 
-                asp_allzero = row_allzero(row, asp_mask)
-                rg_allzero = row_allzero(row, rg_mask)
-                surface = row[surf_col]
+                asp_allnull = col_allnull(row, asp_mask)
+                rg_allnull = col_allnull(row, rg_mask)
+                surface = row[surf_col]  # The surface type
 
-                if surface == 'asphalt':
-                    if not rg_allzero:
-                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan aspal namun memiliki nilai kerusakan rigid.'.\
-                            format(route, from_m, to_m, lane)
-                        self.insert_route_message(route, 'error', error_message)
-                if surface == 'rigid':
-                    if not asp_allzero:
-                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan rigid namun memiliki nilai kerusakan aspal.'. \
-                            format(route, from_m, to_m, lane)
-                        self.insert_route_message(route, 'error', error_message)
-                if surface == 'unpaved':
-                    if (not asp_allzero) or (not rg_allzero):
-                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan unpaved namun memiliki nilai kerusakan rigid atau aspal.'. \
-                            format(route, from_m, to_m, lane)
-                        self.insert_route_message(route, 'error', error_message)
+                if surface == 'asphalt' and (not rg_allnull):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan aspal namun memiliki nilai kerusakan rigid.'.\
+                        format(route, from_m, to_m, lane)
+                    self.insert_route_message(route, 'error', error_message)
+                if surface == 'rigid' and (not asp_allnull):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan rigid namun memiliki nilai kerusakan aspal.'. \
+                        format(route, from_m, to_m, lane)
+                    self.insert_route_message(route, 'error', error_message)
+                if surface == 'unpaved' and (not asp_allnull) or (not rg_allnull):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan unpaved namun memiliki nilai kerusakan rigid atau aspal.'. \
+                        format(route, from_m, to_m, lane)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
