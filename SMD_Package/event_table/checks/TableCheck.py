@@ -32,6 +32,7 @@ class EventValidation(object):
         self.missing_route = []  # List for storing all route which is not in the balai route domain
         self.valid_route = []  # List for storing all route which is in the balai route domain
         self.config = SMDConfigs()
+        self.rni_mfactor = 1
 
         if self.header_check_result is None:
             self.capitalize_string()  # Capitalize every column with string data type
