@@ -7,16 +7,18 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connection, added_column=None, how='inner',
                  mfactor=1):
     """
-
-    :param df:
-    :param routeid_col:
-    :param from_m_col:
-    :param to_m_col:
-    :param lane_code_col:
-    :param connection:
-    :param added_column:
-    :param how:
-    :param mfactor:
+    This functions perform a merge operation between the inputted DataFrame with RNI DataFrame to add requested RNI'
+    column to the inputted DataFrame.
+    :param df: Input DataFrame.
+    :param routeid_col: Route ID column of the input.
+    :param from_m_col: From Measure column of the input.
+    :param to_m_col: To Measure column of the input.
+    :param lane_code_col: Lane Code column of the input.
+    :param connection: SDE connection.
+    :param added_column: Column from the RNI table which will be added to input DataFrame.
+    :param how: Merge 'how', 'inner' or 'outer'.
+    :param mfactor: The factor which will be multiplied to RNI from and to measurement value to match the input from-to
+    measurement unit.
     :return:
     """
 
