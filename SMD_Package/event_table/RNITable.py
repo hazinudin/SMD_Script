@@ -1,5 +1,53 @@
 import json
-from pandas import Series, DataFrame
+from pandas import Series, DataFrame, merge
+from SMD_Package.load_config import SMDConfigs
+from SMD_Package.FCtoDataFrame import event_fc_to_df
+
+
+def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connection, added_column=None, how='inner',
+                 mfactor=1):
+    """
+
+    :param df:
+    :param routeid_col:
+    :param from_m_col:
+    :param to_m_col:
+    :param lane_code_col:
+    :param connection:
+    :param added_column:
+    :param how:
+    :param mfactor:
+    :return:
+    """
+
+    smd_config = SMDConfigs()  # Load the SMD config JSON.
+    rni_table = smd_config.table_names['rni']
+    rni_fields = smd_config.table_fields['rni']
+    rni_routeid = rni_fields['route_id']
+    rni_from_m = rni_fields['from_measure']
+    rni_to_m = rni_fields['to_measure']
+    rni_lane_code = rni_fields['lane_code']
+
+    if type(added_column) == list:  # Make sure the added column is a list variable.
+        pass
+    else:
+        added_column = [added_column]
+
+    routes = df[routeid_col].unique().tolist()  # All the routes in the input DataFrame.
+    rni_key = [rni_routeid, rni_from_m, rni_to_m, rni_lane_code]  # RNI table merge key.
+    input_key = [routeid_col, from_m_col, to_m_col, lane_code_col]  # Input table merge key.
+    request_cols = rni_key + added_column  # Requested columns.
+    df_rni = event_fc_to_df(rni_table, request_cols, routes, rni_routeid, connection, True)  # Get the RNI df.
+
+    if len(df_rni) == 0:  # If all of the requested route does not have RNI data then return None.
+        return None
+
+    df_rni[rni_from_m] = df_rni[rni_from_m].apply(lambda x: x*mfactor).astype(int)  # Convert the from-to value.
+    df_rni[rni_to_m] = df_rni[rni_to_m].apply(lambda x: x*mfactor).astype(int)
+
+    merged = merge(df, df_rni, how=how, left_on=input_key, right_on=rni_key)  # Merge the RNI and input df.
+
+    return merged
 
 
 class RNIRouteDetails(object):
