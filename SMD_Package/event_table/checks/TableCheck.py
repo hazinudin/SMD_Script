@@ -643,7 +643,7 @@ class EventValidation(object):
                     comparison = None  # The comparison value will be None
                 else:
                     rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
-                    comparison = rni_max_m
+                    comparison = float(rni_max_m)/float(100/self.rni_mfactor)
 
             if compare_to == 'LRS':
                 # Get the LRS Network route length
@@ -1751,7 +1751,7 @@ class EventValidation(object):
             comp_search_field = [comp_route_col, comp_from_col, comp_to_col, comp_grading_col, comp_lane_code]
             df_comp = event_fc_to_df(comp_fc, comp_search_field, route,
                                      comp_route_col, self.sde_connection, include_all=True, orderby=None)
-            df_comp[[comp_from_col, comp_to_col]] = df_comp[[comp_from_col, comp_to_col]].apply(lambda x: x*100).astype(int)
+            df_comp[[comp_from_col, comp_to_col]] = df_comp[[comp_from_col, comp_to_col]].apply(lambda x: x*self.rni_mfactor).astype(int)
 
             # Create the RNI Table DataFrame
             rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col, rni_lane_code]  # The column included in RNI
