@@ -1475,7 +1475,7 @@ class EventValidation(object):
         for route in route_list:
             df_route = df.loc[df[routeid_col] == route]
             merge = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
-                                 added_column=rni_lane_width)
+                                 added_column=rni_lane_width, mfactor=self.rni_mfactor)
 
             if merge is None:  # If the RNI DataFrame is empty.
                 error_message = "Data RNI rute {0} tidak tersedia".format(route)
@@ -1551,17 +1551,10 @@ class EventValidation(object):
 
         return self
 
-    def pci_surftype_check(self, rni_table, rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_surf_type,
-                           routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID', from_m_col='STA_FROM',
-                           to_m_col='STA_TO', lane_code='LANE_CODE'):
+    def pci_surftype_check(self, routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID',
+                           from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE'):
         """
         This class method check the consistency between segment's surface type and its AS_x and RG_x value.
-        :param rni_table:
-        :param rni_route_col:
-        :param rni_from_col:
-        :param rni_to_col:
-        :param rni_lane_code:
-        :param rni_surf_type:
         :param routes:
         :param asp_pref:
         :param rg_pref:
@@ -1609,6 +1602,7 @@ class EventValidation(object):
         df = self.copy_valid_df()  # Create a valid DataFrame copy
         surf_col = '_surface'
         df_surf = surf_df(surf_col)  # DataFrame containing surface group
+        rni_surf_type = self.config.table_fields['rni']['surface_type']
 
         col_list = df.columns.tolist()
         asp_mask = np.char.startswith(col_list, asp_pref)
@@ -1625,22 +1619,15 @@ class EventValidation(object):
         route_list = self.route_lane_tuple(df, routeid_col, lane_code, route_only=True)
         for route in route_list:
             df_route = df.loc[df[routeid_col] == route]
+            merge = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
+                                 added_column=rni_surf_type, mfactor=self.rni_mfactor)
 
-            rni_cols = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code, rni_surf_type]
-            df_rni = event_fc_to_df(rni_table, rni_cols, route, rni_route_col, self.sde_connection, is_table=True)
-
-            df_rni[rni_from_col] = df_rni[rni_from_col].apply(lambda x: x*100).astype(int)
-            df_rni[rni_to_col] = df_rni[rni_to_col].apply(lambda x: x*100).astype(int)
-
-            if len(df_rni) == 0:  # If the RNI DataFrame is empty.
+            if merge is None:  # If the RNI DataFrame is empty.
                 error_message = "Data RNI rute {0} tidak tersedia".format(route)
                 self.insert_route_message(route, 'error', error_message)
                 continue
-            else:
-                input_key = [routeid_col, from_m_col, to_m_col, lane_code]
-                rni_key = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code]
-                merge = pd.merge(df_route, df_rni, how='inner', left_on=input_key, right_on=rni_key)
-                merge_surf = merge.join(df_surf, on=rni_surf_type, how='inner')
+
+            merge_surf = merge.join(df_surf, on=rni_surf_type, how='inner')  # Add surface type to merge result.
 
             for index, row in merge_surf.iterrows():
                 from_m = row[from_m_col]
