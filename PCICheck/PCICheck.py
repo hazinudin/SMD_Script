@@ -97,8 +97,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     EventCheck.measurement_check(routes=valid_routes)
     if str(forceWrite) != 'true':
         EventCheck.coordinate_check(routes=valid_routes, at_start=False, comparison='RNIline-LRS')
-    EventCheck.pci_asp_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNILaneWidth,
-                             routes=valid_routes)
+    EventCheck.pci_asp_check(routes=valid_routes)
     EventCheck.pci_val_check(routes=valid_routes)
     EventCheck.pci_surftype_check(RNIEventTable, RNIRouteID, RNIFromMeasure, RNIToMeasure, RNILaneCode, RNISurfaceType,
                                   routes=valid_routes)
