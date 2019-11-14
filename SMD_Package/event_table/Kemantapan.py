@@ -7,7 +7,7 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 class Kemantapan(object):
     def __init__(self, df_rni, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code, rni_route_col,
                  rni_from_col, rni_to_col, rni_lane_code, surftype_col=None, kemantapan_type='ROUGHNESS',
-                 lane_based=False):
+                 lane_based=False, rni_mfactor=1):
         """
         Initialize the Kemantapan class for grading kemantapan value
         :param df_rni: The DataFrame for RNI table.
@@ -38,8 +38,8 @@ class Kemantapan(object):
             raise Exception('Input Event DataFrame is Empty')
 
         df_rni = df_rni.copy(deep=True)
-        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*100).astype(int)  # Create a integer measurement column
-        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*100).astype(int)
+        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*rni_mfactor).astype(int)  # Convert the RNI measurement
+        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*rni_mfactor).astype(int)
         self.df_rni = df_rni
         self.rni_route_col = rni_route_col
         self.rni_from_col = rni_from_col
