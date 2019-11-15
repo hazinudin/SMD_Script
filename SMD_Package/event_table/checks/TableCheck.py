@@ -697,7 +697,7 @@ class EventValidation(object):
                         if to_m < row[from_m_col]:
                             # Create an error message
                             error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'.\
-                                format(route, float(to_m)/100, float(row[from_m_col])/100)
+                                format(route, to_m, row[from_m_col])
                             self.error_list.append(error_message)
                             self.insert_route_message(route, 'error', error_message)
                             # Rewrite the To Measure and From Measure variable
