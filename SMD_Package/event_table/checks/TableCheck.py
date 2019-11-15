@@ -834,7 +834,7 @@ class EventValidation(object):
                         to_m = row[to_m_col]
                         lane = row[lane_code]
                         error_message = "Rute {0} pada segmen {1}-{2} {3} memiliki koordinat yang berjarak lebih dari {4}m dari geometri rute.".\
-                            format(route, from_m, to_m, lane)
+                            format(route, from_m, to_m, lane, threshold)
                         self.insert_route_message(route, 'error', error_message)
 
             if segment_data and (comparison == 'LRS'):
