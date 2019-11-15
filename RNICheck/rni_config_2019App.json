@@ -31,7 +31,7 @@
     "STATO_LAT":{"dtype":"double", "range":{"upper":13, "lower":-8, "eq_lower":true, "eq_upper":true, "review":false}},
     "STATO_ALT":{"dtype":"double", "allow_null":true},
     "ID_KONSULTAN":{"dtype":"integer", "allow_null":true, "raise":false},
-    "ID_SURVEYOR":{"dtype":"integer", "allow_null":true, "raise":false},
+    "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true, "raise":false},
     "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true, "raise":false}
   },
   "output_table":"SMD.RNI_2019",
