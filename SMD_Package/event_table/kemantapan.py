@@ -2,30 +2,29 @@ import pandas as pd
 import numpy as np
 import json
 from SMD_Package.FCtoDataFrame import event_fc_to_df
+from SMD_Package.load_config import SMDConfigs
+from arcpy import env
+import os
 
 
 class Kemantapan(object):
-    def __init__(self, df_rni, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code, rni_route_col,
-                 rni_from_col, rni_to_col, rni_lane_code, surftype_col=None, kemantapan_type='ROUGHNESS',
-                 lane_based=False, rni_mfactor=1):
+    def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='ROUGHNESS',
+                 lane_based=False, rni_mfactor=1, to_km_factor=0.01):
         """
         Initialize the Kemantapan class for grading kemantapan value
-        :param df_rni: The DataFrame for RNI table.
         :param df_event: The DataFrame for the input table.
         :param grading_col: The value used for grading
         :param route_col: The RouteID column of the input DataFrame.
         :param from_m_col: The From Measure column of the input DataFrame.
         :param to_m_col: The To Measure column of the input DataFrame.
-        :param rni_route_col: The RouteID column of the RNI DataFrame.
-        :param rni_from_col: The From Measure column of the RNI DataFrame.
-        :param rni_to_col: The To Measure column of the RNI DataFrame.
-        :param surftype_col: The column which store the surface type value in the RNI Table
         :param kemantapan_type: The type of kemantapan will be calculated. ROUGHNESS or PCI only. The selection will
         effect the amount of grading level.
         :param lane_based: Determine whether the Kemantapan will be calculated as lane based or calculated based on the
         segment interval.
         """
-        with open('SMD_Package/EventTable/surftype_group.json') as group_json:
+        module_folder = os.path.dirname(__file__)
+        surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
+        with open(surftype_json_file) as group_json:
             group_details = json.load(group_json)  # Load the surface type group JSON
 
         # make sure the kemantapan_type is between 'ROUGHNESS' and 'PCI'
@@ -37,9 +36,20 @@ class Kemantapan(object):
         if len(df_event) == 0:
             raise Exception('Input Event DataFrame is Empty')
 
-        df_rni = df_rni.copy(deep=True)
+        # Get the RNI table details.
+        rni_table = SMDConfigs().table_names['rni']
+        rni_route_col = SMDConfigs().table_fields['rni']['route_id']
+        rni_from_col = SMDConfigs().table_fields['rni']['from_measure']
+        rni_to_col = SMDConfigs().table_fields['rni']['to_measure']
+        rni_lane_code = SMDConfigs().table_fields['rni']['lane_code']
+        surftype_col = SMDConfigs().table_fields['rni']['surface_type']
+        rni_request_cols = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code, surftype_col]
+        input_routes = df_event[route_col].unique().tolist()
+
+        df_rni = event_fc_to_df(rni_table, rni_request_cols, input_routes, rni_route_col, env.workspace, True)
         df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*rni_mfactor).astype(int)  # Convert the RNI measurement
         df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*rni_mfactor).astype(int)
+
         self.df_rni = df_rni
         self.rni_route_col = rni_route_col
         self.rni_from_col = rni_from_col
@@ -57,7 +67,7 @@ class Kemantapan(object):
                                        rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
                                        lane_code=lane_code, rni_lane_code=rni_lane_code)
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details, kemantapan_type)
-        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col)
+        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, to_km_factor)
 
     def summary(self, flatten=True):
         """
@@ -426,7 +436,7 @@ class Kemantapan(object):
         return df_merge
 
     @staticmethod
-    def kemantapan_percentage(df_graded, route_col, from_m_col, to_m_col, grade_result_col='_grade',
+    def kemantapan_percentage(df_graded, route_col, from_m_col, to_m_col, to_km_factor, grade_result_col='_grade',
                               kemantapan_col='_kemantapan'):
         """
         This function will find the length percentage of every route with 'Mantap' dan 'Tidak Mantap' status.
@@ -436,6 +446,7 @@ class Kemantapan(object):
         :return: DataFrame with '_kemantapan' column.
         """
         df_graded.loc[:, '_len'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
+        df_graded['_len'] = df_graded['_len']*to_km_factor
         df_graded.loc[df_graded[grade_result_col].isin(['good', 'fair']), kemantapan_col] = 'mantap'
         df_graded.loc[df_graded[grade_result_col].isin(['poor', 'bad']), kemantapan_col] = 'tdk_mantap'
 
