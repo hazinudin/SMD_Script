@@ -762,8 +762,8 @@ class EventValidation(object):
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
 
-            long_condition = (df_route[long_col] > 95) & (df_route[long_col] < 141)  # Check if the coordinate is valid
-            lat_condition = (df_route[lat_col] > -6) & (df_route[lat_col] < 11)
+            long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)  # Check if the coordinate is valid
+            lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
             valid_coords = np.all(long_condition & lat_condition)
 
             if not valid_coords:
