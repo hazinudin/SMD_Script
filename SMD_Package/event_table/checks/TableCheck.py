@@ -33,6 +33,7 @@ class EventValidation(object):
         self.valid_route = []  # List for storing all route which is in the balai route domain
         self.config = SMDConfigs()
         self.rni_mfactor = 1
+        self._coordinate_status = dict()  # For storing route's coordinate status
 
         if self.header_check_result is None:
             self.capitalize_string()  # Capitalize every column with string data type
