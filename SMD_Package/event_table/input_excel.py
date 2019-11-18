@@ -27,7 +27,12 @@ def read_input_excel(event_table_path, parameter_index=2):
             SetParameterAsText(parameter_index, output_message("Failed", "File tidak dapat dibaca."))
             sys.exit(0)
 
-        df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
+        try:
+            df_string = pd.read_excel(event_table_path, converters=s_converter)  # Convert all column to 'str' type.
+        except UnicodeEncodeError:  # Handle if there is a non ascii character.
+            SetParameterAsText(parameter_index, output_message("Failed", "Terdapat karakter yang tidak bisa diconvert."))
+            sys.exit(0)
+
         df_string.columns = df_string.columns.str.upper()  # Uppercase all the column name
         return df_string  # df_string is DataFrame which contain all data in string format
     else:
