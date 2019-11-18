@@ -577,7 +577,7 @@ class EventValidation(object):
                         to_m = df_route_lane.at[error_index, to_m_col]  # The to m value
                         segment_real_len = df_route_lane.at[error_index, 'diff']
                         # Create error message
-                        error_message = 'Segmen pada baris {2} memiliki {0}-{1} ({4}-{5}) dan panjang segmen segmen ({3}) yang tidak konsisten atau memiliki panjang segmen yang tidak sama dengan {6}.'.\
+                        error_message = 'Segmen pada baris {2} memiliki {0}-{1} ({4}-{5}) dan panjang segmen ({3}) yang tidak konsisten atau memiliki panjang segmen yang tidak sama dengan {6}.'.\
                             format(from_m_col, to_m_col, excel_i, segment_real_len, from_m, to_m, segment_len)
                         self.error_list.append(error_message)  # Append the error message
                         self.insert_route_message(route, 'error', error_message)
@@ -718,7 +718,7 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
-                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5):
+                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5, write_error=True):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -734,6 +734,7 @@ class EventValidation(object):
         :param at_start: If True then the inputted coordinate is assumed to be generated at the beginning of a segment.
         :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
         :param comparison: Coordinate data used to check for error. ('LRS' or 'RNI-LRS')
+        :param write_error: If True then error messages will be written into route message class attribute.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -766,6 +767,7 @@ class EventValidation(object):
             long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)  # Check if the coordinate is valid
             lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
             valid_coords = np.all(long_condition & lat_condition)
+            self._coordinate_status[route] = [0]  # Initiate the route's status value.
 
             if not valid_coords:
                 continue
@@ -828,7 +830,8 @@ class EventValidation(object):
                     if len(errors) != 0:
                         error_message = "Rute {0} memiliki koordinat yang berjarak lebih dari {1}m dari geometri ruas.".\
                             format(route, threshold)
-                        self.insert_route_message(route, 'error', error_message)
+                        if write_error:
+                            self.insert_route_message(route, 'error', error_message)
                 else:
                     for index, row in errors.iterrows():
                         from_m = row[from_m_col]
@@ -836,7 +839,8 @@ class EventValidation(object):
                         lane = row[lane_code]
                         error_message = "Rute {0} pada segmen {1}-{2} {3} memiliki koordinat yang berjarak lebih dari {4}m dari geometri rute.".\
                             format(route, from_m, to_m, lane, threshold)
-                        self.insert_route_message(route, 'error', error_message)
+                        if write_error:
+                            self.insert_route_message(route, 'error', error_message)
 
             if segment_data and (comparison == 'LRS'):
                 lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
@@ -847,12 +851,14 @@ class EventValidation(object):
                     for range_error in errors:
                         error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
                             format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
-                        self.insert_route_message(route, 'error', error_message)
+                        self._coordinate_status[route].append(1)
+                        if write_error:
+                            self.insert_route_message(route, 'error', error_message)
 
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
                 if monotonic_error is None:
                     pass
-                else:
+                elif write_error:
                     for error_msg in monotonic_error:
                         self.insert_route_message(route, 'error', error_msg)
 
@@ -865,12 +871,13 @@ class EventValidation(object):
                     for range_error in errors:
                         error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
                             format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
-                        self.insert_route_message(route, 'error', error_message)
+                        if write_error:
+                            self.insert_route_message(route, 'error', error_message)
 
                 monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
                 if monotonic_error is None:
                     pass
-                else:
+                elif write_error:
                     for error_msg in monotonic_error:
                         self.insert_route_message(route, 'error', error_msg)
 
