@@ -593,7 +593,7 @@ class EventValidation(object):
 
                 if last_segment_len > segment_len and (not np.isclose(last_segment_len, segment_len, atol=0.001)):
                     # Create error message
-                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang lane ({3}) yang melebihi {4}km.'.\
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang segmen ({3}) yang melebihi {4}km.'.\
                         format(last_interval, route, lane, last_segment_len, segment_len)
                     self.insert_route_message(route, 'error', error_message)
 
