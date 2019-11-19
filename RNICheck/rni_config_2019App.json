@@ -27,7 +27,7 @@
     "GRADE":{"dtype":"double", "allow_null":true, "raise":false},
     "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":null, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}, "raise":false},
     "SURVEY_DATE":{"dtype":"date", "raise":false},
-    "STATO_LONG":{"dtype":"double", "range":{"upper":143, "lower":97, "eq_lower":true, "eq_upper":true, "review":false}},
+    "STATO_LONG":{"dtype":"double", "range":{"upper":143, "lower":93, "eq_lower":true, "eq_upper":true, "review":false}},
     "STATO_LAT":{"dtype":"double", "range":{"upper":13, "lower":-10, "eq_lower":true, "eq_upper":true, "review":false}},
     "STATO_ALT":{"dtype":"double", "allow_null":true},
     "ID_KONSULTAN":{"dtype":"integer", "allow_null":true, "raise":false},
