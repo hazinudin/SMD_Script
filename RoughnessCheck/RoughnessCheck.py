@@ -147,11 +147,6 @@ elif dtype_check_result is None:
     # There must be an error with semester and year check
     SetParameterAsText(2, output_message("Rejected", year_sem_check_result))
 
-elif year_sem_check_result is None:
+elif dtype_check_result is not None:
     # There must be an error with dtype check or header check
-    SetParameterAsText(2, output_message("Rejected", dtype_check_result))
-
-else:
-    # There is an error with dtype check and year sem check
-    dtype_check_result.append(year_sem_check_result)
     SetParameterAsText(2, output_message("Rejected", dtype_check_result))
