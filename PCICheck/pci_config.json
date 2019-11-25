@@ -36,7 +36,6 @@
     "PCI":{"dtype":"double"},
     "STATO_LONG":{"dtype":"double"},
     "STATO_LAT":{"dtype":"double"},
-    "STATO_ALT":{"dtype":"double"},
     "ID_KONSULTAN":{"dtype":"integer"},
     "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
