@@ -763,6 +763,7 @@ class EventValidation(object):
                                     self.sde_connection, True)  # Get the RNI table
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
+            rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
 
             long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)  # Check if the coordinate is valid
             lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
@@ -771,6 +772,9 @@ class EventValidation(object):
 
             if not valid_coords:
                 continue
+
+            if rni_invalid:
+                comparison = 'LRS'
 
             # Add distance column based on the comparison request
             if segment_data and (comparison == 'LRS'):
@@ -1061,7 +1065,7 @@ class EventValidation(object):
             to_m = row[to_m_col]
             lane = row[lane_code]
 
-            message = "{0} pada segmen {1}-{2} {3} memiliki arah yang tidak konsisten dengan kode lajur.".\
+            message = "Rute {0} pada segmen {1}-{2} {3} memiliki arah yang tidak konsisten dengan kode lajur.".\
                 format(route, from_m, to_m, lane)
             self.insert_route_message(route, 'error', message)  # Insert the route's error message.
 
@@ -1143,12 +1147,12 @@ class EventValidation(object):
                 input_median = row[median_col]['sum']  # The total median from the input
 
                 if input_lane_count != lane_count:
-                    result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane)".\
+                    result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane).".\
                         format(route, from_m, to_m, input_lane_count, road_type_code, lane_count)
                     self.insert_route_message(route, 'error', result)
 
                 if input_direction != direction:
-                    result = "Rute {0} pada segmen {1}-{2} memiliki arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah)".\
+                    result = "Rute {0} pada segmen {1}-{2} memiliki arah ({3} arah) yang tidak sesuai dengan road type {4} ({5} arah).".\
                         format(route, from_m, to_m, input_direction, road_type_code, direction)
                     self.insert_route_message(route, 'error', result)
 
@@ -1157,7 +1161,7 @@ class EventValidation(object):
                         format(route, from_m, to_m, road_type_code)
                     self.insert_route_message(route, 'error', result)
             else:
-                result = "Rute {0} pada segmen {1}-{2} memiliki road type yang tidak konsisten {3}".\
+                result = "Rute {0} pada segmen {1}-{2} memiliki road type yang tidak konsisten {3}.".\
                     format(route, from_m, to_m, road_type_code_list)
                 self.insert_route_message(route, 'error', result)
 
