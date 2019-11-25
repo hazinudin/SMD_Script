@@ -819,16 +819,31 @@ class EventValidation(object):
                                                                                             rni_long=rni_long,
                                                                                             rni_polyline=rni_line), axis=1)
 
-            if not segment_data:
+            if not segment_data and (comparison == 'LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
                                                                                             route_geom,
                                                                                             projections=spatial_ref,
                                                                                             ), axis=1)
+            if not segment_data and (comparison == 'RNIline_LRS'):
+                rni_line = coordinate.to_polyline(rni_df, rni_from_m, rni_long, rni_lat, projections=spatial_ref)
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            projections=spatial_ref,
+                                                                                            rni_polyline=rni_line
+                                                                                            ), axis=1)
+
+            elif comparison not in ['LRS', 'RNIline-LRS', 'RNIseg-LRS']:
+                raise TypeError("Comparison is invalid.")
 
             coordinate_error = coordinate.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
+
+                if comparison == 'RNIline-LRS':
+                    errors = df_route.loc[(df_route['rniDistance'] > threshold) & (df_route['lrsDistance'] > threshold),
+                    [from_m_col, to_m_col, lane_code]]
 
                 if (from_m_col is None) or (to_m_col is None) or (lane_code is None):
                     if len(errors) != 0:
