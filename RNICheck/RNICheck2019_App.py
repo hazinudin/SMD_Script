@@ -129,7 +129,6 @@ if (header_check_result is None) & (dtype_check_result is None):
     for error_message in EventCheck.altered_route_result(message_type='ToBeReviewed', dict_output=False):
         AddMessage(str(msg_count)+'. '+error_message)
         msg_count += 1
-
 else:
     # There must be an error with dtype check or header check
     SetParameterAsText(2, output_message("Rejected", dtype_check_result))
