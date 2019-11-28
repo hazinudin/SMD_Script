@@ -55,7 +55,7 @@ if len(code_check_result) != 0:  # If there is an error
 # Create a EventTableCheck class object
 # The __init__ already include header check
 try:
-    InputDF = read_input_excel(TablePath)  # Read the excel file
+    InputDF = read_input_excel(TablePath, parameter_index=1)  # Read the excel file
 except IOError:  # If the file path is invalid
     SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
     sys.exit(0)  # Stop the script
