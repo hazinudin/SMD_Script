@@ -105,7 +105,7 @@ class EventValidation(object):
                     df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
                     error_null = df[col_name].isnull()  # Null value from the coerce
 
-                    if 'decimal' in self.column_details[col].keys():  # If there is 'decimal' key in the JSON
+                    if 'decimals' in self.column_details[col].keys():  # If there is 'decimal' key in the JSON
                         decimal_places = int(self.column_details[col]['decimals'])
                         df[col_name] = df[col_name].round(decimals=decimal_places)
 
@@ -2067,5 +2067,7 @@ class EventValidation(object):
         if len(error_routes) != 0:
             intersect = np.setdiff1d(self.valid_route, error_routes).tolist()
             return intersect
+        elif len(error_routes) == 0:
+            return self.valid_route
         else:
             return list()
