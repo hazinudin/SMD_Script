@@ -13,10 +13,10 @@
     "SURVEY_DATE":{"dtype":"date"},
     "STATO_LONG":{"dtype":"double"},
     "STATO_LAT":{"dtype":"double"},
-    "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_TEAMLEADER":{"dtype":"integer"},
-    "ID_ALATSURVEY":{"dtype":"integer"},
-    "SURVEY_LENGTH":{"dtype":"double"}
+    "ID_KONSULTAN":{"dtype":"integer", "allow_null":true},
+    "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true},
+    "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true},
+    "SURVEY_LENGTH":{"dtype":"double", "allow_null":true}
   },
   "compare_table":{
     "table_name":"SMD.ROUGHNESS_2_2018",
