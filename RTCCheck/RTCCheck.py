@@ -27,6 +27,7 @@ dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
+forceWrite = GetParameterAsText(1)
 
 # Load the input JSON
 InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'routes'])
@@ -49,18 +50,18 @@ routeList = GetRoutes("balai", KodeBalai, LrsNetwork, BalaiTable, BalaiRouteTabl
 code_check_result = verify_balai(KodeBalai, BalaiTable, BalaiKodeBalai, env.workspace, return_false=True)
 if len(code_check_result) != 0:  # If there is an error
     message = "Kode {0} {1} tidak valid.".format("balai", code_check_result)
-    SetParameterAsText(1, output_message("Failed", message))
+    SetParameterAsText(2, output_message("Failed", message))
     sys.exit(0)
 
 # Create a EventTableCheck class object
 # The __init__ already include header check
 try:
-    InputDF = read_input_excel(TablePath, parameter_index=1)  # Read the excel file
+    InputDF = read_input_excel(TablePath)  # Read the excel file
 except IOError:  # If the file path is invalid
-    SetParameterAsText(1, output_message("Failed", "Invalid file directory"))  # Throw an error message
+    SetParameterAsText(2, output_message("Failed", "Invalid file directory"))  # Throw an error message
     sys.exit(0)  # Stop the script
 if InputDF is None:  # If the file format is not .xlsx
-    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
+    SetParameterAsText(2, output_message("Failed", "File is not in .xlsx format"))
     sys.exit(0)  # Stop the script
 
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
@@ -83,7 +84,7 @@ if (header_check_result is None) & (dtype_check_result is None):
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes
 
-    SetParameterAsText(1, output_message("Checked", EventCheck.altered_route_result()))
+    SetParameterAsText(2, output_message("Checked", EventCheck.altered_route_result()))
 
     if len(passed_routes) != 0:  # If there is an route with no error, then write to GDB
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
@@ -101,4 +102,4 @@ if (header_check_result is None) & (dtype_check_result is None):
 
 else:
     # There must be an error with dtype check or header check
-    SetParameterAsText(1, output_message("Rejected", dtype_check_result))
+    SetParameterAsText(2, output_message("Rejected", dtype_check_result))
