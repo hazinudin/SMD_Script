@@ -42,8 +42,8 @@ RouteIDColumn = "LINKID"
 # Assemble the table name from Data Type, Data Semester, and Data Year variable.
 if DataSemester is None:
     TableName = "SMD.{0}_{1}".format(DataType, DataYear)
-elif type(DataSemester) == int:
-    TableName = "SMD.{0}_{1}_{2}".format(DataType, DataSemester, DataYear)
+else:
+    TableName = "SMD.{0}_{1}_{2}".format(DataType, DataYear, DataSemester)
 
 # SMD Config
 dbConnection = smd_config['smd_database']['instance']
