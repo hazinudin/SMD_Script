@@ -134,6 +134,7 @@ class EventValidation(object):
                     # Convert the column to a date data type
                     # If the column contain an invalid date format, then change that value to Null
                     df[col_name] = pd.to_datetime(df[col_name], errors='coerce', format='%d/%m/%Y')
+                    error_null = df[col_name].isnull()
 
                     if allow_null:
                         error_row = df.loc[~null_input & error_null, [routeid_col, col_name]]  # Null value from the coerce not from the input
