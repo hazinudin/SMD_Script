@@ -226,7 +226,7 @@ class EventValidation(object):
         :param lane_code: The lane code column in the input table.
         :return: self
         """
-        df = self.copy_valid_df()
+        df = self.copy_valid_df(ignore=True)
 
         if df is None:  # This means no rows passed the data type check
             return None  # Return None
@@ -1862,24 +1862,24 @@ class EventValidation(object):
 
         return self
 
-    def copy_valid_df(self, dropna=False):
+    def copy_valid_df(self, dropna=False, ignore=False):
         """
         This function create a valid DataFrame from the dtype check class method, which ensures every column match the
         required DataType
         :return:
         """
         # If there is a problem with the data type check then return the df_string
-        if self.dtype_check(write_error=False) is None:
+        if self.df_valid is None:
+            return None
+        elif self.dtype_check_result is None or ignore:
             df = self.df_valid
             return df.copy(deep=True)
-        elif dropna and self.df_valid is not None:
+        elif dropna:
             df = self.df_valid.dropna()
             return df.copy(deep=True)
         elif not dropna:
             df = self.df_string
             return df.copy(deep=True)
-        else:
-            return None
 
     @staticmethod
     def selected_route_df(df, routes, routeid_col="LINKID"):
