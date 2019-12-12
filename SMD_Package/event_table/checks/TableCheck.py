@@ -931,7 +931,7 @@ class EventValidation(object):
         rni_routeid = self.config.table_fields['rni']['route_id']
         rni_from_col = self.config.table_fields['rni']['from_measure']
         rni_to_col = self.config.table_fields['rni']['to_measure']
-        rni_lane_code = self.config.table_fields['rni']['lane_code']
+        rni_lane_col = self.config.table_fields['rni']['lane_code']
 
         if routes == 'ALL':  # If 'ALL' then process all available route in input table
             pass
@@ -944,7 +944,7 @@ class EventValidation(object):
             df_route = df.loc[df[routeid_col] == route]  # Create a DataFrame containing only selected routes
 
             # The RNI DataFrame
-            search_field = [rni_routeid, rni_from_col, rni_to_col, rni_lane_code]
+            search_field = [rni_routeid, rni_from_col, rni_to_col, rni_lane_col]
             df_rni = event_fc_to_df(rni_table, search_field, route, rni_routeid, self.sde_connection, is_table=True,
                                     orderby=None)
             df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*self.rni_mfactor).round(2).astype(int)
@@ -961,7 +961,7 @@ class EventValidation(object):
 
                 # Create a groupby DataFrame
                 input_groupped = df_route.groupby(by=input_merge_key)[lane_code].unique().reset_index()
-                rni_groupped = df_rni.groupby(by=rni_merge_key)[rni_lane_code].unique().reset_index()
+                rni_groupped = df_rni.groupby(by=rni_merge_key)[rni_lane_col].unique().reset_index()
 
                 # Start the merge process between the input table
                 df_merge = pd.merge(input_groupped, rni_groupped, how='outer', left_on=input_merge_key,
@@ -978,24 +978,27 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', error_message)
 
                 # Modify the lane_code variable
-                if lane_code == rni_lane_code:
-                    lane_code = lane_code+'_INPUT'
-                    rni_lane_code = rni_lane_code+'_RNI'
+                if lane_code == rni_lane_col:
+                    input_lane_code = lane_code+'_INPUT'
+                    merge_rni_lane_col = rni_lane_col+'_RNI'
+                else:
+                    input_lane_code = lane_code
+                    merge_rni_lane_col = rni_lane_col
 
                 # Create a column containing intersection count of lane code combination
                 # between the input table and RNI Table
                 df_both.loc[:, 'lane_intersect_count'] = pd.Series([len(set(a).intersection(b)) for a, b in
-                                                                    zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                                    zip(df_both[input_lane_code], df_both[merge_rni_lane_col])],
                                                                    index=df_both.index)
 
                 # Create a column containing the lane diff of Input - RNI
                 df_both.loc[:, 'input-RNI'] = pd.Series([np.setdiff1d(a, b) for a, b in
-                                                         zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                         zip(df_both[input_lane_code], df_both[merge_rni_lane_col])],
                                                         index=df_both.index)
 
                 # Create a column containing the lane diff of RNI - Input
                 df_both.loc[:, 'RNI-input'] = pd.Series([np.setdiff1d(b, a) for a, b in
-                                                         zip(df_both[lane_code], df_both[rni_lane_code])],
+                                                         zip(df_both[input_lane_code], df_both[merge_rni_lane_col])],
                                                         index=df_both.index)
 
                 df_both[from_m_col] = pd.Series(df_both[from_m_col]).astype(str)
