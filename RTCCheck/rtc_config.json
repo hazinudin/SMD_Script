@@ -17,8 +17,8 @@
     "NUM_VEH7B":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
     "NUM_VEH7C":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
     "NUM_VEH8":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
-    "RTC_LAT":{"dtype":"double"},
-    "RTC_LONG":{"dtype":"double"},
+    "RTC_LONG":{"dtype":"double", "range":{"upper":143, "lower":96, "eq_lower":true, "eq_upper":true, "review":false}},
+    "RTC_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
     "ID_KONSULTAN":{"dtype":"integer"},
     "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
