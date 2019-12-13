@@ -37,7 +37,7 @@ inputJSON = GetParameterAsText(0)
 forceWrite = GetParameterAsText(1)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'balai', 'year', 'semester', 'routes'])
+InputDetails = input_json_check(inputJSON, 2, req_keys=['file_name', 'balai', 'year', 'semester', 'routes'])
 TablePath = InputDetails["file_name"]
 DataYear = InputDetails["year"]
 Semester = InputDetails['semester']
