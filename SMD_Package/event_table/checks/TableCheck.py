@@ -1022,7 +1022,7 @@ class EventValidation(object):
                 for i in partial_1st:
                     excess_lane = [str(x) for x in df_both.at[i, 'input-RNI']]
                     missing_lane = [str(x) for x in df_both.at[i, 'RNI-input']]
-                    error_message = 'Segmen {0] pada rute {1} tidak memiliki lane {2} dan memiliki lane {3} yang tidak terdapat pada tabel RNI.'.\
+                    error_message = 'Segmen {0} pada rute {1} tidak memiliki lane {2} dan memiliki lane {3} yang tidak terdapat pada tabel RNI.'.\
                         format(i, route, missing_lane, excess_lane)
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
