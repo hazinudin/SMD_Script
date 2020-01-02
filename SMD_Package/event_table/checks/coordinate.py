@@ -59,7 +59,7 @@ def to_polyline(dataframe, sorting_col, long_col, lat_col, projections='4326'):
         arcpy_ar = Array(coord_array)
         spat_ref = SpatialReference(int(projections))
 
-        line = Polyline(arcpy_ar).projectAs(spat_ref)
+        line = Polyline(arcpy_ar, spat_ref)
 
         return line
 
