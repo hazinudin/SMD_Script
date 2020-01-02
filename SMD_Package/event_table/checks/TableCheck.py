@@ -224,6 +224,7 @@ class EventValidation(object):
         :param from_m_col: The From Measure column in the input table.
         :param to_m_col: The To Measure column in the input table.
         :param lane_code: The lane code column in the input table.
+        :param year_check_only: If True then the method will only check the survey_year value.
         :return: self
         """
         df = self.copy_valid_df(ignore=True)
@@ -236,7 +237,7 @@ class EventValidation(object):
 
         # Create the selection mask
         year_mask = df[year_col] != year_input
-        cur_year_mask = df[year_col] > cur_year
+        cur_year_mask = df[year_col] > cur_year  # The inputted year should not exceed the current year
 
         # the index of row with bad val
         if year_check_only:
