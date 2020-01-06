@@ -34,7 +34,7 @@
     "SURVEY_DATE":{"dtype":"date"},
     "SURVEY_YEAR":{"dtype":"integer"},
     "PCI":{"dtype":"double"},
-    "STATO_LONG":{"dtype":"double", "range":{"upper":143, "lower":96, "eq_lower":true, "eq_upper":true, "review":false}},
+    "STATO_LONG":{"dtype":"double", "range":{"upper":143, "lower":94, "eq_lower":true, "eq_upper":true, "review":false}},
     "STATO_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
     "ID_KONSULTAN":{"dtype":"integer"},
     "ID_TEAMLEADER":{"dtype":"integer"},
