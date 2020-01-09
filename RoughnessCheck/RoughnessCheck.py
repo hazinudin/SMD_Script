@@ -105,6 +105,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     valid_routes = EventCheck.valid_route
 
     EventCheck.range_domain_check()
+    EventCheck.segment_duplicate_check()
     EventCheck.lane_direction_check(routes=valid_routes)
     EventCheck.segment_len_check(routes=valid_routes)
     EventCheck.measurement_check(routes=valid_routes, tolerance=0)
