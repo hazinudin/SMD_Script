@@ -19,10 +19,9 @@
     "NUM_VEH8":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
     "RTC_LONG":{"dtype":"double", "range":{"upper":143, "lower":94, "eq_lower":true, "eq_upper":true, "review":false}},
     "RTC_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
-    "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_TEAMLEADER":{"dtype":"integer"},
-    "ID_ALATSURVEY":{"dtype":"integer"}
+    "ID_KONSULTAN":{"dtype":"integer", "allow_null":true},
+    "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true},
+    "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true}
   },
-  "search_radius":30,
-  "output_table":"ELRS.DEV_RTC_2_2018"
+  "search_radius":30
 }

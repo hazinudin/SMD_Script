@@ -39,7 +39,7 @@ RouteReq = InputDetails["routes"]
 # All the column details in the roughness_config.json
 ColumnDetails = rtc_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rtc_config['search_radius']
-OutputTable = rtc_config['output_table']
+OutputTable = "SMD.RTC_{0}".format(DataYear)
 RouteIDCol = 'LINKID'
 
 # GetAllRoute result containing all route from a Balai
@@ -67,10 +67,9 @@ if InputDF is None:  # If the file format is not .xlsx
 EventCheck = EventValidation(InputDF, ColumnDetails, LrsNetwork, LrsNetworkRID, dbConnection)
 header_check_result = EventCheck.header_check_result
 dtype_check_result = EventCheck.dtype_check_result
-year_sem_check_result = EventCheck.year_and_semester_check(DataYear, None, year_check_only=True)
 
 # If the header check, data type check and year semester check returns None, the process can continue
-if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
+if (header_check_result is None) & (dtype_check_result is None):
 
     EventCheck.route_domain(KodeBalai, routeList)  # Check the input route domain
     EventCheck.route_selection(selection=RouteReq)
@@ -101,8 +100,6 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         AddMessage(str(msg_count) + '. ' + error_message + ' WARNING')
         msg_count += 1
 
-elif dtype_check_result is None:
-    SetParameterAsText(2, output_message("Rejected", year_sem_check_result))
 else:
     # There is an error with dtype check and year sem check
     SetParameterAsText(2, output_message("Rejected", dtype_check_result))
