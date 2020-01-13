@@ -1690,7 +1690,7 @@ class EventValidation(object):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan rigid namun memiliki nilai kerusakan aspal.'. \
                         format(route, from_m, to_m, lane)
                     self.insert_route_message(route, 'error', error_message)
-                if surface == 'unpaved' and (not asp_allnull) or (not rg_allnull):
+                if surface == 'unpaved' and ((not asp_allnull) or (not rg_allnull)):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan unpaved namun memiliki nilai kerusakan rigid atau aspal.'. \
                         format(route, from_m, to_m, lane)
                     self.insert_route_message(route, 'error', error_message)
