@@ -255,14 +255,26 @@ class EventValidation(object):
             for index, row in error_row.iterrows():
 
                 if year_check_only:
-                    result = "Rute {0} memiliki {1} yang tidak sesuai dengan input {2} pada segmen {3}-{4} {5}.".\
-                        format(row[routeid_col], year_col, year_input, row[from_m_col], row[to_m_col], row[lane_code])
-                    self.insert_route_message(row[routeid_col], 'error', result)
+                    if lane_code is not None:
+                        result = "Rute {0} memiliki {1} yang tidak sesuai dengan input {2} pada segmen {3}-{4} {5}.".\
+                            format(row[routeid_col], year_col, year_input, row[from_m_col], row[to_m_col], row[lane_code])
+                        self.insert_route_message(row[routeid_col], 'error', result)
+                    else:
+                        result = "Rute {0} memiliki {1} yang tidak sesuai dengan input {2} pada segmen {3}-{4}.".\
+                            format(row[routeid_col], year_col, year_input, row[from_m_col], row[to_m_col])
+                        self.insert_route_message(row[routeid_col], 'error', result)
+
                 else:
-                    result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}.".\
-                        format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
-                               row[to_m_col], row[lane_code])
-                    self.insert_route_message(row[routeid_col], 'error', result)
+                    if lane_code is not None:
+                        result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}.".\
+                            format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
+                                   row[to_m_col], row[lane_code])
+                        self.insert_route_message(row[routeid_col], 'error', result)
+                    else:  # If the data does not contain lane code column
+                        result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6}".\
+                            format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
+                                   row[to_m_col])
+                        self.insert_route_message(row[routeid_col], 'error', result)
 
             return error_message  # If there is an error
         else:
