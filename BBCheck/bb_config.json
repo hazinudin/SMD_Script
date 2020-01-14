@@ -21,9 +21,9 @@
     "OFFSET1":{"dtype":"double"},
     "OFFSET2":{"dtype":"double"},
     "OFFSET3":{"dtype":"double"},
-    "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_TEAMLEADER":{"dtype":"integer"},
-    "ID_ALATSURVEY":{"dtype":"integer"}
+    "ID_KONSULTAN":{"dtype":"integer", "allow_null":true},
+    "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true},
+    "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true}
   },
   "search_radius":30
 }
