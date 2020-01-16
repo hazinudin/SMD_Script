@@ -110,8 +110,8 @@ if (header_check_result is None) & (dtype_check_result is None):
     if len(passed_routes) != 0:  # Only process the route which passed the Error check.
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]
         adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
-        if str(forceWrite) == 'true':
-            adjust.survey_direction()
+        # if str(forceWrite) == 'true':
+        #     adjust.survey_direction()
         # adjust.convert()  # Convert the measurement value
         adjust.df.loc[adjust.df['STATO_ALT'] < 0, ['STATO_ALT']] = 1
         gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
