@@ -45,21 +45,22 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
 
     if rni_polyline is not None:  # Comparison to RNI as a polyline
         rni_distance = input_point.distance_to_centerline(rni_polyline)
+        meas_value = input_point.point_meas_on_route(rni_polyline)
 
     return Series([segment_distance, rni_distance, lrs_distance, meas_value])
 
 
-def to_polyline(dataframe, sorting_col, long_col, lat_col, projections='4326'):
+def to_polyline(dataframe, sorting_col, long_col, lat_col, to_m_col, projections='4326'):
     if dataframe.empty:
         return None
     else:
         dataframe.sort_values(by=sorting_col, inplace=True)
-        dataframe['Point'] = dataframe.apply(lambda x: Point(x[long_col], x[lat_col]), axis=1)
+        dataframe['Point'] = dataframe.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]), axis=1)
         coord_array = dataframe['Point'].values.tolist()
         arcpy_ar = Array(coord_array)
         spat_ref = SpatialReference(int(projections))
 
-        line = Polyline(arcpy_ar, spat_ref)
+        line = Polyline(arcpy_ar, spat_ref, False, True)  # Construct the polyline
 
         return line
 
