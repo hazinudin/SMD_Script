@@ -1287,6 +1287,7 @@ class EventValidation(object):
 
         for route, direction in self.route_lane_tuple(df, routeid_col, direction_col):  # Iterate over all available route
             df_route_dir = df.loc[(df[routeid_col] == route) & (df[direction_col] == direction)]
+            df_route_dir.sort_values([surv_date_col, hours_col, minute_col], inplace=True)
             df_route_dir.reset_index(inplace=True)  # Reset the index
 
             for index, row in df_route_dir.iterrows():
