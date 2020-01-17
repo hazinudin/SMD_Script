@@ -1586,7 +1586,7 @@ class EventValidation(object):
                 asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero
 
                 if (pci_val == 0) and asp_rg_allzero:
-                    error_message = 'Rute {0} pada segmen {1]-{2} lane {3} memiliki nilai {4}=0 namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}=0 namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col)
                     self.insert_route_message(route, 'error', error_message)
                 if (pci_val == 100) and (not asp_rg_allzero):
