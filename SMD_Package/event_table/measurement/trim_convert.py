@@ -18,11 +18,11 @@ def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, co
     """
     df = dataframe
     _convert_measurement(df, from_m_col, to_m_col, conversion=conversion)  # Convert the measurement
-    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to)
+    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to, rni_to_km=conversion)
     return df
 
 
-def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None):
+def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None, rni_to_km=None):
     """
     This function will trim event table to fit the LRS Network Max Measurement.
     :param dataframe: The event DataFrame
@@ -62,6 +62,7 @@ def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None):
                 max_m = lrs_geom.lastPoint.M
             elif fit_to == 'RNI':
                 max_m = rni_df.loc[rni_df[rni_lane_code] == lane, rni_to_col].max()
+                max_m = float(max_m)/rni_to_km
 
             df_route_lane = df_route.loc[df_route[lane_code] == lane]  # Lane in route DataFrame.
             df_route_lane['_diff'] = df_route_lane[to_m_col] - max_m  # Create a difference col
