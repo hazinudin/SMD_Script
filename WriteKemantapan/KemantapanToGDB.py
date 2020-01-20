@@ -12,23 +12,25 @@ with open('smd_config.json') as config_f:
     smd_config = json.load(config_f)
 
 routeSelection = request_j['routes']
+DataSemester = request_j['semester']
+DataYear = request_j['year']
 
 dbConnection = smd_config['smd_database']['instance']
 
-iriTable = 'ELRS.RAW_IRI_2019_1_20191106'
-iriRouteID = 'LINKID'
-iriFromMeasure = 'KMPOST'
-iriToMeasure = 'KMPOSTTO'
-iriGrade = 'IRI'
-iriLaneCode = 'LANE_CODE'
+DataTable = 'SMD.ROUGHNESS_{0}_{1}'.format(DataSemester, DataYear)
+RouteID = 'LINKID'
+FromMeasure = 'STA_FROM'
+ToMeasure = 'STA_TO'
+GradeColumn = 'IRI'
+LaneCode = 'LANE_CODE'
 
 columnDetails = dict()
 
 env.workspace = dbConnection
-iriDf = event_fc_to_df(iriTable, [iriRouteID, iriFromMeasure, iriToMeasure, iriGrade], routeSelection, iriRouteID,
-                       dbConnection, is_table=True)
+InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn], routeSelection, RouteID,
+                         dbConnection, is_table=True)
 
-kemantapan = Kemantapan(iriDf, iriGrade, iriRouteID, iriFromMeasure, iriToMeasure, iriLaneCode, 'ROUGHNESS')
+kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, 'ROUGHNESS', to_km_factor=1)
 summaryTable = kemantapan.summary().reset_index()
 
 # Create the column details
@@ -46,4 +48,5 @@ for col_name in summaryTable.dtypes.to_dict():
     columnDetails[col_name]['dtype'] = gdb_dtype  # Insert the column data type
 
 # Write to GDB.
-gdb_table_writer(dbConnection, summaryTable, 'kemantapan_2019_1_DEV', columnDetails, new_table=False)
+gdb_table_writer(dbConnection, summaryTable, 'SMD.KEMANTAPAN_ROUGH_{0}_{1}'.format(DataSemester, DataYear),
+                 columnDetails, new_table=False)

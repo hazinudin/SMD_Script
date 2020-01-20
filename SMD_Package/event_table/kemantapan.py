@@ -22,6 +22,11 @@ class Kemantapan(object):
         :param lane_based: Determine whether the Kemantapan will be calculated as lane based or calculated based on the
         segment interval.
         """
+        # Convert the measurement value of the event dataframe to DM
+        df_event[from_m_col] = df_event[from_m_col].astype(float)*to_km_factor*100
+        df_event[to_m_col] = df_event[to_m_col].astype(float)*to_km_factor*100
+        df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(0).astype(int)
+
         module_folder = os.path.dirname(__file__)
         surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
         with open(surftype_json_file) as group_json:
@@ -67,7 +72,7 @@ class Kemantapan(object):
                                        rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
                                        lane_code=lane_code, rni_lane_code=rni_lane_code)
         self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details, kemantapan_type)
-        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, to_km_factor)
+        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
 
     def summary(self, flatten=True):
         """
