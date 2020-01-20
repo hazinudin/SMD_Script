@@ -2,8 +2,8 @@
   "output_table":"ELRS.DEV_PCI_2_2018",
   "column_details":{
     "LINKID":{"dtype":"string"},
-    "STA_FROM":{"dtype":"integer"},
-    "STA_TO":{"dtype":"integer"},
+    "STA_FROM":{"dtype":"double"},
+    "STA_TO":{"dtype":"double"},
     "SEGMENT_LENGTH":{"dtype":"double"},
     "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
     "LANE_CODE":{"dtype":"string"},
