@@ -14,7 +14,7 @@
     "SURF_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "DROP_ID":{"dtype":"integer"},
     "STRESS":{"dtype":"double", "range":{"upper":null, "lower":0, "eq_upper":false, "eq_lower":false, "review":false}},
-    "FORCE":{"dtype":"double", "range":{"upper":50, "lower":30, "eq_upper":false, "eq_lower":false, "review":false}},
+    "FORCE":{"dtype":"double", "range":{"upper":50, "lower":30, "eq_upper":true, "eq_lower":true, "review":false}},
     "FWD_D1":{"dtype":"double"},
     "FWD_D2":{"dtype":"double"},
     "FWD_D3":{"dtype":"double"},
