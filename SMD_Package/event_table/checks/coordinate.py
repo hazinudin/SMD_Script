@@ -43,6 +43,10 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
             rni_distance = input_point.distance_to_rni(from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code,
                                                        rni_lat, rni_long)
 
+    else:  # Where the measurement column from the input table is not defined.
+        rni_point = InputPoint(rni_df.at[0, rni_long], rni_df.at[0, rni_lat])
+        rni_distance = input_point.point_geom.distanceTo(rni_point.point_geom)
+
     if rni_polyline is not None:  # Comparison to RNI as a polyline
         rni_distance = input_point.distance_to_centerline(rni_polyline)
         meas_value = input_point.point_meas_on_route(rni_polyline)

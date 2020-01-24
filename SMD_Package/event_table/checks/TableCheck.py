@@ -570,7 +570,7 @@ class EventValidation(object):
         for route, lane in self.route_lane_tuple(df, routeid_col, lane_code):  # Iterate over all route and lane
 
                 df_route_lane = df.loc[(df[lane_code] == lane) & (df[routeid_col] == route)]
-                max_to_ind = df_route_lane[to_m_col].idxmax()
+                max_to_ind = df_route_lane[from_m_col].idxmax()
                 last_segment_len = df_route_lane.at[max_to_ind, 'diff']  # The last segment real length
                 last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]  # The last segment stated len
                 last_from = df_route_lane.at[max_to_ind, from_m_col]*100  # Last segment from measure in Decameters
@@ -760,6 +760,7 @@ class EventValidation(object):
         rni_lane = self.config.table_fields['rni']['lane_code']
         rni_long = self.config.table_fields['rni']['longitude']
         rni_lat = self.config.table_fields['rni']['latitude']
+        initial_comparison = comparison
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
             pass
@@ -778,6 +779,7 @@ class EventValidation(object):
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
+            rni_segment_count = len(rni_df.groupby([rni_from_m, rni_to_m]).groups)  # The count of RNI data segment/s
 
             long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)  # Check if the coordinate is valid
             lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
@@ -786,6 +788,12 @@ class EventValidation(object):
 
             if not valid_coords:
                 continue
+
+            if rni_segment_count < 2:
+                comparison = 'RNIPoint-LRS'
+                segment_data = False
+            else:
+                comparison = initial_comparison
 
             if rni_invalid:
                 comparison = 'LRS'
@@ -848,14 +856,22 @@ class EventValidation(object):
                                                                                             rni_polyline=rni_line
                                                                                             ), axis=1)
 
-            elif comparison not in ['LRS', 'RNIline-LRS', 'RNIseg-LRS']:
+            if comparison == 'RNIPoint-LRS':
+                df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
+                                                                                            _x[long_col],
+                                                                                            route_geom,
+                                                                                            rni_df=rni_df,
+                                                                                            rni_lat=rni_lat,
+                                                                                            rni_long=rni_long), axis=1)
+
+            elif comparison not in ['LRS', 'RNIline-LRS', 'RNIseg-LRS', 'RNIPoint-LRS']:
                 raise TypeError("Comparison is invalid.")
 
             coordinate_error = coordinate.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
 
-                if comparison == 'RNIline-LRS':
+                if (comparison == 'RNIline-LRS') or (comparison == 'RNIPoint-LRS'):
                     errors = df_route.loc[(df_route['rniDistance'] > threshold) & (df_route['lrsDistance'] > threshold),
                     [from_m_col, to_m_col, lane_code]]
 
