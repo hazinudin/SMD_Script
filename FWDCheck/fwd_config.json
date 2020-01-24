@@ -9,7 +9,7 @@
     "SURVEY_DATE":{"dtype":"date"},
     "DEFL_LONG":{"dtype":"double", "range":{"upper":143, "lower":94, "eq_lower":true, "eq_upper":true, "review":false}},
     "DEFL_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
-    "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":40, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
+    "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "AIR_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "SURF_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "DROP_ID":{"dtype":"integer"},
