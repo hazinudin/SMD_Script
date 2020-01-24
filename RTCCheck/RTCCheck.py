@@ -77,7 +77,7 @@ if (header_check_result is None) & (dtype_check_result is None):
 
     EventCheck.range_domain_check(from_m_col=None, to_m_col=None)
     EventCheck.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
-                                long_col='RTC_LONG')
+                                long_col='RTC_LONG', comparison='RNIline-LRS')
     EventCheck.rtc_duration_check(routes=valid_routes)  # The RTC duration check.
     EventCheck.rtc_time_interval_check(routes=valid_routes)  # The RTC survey time interval check.
 

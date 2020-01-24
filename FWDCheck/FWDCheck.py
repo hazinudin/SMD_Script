@@ -83,7 +83,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
 
     EventCheck.range_domain_check(lane_code='SURVEY_DIREC')
     if forceWrite == 'false':
-        EventCheck.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT', long_col='DEFL_LONG')
+        EventCheck.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT', long_col='DEFL_LONG',
+                                    comparison='RNIline-LRS')
 
     valid_df = EventCheck.copy_valid_df()
     passed_routes = EventCheck.passed_routes
