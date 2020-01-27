@@ -1613,16 +1613,17 @@ class EventValidation(object):
         return self
 
     def pci_surftype_check(self, routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID',
-                           from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE'):
+                           from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', pci_col='PCI'):
         """
         This class method check the consistency between segment's surface type and its AS_x and RG_x value.
-        :param routes:
-        :param asp_pref:
-        :param rg_pref:
-        :param routeid_col:
-        :param from_m_col:
-        :param to_m_col:
-        :param lane_code:
+        :param routes: Route selection
+        :param asp_pref: AS_ column prefix
+        :param rg_pref: RG_ column prefix
+        :param routeid_col:  The routeid column
+        :param from_m_col: The from measure column
+        :param to_m_col: The to measure column
+        :param lane_code: Lane code column
+        :param pci_col: PCI column
         :return:
         """
 
@@ -1697,6 +1698,7 @@ class EventValidation(object):
 
                 asp_allnull = col_allnull(row, asp_mask)
                 rg_allnull = col_allnull(row, rg_mask)
+                pci_null = row[pci_col] is None
                 surface = row[surf_col]  # The surface type
 
                 if surface == 'asphalt' and (not rg_allnull):
@@ -1710,6 +1712,16 @@ class EventValidation(object):
                 if surface == 'unpaved' and ((not asp_allnull) or (not rg_allnull)):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan unpaved namun memiliki nilai kerusakan rigid atau aspal.'. \
                         format(route, from_m, to_m, lane)
+                    self.insert_route_message(route, 'error', error_message)
+
+                # Compare the surface type and pci value
+                if (surface in ['asphlat', 'rigid']) and pci_null:
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan {4} namun tidak memiliki nilai PCI.'.\
+                        format(route, from_m, to_m, lane, surface)
+                    self.insert_route_message(route, 'error', error_message)
+                if surface == 'unpaved' and (not pci_null):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan {4} namun memiliki nilai PCI.'.\
+                        format(route, from_m, to_m, lane, surface)
                     self.insert_route_message(route, 'error', error_message)
 
         return self
