@@ -17,7 +17,7 @@
     "DITDEPTH_L":{"dtype":"double", "allow_null":true, "raise":false},
     "DITDEPTH_R":{"dtype":"double", "allow_null":true, "raise":false},
     "MED_WIDTH":{"dtype":"double"},
-    "ROAD_TYPE":{"dtype":"integer", "range":{"upper":23, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}},
+    "ROAD_TYPE":{"dtype":"integer", "range":{"upper":25, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}},
     "TERRTYPE_L":{"dtype":"string", "allow_null":true, "raise":false},
     "TERRTYPE_R":{"dtype":"string", "allow_null":true, "raise":false},
     "ALIGN_VER":{"dtype":"integer", "allow_null":true, "raise":false},
