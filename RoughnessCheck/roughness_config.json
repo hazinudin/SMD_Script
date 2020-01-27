@@ -5,7 +5,7 @@
     "STA_FROM":{"dtype":"double"},
     "STA_TO":{"dtype":"double"},
     "SEGMENT_LENGTH":{"dtype":"double"},
-    "LANE_CODE":{"dtype":"string"},
+    "LANE_CODE":{"dtype":"string", "domain": ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "R1", "R2", "R3", "R4", "R5","R6", "R7", "R8", "R9"]},
     "IRI":{"dtype":"double", "range":{"upper":25, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
     "SURVEY_YEAR":{"dtype":"integer"},
     "SURVEY_SMS":{"dtype":"integer"},
