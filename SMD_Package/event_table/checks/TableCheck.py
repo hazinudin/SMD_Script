@@ -789,7 +789,7 @@ class EventValidation(object):
             if not valid_coords:
                 continue
 
-            if rni_segment_count < 2:
+            if rni_segment_count < 2 and (comparison != 'LRS'):
                 comparison = 'RNIPoint-LRS'
                 segment_data = False
             else:
