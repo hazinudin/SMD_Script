@@ -1006,6 +1006,11 @@ class EventValidation(object):
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
+                if len(df_both) == 0:
+                    error_message = "Rute {0} tidak memiliki interval segmen yang cocok dengan data RNI".format(route)
+                    self.insert_route_message(route, 'error', error_message)
+                    continue
+
                 # Modify the lane_code variable
                 if lane_code == rni_lane_col:
                     input_lane_code = lane_code+'_INPUT'
