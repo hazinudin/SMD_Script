@@ -6,7 +6,7 @@
     "STA_TO":{"dtype":"double"},
     "SEGMENT_LENGTH":{"dtype":"double"},
     "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
-    "LANE_CODE":{"dtype":"string"},
+    "LANE_CODE":{"dtype":"string", "domain": ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "R1", "R2", "R3", "R4", "R5","R6", "R7", "R8", "R9"]},
     "AS_ALG_CRACK":{"dtype":"double", "allow_null":true},
     "AS_EDGE_CRACK":{"dtype":"double", "allow_null":true},
     "AS_LONG_CRACK":{"dtype":"double", "allow_null":true},
