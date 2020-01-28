@@ -273,7 +273,7 @@ class FindCoordinateError(object):
         for lane in lanes:
             df_lane = self.df.loc[self.df[self.lane_code_col] == lane]  # Create a DataFrame for every available lane
             df_lane.sort_values(by=[self.from_m_col, self.to_m_col], inplace=True)  # Sort the DataFrame
-            monotonic_check = np.diff(df_lane[measure_column]) > 0
+            monotonic_check = np.diff(df_lane[measure_column]) >= 0
             check_unique = np.unique(monotonic_check)
 
             if check_unique.all():  # Check whether the result only contain True
