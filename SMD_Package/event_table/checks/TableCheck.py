@@ -598,18 +598,24 @@ class EventValidation(object):
 
                 # Check whether the stated length for the last segment match the actual length
                 len_statedlen_diff = last_segment_len - last_segment_statedlen
-                if len_statedlen_diff > 0.01 and (not np.isclose(len_statedlen_diff, 0.01, atol=0.001)):
-                    # Create error message
-                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
-                        format(last_interval, route, lane, length_col, last_segment_statedlen)
-                    self.error_list.append(error_message)
-                    self.insert_route_message(route, 'error', error_message)
 
-                if last_segment_len > segment_len and (not np.isclose(last_segment_len, segment_len, atol=0.001)):
-                    # Create error message
-                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang segmen ({3}) yang melebihi {4}km.'.\
-                        format(last_interval, route, lane, last_segment_len, segment_len)
+                if np.isclose(last_segment_len, 0):  # Prevent last segment from having same from-to value.
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memililki nilai {3}-{4} yang sama (panjang = 0).'.\
+                        format(last_interval, route, lane, from_m_col, to_m_col)
                     self.insert_route_message(route, 'error', error_message)
+                else:
+                    if len_statedlen_diff > 0.01 and (not np.isclose(len_statedlen_diff, 0.01, atol=0.001)):
+                        # Create error message
+                        error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
+                            format(last_interval, route, lane, length_col, last_segment_statedlen)
+                        self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
+
+                    if last_segment_len > segment_len and (not np.isclose(last_segment_len, segment_len, atol=0.001)):
+                        # Create error message
+                        error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang segmen ({3}) yang melebihi {4}km.'.\
+                            format(last_interval, route, lane, last_segment_len, segment_len)
+                        self.insert_route_message(route, 'error', error_message)
 
         return self
 
