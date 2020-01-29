@@ -27,8 +27,8 @@ class AADT(object):
         :param lane_aadt: If True then the output result is lane based, if False then the result is route based.
         :return:
         """
-        veh_columns = self.veh_columns
-        df = self._add_survey_time()
+        veh_columns = self.veh_columns  # Get all the veh columns
+        df = self._add_survey_time()  # Add the survey time column
         df.set_index('_survey_time', inplace=True)  # Set the survey time as index
         grouped = df.groupby(by=[self.routeid_col, self.survey_direction])
         resample_result = grouped[veh_columns].apply(lambda x: x.resample('1440T', label='right',
