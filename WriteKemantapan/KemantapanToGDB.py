@@ -12,18 +12,32 @@ request_j = json.loads(request)
 with open('smd_config.json') as config_f:
     smd_config = json.load(config_f)
 
+# Get all the request detail
 routeSelection = request_j['routes']
-DataSemester = request_j['semester']
+if 'semester' in request_j.keys():
+    DataSemester = request_j['semester']
+else:
+    DataSemester = None
 DataYear = request_j['year']
-
 dbConnection = smd_config['smd_database']['instance']
 
-DataTable = 'SMD.{0}_{1}_{2}'.format(data, DataSemester, DataYear)
+# Determine the grading column
+if data == 'ROUGHNESS':
+    GradeColumn = 'IRI'
+elif data == 'PCI':
+    GradeColumn = 'PCI'
+else:
+    raise('Invalid request {0}'.format(data))
+
+# All the input table column and table name
+LaneCode = 'LANE_CODE'
 RouteID = 'LINKID'
 FromMeasure = 'STA_FROM'
 ToMeasure = 'STA_TO'
-GradeColumn = 'IRI'
-LaneCode = 'LANE_CODE'
+if DataSemester is None:
+    DataTable = 'SMD.{0}_{1}'.format(data, DataYear)
+else:
+    DataTable = 'SMD.{0}_{1}_{2}'.format(data, DataSemester, DataYear)
 
 columnDetails = dict()
 
@@ -31,7 +45,8 @@ env.workspace = dbConnection
 InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn], routeSelection, RouteID,
                          dbConnection, is_table=True)
 
-kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, 'ROUGHNESS', to_km_factor=1)
+# Initialize the kemantapan class
+kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
 summaryTable = kemantapan.summary().reset_index()
 
 # Create the column details
