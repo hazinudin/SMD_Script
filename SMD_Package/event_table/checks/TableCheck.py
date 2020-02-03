@@ -1707,9 +1707,9 @@ class EventValidation(object):
                 to_m = row[to_m_col]
                 lane = row[lane_code]
 
-                asp_allnull = col_allnull(row, asp_mask)
-                rg_allnull = col_allnull(row, rg_mask)
-                pci_null = row[pci_col] is None
+                asp_allnull = col_allnull(row, asp_mask)  # Check if all ASP_ value is null
+                rg_allnull = col_allnull(row, rg_mask)  # Check if all RG_ value is null
+                pci_null = pd.isnull(row[pci_col])  # Check whether PCI value is null
                 surface = row[surf_col]  # The surface type
 
                 if surface == 'asphalt' and (not rg_allnull):
