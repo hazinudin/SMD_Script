@@ -45,7 +45,7 @@ RouteReq = InputDetails["routes"]
 # All the column details in the roughness_config.json
 ColumnDetails = rni_config['column_details']  # Load the roughness column details dictionary
 SearchRadius = rni_config['search_radius']
-OutputGDBTable = 'SMD.RNI_{0}'.format(DataYear)  # The GDB table which store all the valid table row
+OutputGDBTable = 'SMD.RNI_{0}_RERUN'.format(DataYear)  # The GDB table which store all the valid table row
 RoadTypeDetails = rni_config['roadtype_details']
 ComparisonTable = rni_config['compare_table']['table_name']
 CompRouteID = rni_config['compare_table']['route_id']
