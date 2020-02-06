@@ -14,7 +14,7 @@
     "lrs_network":"ELRS.National_Network2018",
     "balai_table":"SMD.MAP_BALAI_PROV",
     "balai_route_table":"SMD.MAP_BALAI_ROUTE",
-    "rni": "SMD.RNI_2019"
+    "rni": "SMD.RNI_2019_RERUN"
   },
   "table_fields":{
     "lrs_network":{
