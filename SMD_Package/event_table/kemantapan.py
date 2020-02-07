@@ -70,9 +70,17 @@ class Kemantapan(object):
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
                                        rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
-                                       lane_code=lane_code, rni_lane_code=rni_lane_code)
-        self.graded_df = self.grading(merge_df, surftype_col, grading_col, group_details, kemantapan_type)
+                                       match_only=False, lane_code=lane_code, rni_lane_code=rni_lane_code)
+        self.merged_df = merge_df
+        self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
+        self.graded_df = self.grading(self.match_only, surftype_col, grading_col, group_details, kemantapan_type)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
+        self.no_match_event = len(merge_df.loc[merge_df['_merge'] == 'left_only'])
+
+        if self.no_match_event != 0:
+            self.all_match = False
+        else:
+            self.all_match = True
 
     def summary(self, flatten=True):
         """

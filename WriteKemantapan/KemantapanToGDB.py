@@ -1,6 +1,7 @@
 import sys
 sys.path.append('E:/SMD_Script')
 from SMD_Package import Kemantapan, gdb_table_writer, event_fc_to_df
+from SMD_Package.event_table.measurement.adjustment import Adjust
 from arcpy import GetParameterAsText, env
 import json
 import os
@@ -14,6 +15,15 @@ with open('smd_config.json') as config_f:
 
 # Get all the request detail
 routeSelection = request_j['routes']
+if routeSelection == "ALL":
+    pass
+elif type(routeSelection) == unicode:
+    routeSelection = [routeSelection]
+elif type(routeSelection) == list:
+    pass
+else:
+    raise ("Route selection is not list or string")
+
 if 'semester' in request_j.keys():
     DataSemester = request_j['semester']
 else:
@@ -42,27 +52,33 @@ else:
 columnDetails = dict()
 
 env.workspace = dbConnection
-InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn], routeSelection, RouteID,
-                         dbConnection, is_table=True)
+for route in routeSelection:
+    InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn, LaneCode], route, RouteID,
+                             dbConnection, is_table=True)
+    adjust = Adjust(InputDF, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE", conversion=1)
+    adjust.trim_to_reference(fit_to='RNI')
 
-# Initialize the kemantapan class
-kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
-summaryTable = kemantapan.summary().reset_index()
+    # Initialize the kemantapan class
+    kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
 
-# Create the column details
-for col_name in summaryTable.dtypes.to_dict():
+    if kemantapan.all_match:
+        summaryTable = kemantapan.summary().reset_index()
+        print route
 
-    columnDetails[col_name] = dict()  # Create the dictionary for a single column
-    col_dtype = summaryTable.dtypes[col_name]  # The Pandas Data Type.
+        # Create the column details
+        for col_name in summaryTable.dtypes.to_dict():
 
-    # Translate the Data Type
-    if col_dtype == 'object':
-        gdb_dtype = 'string'
-    if col_dtype in ['int64', 'float64']:
-        gdb_dtype = 'double'
+            columnDetails[col_name] = dict()  # Create the dictionary for a single column
+            col_dtype = summaryTable.dtypes[col_name]  # The Pandas Data Type.
 
-    columnDetails[col_name]['dtype'] = gdb_dtype  # Insert the column data type
+            # Translate the Data Type
+            if col_dtype == 'object':
+                gdb_dtype = 'string'
+            if col_dtype in ['int64', 'float64']:
+                gdb_dtype = 'double'
 
-# Write to GDB.
-gdb_table_writer(dbConnection, summaryTable, 'SMD.KEMANTAPAN_{0}_{1}_{2}'.format(data, DataSemester, DataYear),
-                 columnDetails, new_table=False)
+            columnDetails[col_name]['dtype'] = gdb_dtype  # Insert the column data type
+
+        # Write to GDB.
+        gdb_table_writer(dbConnection, summaryTable, 'SMD.KEMANTAPAN_{0}_{1}_{2}'.format(data, DataSemester, DataYear),
+                         columnDetails, new_table=False)
