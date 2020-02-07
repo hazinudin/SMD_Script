@@ -4,7 +4,8 @@ from SMD_Package.event_table.lrs import route_geometry
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 
-def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, conversion=100, fit_to='LRS'):
+def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, conversion=100, rni_to_km=100,
+                     fit_to='LRS'):
     """
     This function will convert the input DataFrame to the specified conversion and trim the input DataFrame measurement
     column to fit the LRS Maximum measurement value.
@@ -18,7 +19,7 @@ def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, co
     """
     df = dataframe
     _convert_measurement(df, from_m_col, to_m_col, conversion=conversion)  # Convert the measurement
-    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to, rni_to_km=conversion)
+    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to, rni_to_km=rni_to_km)
     return df
 
 

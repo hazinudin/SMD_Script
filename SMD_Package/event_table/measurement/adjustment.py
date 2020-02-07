@@ -7,13 +7,13 @@ from trim_convert import convert_and_trim, _convert_measurement
 
 
 class Adjust(object):
-    def __init__(self, df, routeid_col, from_m_col, to_m_col, lane_code):
+    def __init__(self, df, routeid_col, from_m_col, to_m_col, lane_code, conversion=100):
         self.df = df
         self.routeid = routeid_col
         self.from_m = from_m_col
         self.to_m = to_m_col
         self.lane_code = lane_code
-        self.conversion = 100
+        self.conversion = conversion
         self.flipped = list()  # List flipped routes
 
         config = SMDConfigs()
