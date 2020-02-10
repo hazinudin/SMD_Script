@@ -14,12 +14,16 @@ request_j = json.loads(request)
 with open('smd_config.json') as config_f:
     smd_config = json.load(config_f)
 
+# Setting up the GDB environment
+dbConnection = smd_config['smd_database']['instance']
+env.workspace = dbConnection
+
 # Get all the request detail
 routeSelection = request_j['routes']
 if routeSelection == "ALL":
     lrsNetwork = smd_config["table_names"]["lrs_network"]
     balaiTable = smd_config["table_names"]["balai_table"]
-    balaiRouteTable = smd_config["table_names"]["balai_table"]
+    balaiRouteTable = smd_config["table_names"]["balai_route_table"]
     getRoute = GetRoutes("balai", 'ALL', lrsNetwork, balaiTable, balaiRouteTable)
     routeSelection = getRoute.route_list()
     pass
@@ -35,7 +39,6 @@ if 'semester' in request_j.keys():
 else:
     DataSemester = None
 DataYear = request_j['year']
-dbConnection = smd_config['smd_database']['instance']
 
 # Determine the grading column
 if data == 'ROUGHNESS':
@@ -57,7 +60,6 @@ else:
 
 columnDetails = dict()
 
-env.workspace = dbConnection
 for route in routeSelection:
     InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn, LaneCode], route, RouteID,
                              dbConnection, is_table=True)
@@ -66,8 +68,10 @@ for route in routeSelection:
 
     # Initialize the kemantapan class
     if lane_based == 'false':
+        outputTable = 'SMD.KEMANTAPAN_{0}_{1}_{2}'.format(data, DataSemester, DataYear)
         kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
     else:
+        outputTable = 'SMD.KEMANTAPAN_L_{0}_{1}_{2}'.format(data, DataSemester, DataYear)
         kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data,
                                 lane_based=True, to_km_factor=1)
 
@@ -90,5 +94,4 @@ for route in routeSelection:
             columnDetails[col_name]['dtype'] = gdb_dtype  # Insert the column data type
 
         # Write to GDB.
-        gdb_table_writer(dbConnection, summaryTable, 'SMD.KEMANTAPAN_{0}_{1}_{2}'.format(data, DataSemester, DataYear),
-                         columnDetails, new_table=False)
+        gdb_table_writer(dbConnection, summaryTable, outputTable, columnDetails, new_table=False)
