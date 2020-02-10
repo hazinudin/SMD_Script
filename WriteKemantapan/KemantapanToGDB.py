@@ -1,6 +1,6 @@
 import sys
 sys.path.append('E:/SMD_Script')
-from SMD_Package import Kemantapan, gdb_table_writer, event_fc_to_df
+from SMD_Package import Kemantapan, gdb_table_writer, event_fc_to_df, GetRoutes
 from SMD_Package.event_table.measurement.adjustment import Adjust
 from arcpy import GetParameterAsText, env
 import json
@@ -16,6 +16,11 @@ with open('smd_config.json') as config_f:
 # Get all the request detail
 routeSelection = request_j['routes']
 if routeSelection == "ALL":
+    lrsNetwork = smd_config["table_names"]["lrs_network"]
+    balaiTable = smd_config["table_names"]["balai_table"]
+    balaiRouteTable = smd_config["table_names"]["balai_table"]
+    getRoute = GetRoutes("balai", 'ALL', lrsNetwork, balaiTable, balaiRouteTable)
+    routeSelection = getRoute.route_list()
     pass
 elif type(routeSelection) == unicode:
     routeSelection = [routeSelection]
