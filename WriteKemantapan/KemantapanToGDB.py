@@ -9,6 +9,7 @@ os.chdir('E:/SMD_Script')
 
 request = GetParameterAsText(0)
 data = GetParameterAsText(1)
+lane_based = GetParameterAsText(2)
 request_j = json.loads(request)
 with open('smd_config.json') as config_f:
     smd_config = json.load(config_f)
@@ -64,7 +65,11 @@ for route in routeSelection:
     adjust.trim_to_reference(fit_to='RNI')
 
     # Initialize the kemantapan class
-    kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
+    if lane_based == 'false':
+        kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
+    else:
+        kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data,
+                                lane_based=True, to_km_factor=1)
 
     if kemantapan.all_match:
         summaryTable = kemantapan.summary().reset_index()
