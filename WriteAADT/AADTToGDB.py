@@ -1,6 +1,6 @@
 import sys
 sys.path.append('E:/SMD_Script')
-from SMD_Package import gdb_table_writer, event_fc_to_df
+from SMD_Package import gdb_table_writer, event_fc_to_df, GetRoutes
 from SMD_Package.event_table.traffic.aadt import AADT
 from arcpy import GetParameterAsText, env
 import json
@@ -12,9 +12,18 @@ request_j = json.loads(request)
 with open('smd_config.json') as config_f:
     smd_config = json.load(config_f)
 
+# Setting up the GDB environment
+dbConnection = smd_config['smd_database']['instance']
+env.workspace = dbConnection
+
 # Get all the request detail
 routeSelection = request_j['routes']
 if routeSelection == "ALL":
+    lrsNetwork = smd_config["table_names"]["lrs_network"]
+    balaiTable = smd_config["table_names"]["balai_table"]
+    balaiRouteTable = smd_config["table_names"]["balai_route_table"]
+    getRoute = GetRoutes("balai", 'ALL', lrsNetwork, balaiTable, balaiRouteTable)
+    routeSelection = getRoute.route_list()
     pass
 elif type(routeSelection) == unicode:
     routeSelection = [routeSelection]
@@ -24,7 +33,6 @@ else:
     raise ("Route selection is not list or string")
 
 DataYear = request_j['year']
-dbConnection = smd_config['smd_database']['instance']
 
 # All the input table column and table name
 LaneCode = 'LANE_CODE'
@@ -34,7 +42,6 @@ ToMeasure = 'STA_TO'
 DataTable = "SMD.RTC_{0}".format(DataYear)
 columnDetails = dict()
 
-env.workspace = dbConnection
 for route in routeSelection:
     InputDF = event_fc_to_df(DataTable, "*", route, RouteID, dbConnection, is_table=True)
 
