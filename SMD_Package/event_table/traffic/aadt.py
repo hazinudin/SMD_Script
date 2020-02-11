@@ -18,6 +18,7 @@ class AADT(object):
         self.routeid_col = routeid_col
         self.survey_direction = survey_direction
         self.col_prefix = veh_col_prefix
+        self.exclude = ['NUM_VEH1', 'NUM_VEH8']  # Exclude these veh column from AADT sum
 
         self.df_multiplied = self._traffic_multiplier()
 
@@ -40,7 +41,7 @@ class AADT(object):
         else:
             veh_summary = resample_result.reset_index().groupby(by='LINKID').sum().reset_index()  # Route AADT
 
-        veh_summary['AADT'] = veh_summary.sum(axis=1)  # Create AADT column which sum all veh columns
+        veh_summary['AADT'] = veh_summary[self.excluded_veh_cols].sum(axis=1)  # Create AADT column which sum all veh columns
         return veh_summary
 
     def _traffic_multiplier(self):
@@ -80,3 +81,12 @@ class AADT(object):
         veh_columns = all_columns[veh_masking]
 
         return veh_columns
+
+    @property
+    def excluded_veh_cols(self):
+        all_columns = np.array(self.df.columns.tolist())
+        veh_masking = np.char.startswith(all_columns, self.col_prefix)
+        veh_cols = all_columns[veh_masking]
+
+        excluded = np.setdiff1d(veh_cols, self.exclude)
+        return excluded
