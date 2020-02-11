@@ -31,7 +31,7 @@ class AADT(object):
         veh_columns = self.veh_columns  # Get all the veh columns
         df = self._add_survey_time()  # Add the survey time column
         df.set_index('_survey_time', inplace=True)  # Set the survey time as index
-        grouped = df.groupby(by=[self.routeid_col, self.survey_direction])
+        grouped = df.groupby(by=[self.routeid_col])
         resample_result = grouped[veh_columns].apply(lambda x: x.resample('1440T', label='right',
                                                      base=(x.index.min().hour*60)+x.index.min().minute).
                                                      sum().reset_index(drop=True).mean()).astype(int)
