@@ -33,7 +33,7 @@ class AADT(object):
         grouped = df.groupby(by=[self.routeid_col, self.survey_direction])
         resample_result = grouped[veh_columns].apply(lambda x: x.resample('1440T', label='right',
                                                      base=(x.index.min().hour*60)+x.index.min().minute).
-                                                     sum().reset_index(drop=True).mean())
+                                                     sum().reset_index(drop=True).mean()).astype(int)
 
         if lane_aadt:
             veh_summary = resample_result.reset_index()  # Lane AADT

@@ -1,6 +1,6 @@
 import sys
 sys.path.append('E:/SMD_Script')
-from SMD_Package import Kemantapan, gdb_table_writer, event_fc_to_df
+from SMD_Package import gdb_table_writer, event_fc_to_df
 from SMD_Package.event_table.traffic.aadt import AADT
 from arcpy import GetParameterAsText, env
 import json
@@ -31,18 +31,20 @@ LaneCode = 'LANE_CODE'
 RouteID = 'LINKID'
 FromMeasure = 'STA_FROM'
 ToMeasure = 'STA_TO'
-DataTable = "SMD.RNI_{0}".format(DataYear)
+DataTable = "SMD.RTC_{0}".format(DataYear)
 columnDetails = dict()
 
 env.workspace = dbConnection
 for route in routeSelection:
     InputDF = event_fc_to_df(DataTable, "*", route, RouteID, dbConnection, is_table=True)
 
-    # Initialize the kemantapan class
+    if len(InputDF) == 0:  # Continue to next route if the InputDF is empty
+        continue
+
+    # Initialize the AADT class
     aadt = AADT(InputDF)
 
-    summaryTable = aadt.daily_aadt()
-    print route
+    summaryTable = aadt.daily_aadt()  # Create the daily AADT summary
 
     # Create the column details
     for col_name in summaryTable.dtypes.to_dict():
@@ -53,8 +55,8 @@ for route in routeSelection:
         # Translate the Data Type
         if col_dtype == 'object':
             gdb_dtype = 'string'
-        if col_dtype in ['int64', 'float64']:
-            gdb_dtype = 'double'
+        if col_dtype in ['int64', 'float64', 'int32']:
+            gdb_dtype = 'long'
 
         columnDetails[col_name]['dtype'] = gdb_dtype  # Insert the column data type
 
