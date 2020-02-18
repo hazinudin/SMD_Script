@@ -120,8 +120,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         passed_routes_row = valid_df.loc[valid_df[RouteIDCol].isin(passed_routes)]  # Only select the route which pass
         passed_routes_row = create_patch(passed_routes_row, LrsNetwork, LrsNetworkRID)
         adjust = Adjust(passed_routes_row, RouteIDCol, FromMCol, ToMCol, CodeLane)
-        if str(forceWrite) == 'true':
-            adjust.survey_direction()
+        # if str(forceWrite) == 'true':
+        #     adjust.survey_direction()
         adjust.trim_to_reference(fit_to='RNI')  # Trim and convert to reference
         gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
