@@ -1285,7 +1285,7 @@ class EventValidation(object):
             required_delta = timedelta(minutes=duration*24*60)  # The required survey duration
 
             if end_timestamp < (required_delta+start_timestamp):
-                actual_delta = (end_timestamp-(required_delta+start_timestamp)).seconds/60  # The actual survey duration in minutes
+                actual_delta = abs((end_timestamp-(required_delta+start_timestamp)).total_seconds()/60)  # The actual survey duration in minutes
                 duration_in_h = duration*24  # The required survey duration in hours
                 result = "Rute {0} pada arah {1} memiliki kekurangan durasi survey RTC sebanyak {2} menit dari total {3} jam yang harus dilakukan.".\
                     format(route, direction, actual_delta, duration_in_h)
