@@ -95,3 +95,5 @@ for route in routeSelection:
 
         # Write to GDB.
         gdb_table_writer(dbConnection, summaryTable, outputTable, columnDetails, new_table=False)
+    else:
+        kemantapan.merged_df.to_csv("{0}.csv".format(route))
