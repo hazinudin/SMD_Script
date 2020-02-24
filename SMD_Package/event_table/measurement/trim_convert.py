@@ -1,4 +1,5 @@
 from arcpy import env, da
+import numpy as np
 from SMD_Package.load_config import SMDConfigs
 from SMD_Package.event_table.lrs import route_geometry
 from SMD_Package.FCtoDataFrame import event_fc_to_df
@@ -19,11 +20,11 @@ def convert_and_trim(dataframe, routeid_col, from_m_col, to_m_col, lane_code, co
     """
     df = dataframe
     _convert_measurement(df, from_m_col, to_m_col, conversion=conversion)  # Convert the measurement
-    _trim(df, routeid_col, to_m_col, lane_code, fit_to=fit_to, rni_to_km=rni_to_km)
+    _trim(df, routeid_col, to_m_col, from_m_col, lane_code, fit_to=fit_to, rni_to_km=rni_to_km)
     return df
 
 
-def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None, rni_to_km=None):
+def _trim(dataframe, routeid_col, to_m_col, from_m_col, lane_code, fit_to=None, rni_to_km=None):
     """
     This function will trim event table to fit the LRS Network Max Measurement.
     :param dataframe: The event DataFrame
@@ -66,19 +67,27 @@ def _trim(dataframe, routeid_col, to_m_col, lane_code, fit_to=None, rni_to_km=No
                 max_m = float(max_m)/rni_to_km
 
             df_route_lane = df_route.loc[df_route[lane_code] == lane]  # Lane in route DataFrame.
-            df_route_lane['_diff'] = df_route_lane[to_m_col] - max_m  # Create a difference col
+            df_route_lane['_diff_to'] = df_route_lane[to_m_col] - max_m  # Create a difference col
+            df_route_lane['_diff_from'] = df_route_lane[from_m_col] - max_m
 
-            outbound_meas = df_route_lane.loc[df_route_lane['_diff'] > 0]  # All row which lies outside the lRS max m
+            full_outbound = df_route_lane.loc[(df_route_lane['_diff_to'] > 0) &
+                                              ((np.isclose(df_route_lane['_diff_from'], 0)) |
+                                              (df_route_lane['_diff_from'] > 0))]  # All row which lies outside the lRS max m
+            partial_outbound = df_route_lane.loc[(df_route_lane['_diff_to'] > 0) &
+                                                 (df_route_lane['_diff_from'] < 0)]  # All row which lies outside the lRS max m
 
-            if len(outbound_meas) != 0:
-                closest_to = outbound_meas[to_m_col].idxmin()  # Find the index of closest to_m
-                drop_ind = outbound_meas.index.tolist()  # The row which completely out of bound
-                drop_ind.remove(closest_to)
+            if len(full_outbound) != 0:
+                drop_ind = full_outbound.index.tolist()  # The row which completely out of bound
 
-                # Replace the closest value to_m with LRS Max Measurement value
-                df.loc[closest_to, [to_m_col]] = max_m
                 # Drop all the row which is completely out of range
                 df.drop(drop_ind, inplace=True)
+
+            if len(partial_outbound) != 0:
+                partial_ind = partial_outbound.index.tolist()  # The row which is partially outbound
+
+                # Replace the To measurement value with max_m from reference
+                df.loc[partial_ind, [to_m_col]] = max_m
+
             else:
                 pass
 
