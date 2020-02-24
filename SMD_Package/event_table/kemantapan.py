@@ -25,7 +25,7 @@ class Kemantapan(object):
         # Convert the measurement value of the event dataframe to DM
         df_event[from_m_col] = df_event[from_m_col].astype(float)*to_km_factor*100
         df_event[to_m_col] = df_event[to_m_col].astype(float)*to_km_factor*100
-        df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(0).astype(int)
+        df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(1).astype(int)
 
         module_folder = os.path.dirname(__file__)
         surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
@@ -52,8 +52,8 @@ class Kemantapan(object):
         input_routes = df_event[route_col].unique().tolist()
 
         df_rni = event_fc_to_df(rni_table, rni_request_cols, input_routes, rni_route_col, env.workspace, True)
-        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*rni_mfactor).astype(int)  # Convert the RNI measurement
-        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*rni_mfactor).astype(int)
+        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*rni_mfactor).round(1).astype(int)  # Convert the RNI measurement
+        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*rni_mfactor).round(1).astype(int)
 
         self.df_rni = df_rni
         self.rni_route_col = rni_route_col
