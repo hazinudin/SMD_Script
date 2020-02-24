@@ -58,7 +58,7 @@ AltitudeCol = 'STATO_ALT'
 SegmentLength = 'SEGMENT_LENGTH'
 
 # The GDB table which store all the valid table row
-OutputGDBTable = 'SMD.ROUGHNESS_{0}_{1}_RERUN'.format(Semester, DataYear)
+OutputGDBTable = 'SMD.ROUGHNESS_{0}_{1}_RERUN_2'.format(Semester, DataYear)
 
 # All the details about comparison table
 CompTable = roughness_config['compare_table']['table_name']
