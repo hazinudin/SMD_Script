@@ -42,7 +42,7 @@ DataYear = request_j['year']
 
 # Determine the grading column
 if data == 'ROUGHNESS':
-    GradeColumn = 'IRI'
+    GradeColumn = 'IRI_POK'
 elif data == 'PCI':
     GradeColumn = 'PCI'
 else:
@@ -56,15 +56,15 @@ ToMeasure = 'STA_TO'
 if DataSemester is None:
     DataTable = 'SMD.{0}_{1}'.format(data, DataYear)
 else:
-    DataTable = 'SMD.{0}_{1}_{2}'.format(data, DataSemester, DataYear)
+    DataTable = 'SMD.{0}_{1}_{2}_RERUN_2'.format(data, DataSemester, DataYear)
 
 columnDetails = dict()
 
 for route in routeSelection:
     InputDF = event_fc_to_df(DataTable, [RouteID, FromMeasure, ToMeasure, GradeColumn, LaneCode], route, RouteID,
                              dbConnection, is_table=True)
-    adjust = Adjust(InputDF, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE", conversion=1)
-    adjust.trim_to_reference(fit_to='RNI')
+    # adjust = Adjust(InputDF, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE", conversion=1)
+    # adjust.trim_to_reference(fit_to='RNI')
 
     # Initialize the kemantapan class
     if lane_based == 'false':
