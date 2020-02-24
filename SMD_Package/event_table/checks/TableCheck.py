@@ -698,7 +698,7 @@ class EventValidation(object):
                 else:
                     # Make sure the from measure is smaller than to measure, and
                     # the next row from measure is the same as previous row to measure (no gaps).
-                    if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], rtol=0.01)):
+                    if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], atol=0.01)):
                         # This means OK
                         # Rewrite the To Measure and From Measure variable
                         from_m = row[from_m_col]
@@ -714,7 +714,7 @@ class EventValidation(object):
                         to_m = row[from_m_col]
                         from_m = row[to_m_col]
 
-                    elif not np.isclose(to_m, row[from_m_col], rtol=0.01):
+                    elif not np.isclose(to_m, row[from_m_col], atol=0.01):
                         if to_m < row[from_m_col]:
                             # Create an error message
                             error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'.\
