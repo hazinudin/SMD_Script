@@ -82,7 +82,7 @@ class Kemantapan(object):
         else:
             self.all_match = True
 
-    def summary(self, flatten=True):
+    def summary(self, flatten=True, lane_km=True):
         """
         Create a summary DataFrame which contain the length for every road grade and the percentage for every road grade
         in a single route. The column with '_p' suffix contain the length percentage.
@@ -97,10 +97,10 @@ class Kemantapan(object):
             pivot_grade_all = self.create_pivot(columns=['_grade'])
         elif self.lane_based:
             # Create the pivot table
-            pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'], lane_code=self.lane_code)
-            pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'], lane_code=self.lane_code)
-            pivot_mantap_all = self.create_pivot(columns=['_kemantapan'], lane_code=self.lane_code)
-            pivot_grade_all = self.create_pivot(columns=['_grade'], lane_code=self.lane_code)
+            pivot_grade = self.create_pivot(columns=['_surf_group', '_grade'], lane_code=self.lane_code, lane_km=lane_km)
+            pivot_mantap = self.create_pivot(columns=['_surf_group', '_kemantapan'], lane_code=self.lane_code, lane_km=lane_km)
+            pivot_mantap_all = self.create_pivot(columns=['_kemantapan'], lane_code=self.lane_code, lane_km=lane_km)
+            pivot_grade_all = self.create_pivot(columns=['_grade'], lane_code=self.lane_code, lane_km=lane_km)
 
         # All the required grades and surfaces
         if self.type == 'ROUGHNESS':
@@ -323,19 +323,26 @@ class Kemantapan(object):
 
         return mantap_comp
 
-    def create_pivot(self, columns, lane_code=None):
+    def create_pivot(self, columns, lane_code=None, lane_km=False):
         """
         Create a pivot DataFrame from the DataFrame which already being graded
         :param columns: The column used to create pivot table.
         :param lane_code: The lane code column.
+        :param lane_km: If True then the calculation will sum all the segment length from all available lane.
         :return:
         """
         if lane_code is None:  # If no lane code column is specified
-            pivot = self.graded_df.pivot_table('_len', index='LINKID', columns=columns, aggfunc=np.sum,
+            pivot = self.graded_df.pivot_table('_len', index=self.route_col, columns=columns, aggfunc=np.sum,
                                                fill_value=0)
         elif lane_code is not None:
-            pivot = self.graded_df.pivot_table('_len', index=['LINKID', lane_code], columns=columns, aggfunc=np.sum,
+            pivot = self.graded_df.pivot_table('_len', index=[self.route_col, lane_code], columns=columns, aggfunc=np.sum,
                                                fill_value=0)
+
+            if lane_km:
+                pivot_reset = pivot.reset_index()
+                grouped = pivot_reset.groupby(self.route_col).sum()
+                return grouped
+
         return pivot
 
     @staticmethod

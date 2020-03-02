@@ -71,7 +71,7 @@ for route in routeSelection:
         outputTable = 'SMD.KEMANTAPAN_{0}_{1}_{2}'.format(data, DataSemester, DataYear)
         kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data, to_km_factor=1)
     else:
-        outputTable = 'SMD.KEMANTAPAN_L_{0}_{1}_{2}'.format(data, DataSemester, DataYear)
+        outputTable = 'SMD.KEMANTAPAN_LKM_{0}_{1}_{2}'.format(data, DataSemester, DataYear)
         kemantapan = Kemantapan(InputDF, GradeColumn, RouteID, FromMeasure, ToMeasure, LaneCode, data,
                                 lane_based=True, to_km_factor=1)
 
