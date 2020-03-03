@@ -5,7 +5,7 @@ sorting process and table lookup from a database connection.
 
 
 class Deflection(object):
-    def __init__(self, df, force_col, type, route_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+    def __init__(self, df, force_col, type, d0_col, d200_col, route_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                  survey_direc='SURVEY_DIREC', force_ref=40):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
