@@ -66,6 +66,6 @@ class Deflection(object):
         :return:
         """
         result = self.sorted[[self.d0, self.d200, self.force_col]].\
-            apply(lambda x: (self.force_ref/x[self.force_col])*(x/1000))  # The normalized calculation
+            apply(lambda x: (self.force_ref/x[self.force_col])*(x/1000), axis=1)  # The normalized calculation
 
         return result[[self.d0, self.d200]]  # Only return the D0 and D200 column
