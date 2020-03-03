@@ -30,11 +30,17 @@ class Deflection(object):
         self.to_m = to_m_col
         self.force_ref = force_ref
         self.survey_direc = survey_direc
+        self.d0 = d0_col
+        self.d200 = d200_col
+        self.norm_d0 = 'NORM_'+self.d0
+        self.norm_d200 = 'NORM_'+self.d200
 
         if type == 'FWD':
             self.sorted = self._sorting()
         elif type == 'LWD':
             self.sorted = self.df
+
+        self.sorted[[self.norm_d0, self.norm_d200]] = self.normalized()  # Create and fill the normalized columns
 
     def _sorting(self):
         """
@@ -48,3 +54,13 @@ class Deflection(object):
         closest_row = self.df.loc[closest_index]  # Get the closest rows
 
         return closest_row  # Return closest row
+
+    def normalized(self):
+        """
+        This class method calculate the normalized value of D0 and D200 column.
+        :return:
+        """
+        result = self.sorted[[self.d0, self.d200, self.force_col]].\
+            apply(lambda x: (self.force_ref/x[self.force_col])*(x/1000))  # The normalized calculation
+
+        return result[[self.d0, self.d200]]  # Only return the D0 and D200 column
