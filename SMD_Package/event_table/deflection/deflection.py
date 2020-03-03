@@ -34,6 +34,7 @@ class Deflection(object):
         self.d200 = d200_col
         self.norm_d0 = 'NORM_'+self.d0
         self.norm_d200 = 'NORM_'+self.d200
+        self.curvature = 'D0_D200'
 
         if type == 'FWD':
             self.sorted = self._sorting()
@@ -41,6 +42,7 @@ class Deflection(object):
             self.sorted = self.df
 
         self.sorted[[self.norm_d0, self.norm_d200]] = self.normalized()  # Create and fill the normalized columns
+        self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
 
     def _sorting(self):
         """
