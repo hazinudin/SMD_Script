@@ -5,13 +5,14 @@ sorting process and table lookup from a database connection.
 
 
 class Deflection(object):
-    def __init__(self, df, force_col, type, d0_col, d200_col, route_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                 survey_direc='SURVEY_DIREC', force_ref=40):
+    def __init__(self, df, force_col, type, d0_col, d200_col, asp_temp, route_col='LINKID', from_m_col='STA_FROM',
+                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
         :param d0_col: The D0 column.
         :param d200_col: The d200 column.
+        :param asp_temp: The asphalt temperature column.
         :param route_col: The route id column
         :param from_m_col: The From Measure column
         :param to_m_col: The To Measure column
@@ -35,6 +36,7 @@ class Deflection(object):
         self.norm_d0 = 'NORM_'+self.d0
         self.norm_d200 = 'NORM_'+self.d200
         self.curvature = 'D0_D200'
+        self.ampt_tlap = 'AMPT_TLAP'
 
         if type == 'FWD':
             self.sorted = self._sorting()
@@ -43,6 +45,7 @@ class Deflection(object):
 
         self.sorted[[self.norm_d0, self.norm_d200]] = self.normalized()  # Create and fill the normalized columns
         self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
+        self.sorted[self.ampt_tlap] = 41/self.sorted[asp_temp]  # The AMPT/TLAP value
 
     def _sorting(self):
         """
