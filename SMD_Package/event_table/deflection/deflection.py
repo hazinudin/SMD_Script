@@ -10,6 +10,8 @@ class Deflection(object):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
+        :param d0_col: The D0 column.
+        :param d200_col: The d200 column.
         :param route_col: The route id column
         :param from_m_col: The From Measure column
         :param to_m_col: The To Measure column
