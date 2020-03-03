@@ -1,5 +1,5 @@
 """
-This script contains function used to calculate FWD d0-d200 and its normalized value. The calculation also includes
+This script contains function used to calculate FWD/LWD d0-d200 and its normalized value. The calculation also includes
 sorting process and table lookup from a database connection.
 """
 
