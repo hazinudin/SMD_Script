@@ -284,6 +284,58 @@ class FindCoordinateError(object):
 
         return errors
 
+    def find_end_error(self, route, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
+                       lat_col='STATO_LAT', threshold=30):
+        """
+        This class method find error for start point.
+        :param route which currently being processed.
+        :param ref_polyline: The reference data used, should be a Polyline object.
+        :param end_type: The end type either 'start' or 'end'.
+        :param ref_distance: The reference distance column.
+        :param long_col: The longitude column of the input table.
+        :param lat_col: The latitude column of the input table.
+        :param threshold: The distance threshold in meters.
+        :return:
+        """
+        grouped = self.df.groupby([self.to_m_col])
+        groups = grouped.groups
+
+        if end_type not in ['start', 'end']:
+            raise ValueError("end_type is not 'start' or 'end'.")
+        elif end_type == 'start':
+            ref_geom = PointGeometry(ref_polyline.firstPoint).projectAs(ref_polyline.spatialReference)
+            start_ind = np.min(groups.keys())
+            rads = 100
+        else:
+            ref_geom = PointGeometry(ref_polyline.lastPoint).projectAs(ref_polyline.spatialReference)
+            start_ind = np.max(groups.keys())
+            rads = 0
+
+        first_ind_rows = self.df.loc[groups[start_ind]]
+        error_messages = list()
+
+        for index, row in first_ind_rows.iterrows():
+            lane = row[self.lane_code_col]
+            ref_dist = row[ref_distance]
+            input_p = InputPoint(row[long_col], row[lat_col])
+            distance_to_ref = input_p.point_geom.projectAs(ref_geom.spatialReference).distanceTo(ref_geom)
+
+            if end_type == 'start':
+                if (distance_to_ref < (rads-threshold)) and \
+                   (distance_to_ref > (rads+threshold)) and \
+                   (ref_dist > threshold):
+                    msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (start_dist = {2}, line_dist = {3})".\
+                        format(route, lane, distance_to_ref, ref_dist)
+                    error_messages.append(msg)
+
+            else:
+                if (distance_to_ref > threshold) and (ref_dist > threshold):
+                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (end_dist = {2}, line_dist = {3})".\
+                        format(route, lane, distance_to_ref, ref_dist)
+                    error_messages.append(msg)
+
+        return error_messages
+
 
 def _find_error_runs(df, column, window, threshold):
     runs = list()  # Runs list result
