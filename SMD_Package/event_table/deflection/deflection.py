@@ -5,7 +5,7 @@ sorting process and table lookup from a database connection.
 
 
 class Deflection(object):
-    def __init__(self, df, force_col, type, d0_col, d200_col, asp_temp, route_col='LINKID', from_m_col='STA_FROM',
+    def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, route_col='LINKID', from_m_col='STA_FROM',
                  to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
@@ -18,10 +18,10 @@ class Deflection(object):
         :param to_m_col: The To Measure column
         :param survey_direc: The Survey Direction column
         :param force_col: The Force/Load column
-        :param type: FWD or LWD data set.
+        :param data_type: FWD or LWD data set.
         :param force_ref: The value of reference force in kN.
         """
-        if type == 'FWD' and (survey_direc is None):
+        if data_type == 'FWD' and (survey_direc is None):
             raise ValueError("Type is FWD but survey_direc is None")
 
         self.df = df.copy(deep=True)
@@ -38,9 +38,9 @@ class Deflection(object):
         self.curvature = 'D0_D200'
         self.ampt_tlap = 'AMPT_TLAP'
 
-        if type == 'FWD':
+        if data_type == 'FWD':
             self.sorted = self._sorting()
-        elif type == 'LWD':
+        elif data_type == 'LWD':
             self.sorted = self.df
 
         self.sorted[[self.norm_d0, self.norm_d200]] = self.normalized()  # Create and fill the normalized columns
