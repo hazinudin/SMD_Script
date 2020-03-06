@@ -334,7 +334,10 @@ class FindCoordinateError(object):
                         format(route, lane, distance_to_ref, ref_dist)
                     error_messages.append(msg)
 
-        return error_messages
+        if len(error_messages) == 0:
+            return None
+        else:
+            return error_messages
 
 
 def _find_error_runs(df, column, window, threshold):
