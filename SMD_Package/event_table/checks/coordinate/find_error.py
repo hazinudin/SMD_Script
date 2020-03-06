@@ -10,18 +10,22 @@ class FindCoordinateError(object):
     This class is used to process the input point distance to a specified point of reference
     and also point's measurement pattern.
     """
-    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col):
+    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col, long_col='STATO_LONG', lat_col='STATO_LAT'):
         """
         Initialization.
         :param data_frame: The input DataFrame with distance column.
         :param from_m_col: The from measure column in the input DataFrame.
         :param to_m_col: The to measure column in the input DataFrame.
         :param lane_code_col: The lane code column in the input DataFrame.
+        :param long_col: The longitude column.
+        :param lat_col: The latitude column.
         """
         self.df = data_frame
         self.from_m_col = from_m_col
         self.to_m_col = to_m_col
         self.lane_code_col = lane_code_col
+        self.long_col = long_col
+        self.lat_col = lat_col
 
     def distance_double_check(self, column1, column2, window=5, threshold=30):
         """
@@ -160,6 +164,21 @@ class FindCoordinateError(object):
             return None
         else:
             return error_messages
+
+    def find_lane_group_error(self, threshold=30, ref='L1'):
+        """
+        This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
+        any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
+        :param threshold: Distance error threshold in meters.
+        :param ref: Lane coordinate used as reference.
+        :return:
+        """
+        grouped = self.df.groupby([self.from_m_col])
+        groups = grouped.groups
+
+        for group in groups.keys():
+            rows = self.df.loc[groups[group]]
+            ref_x = rows.at[rows[self.lane_code_col] == ref]
 
 
 def _find_error_runs(df, column, window, threshold):
