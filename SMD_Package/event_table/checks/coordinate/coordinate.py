@@ -170,6 +170,19 @@ class InputPoint(object):
         else:
             return np.nan
 
+    def distance_to_point(self, x, y, spat_ref='4326'):
+        """
+        This class method calculate the distance between the input point and other point defined in the parameter.
+        :param x: The longitude of other point.
+        :param y: The latitude of other point.
+        :param spat_ref: Spatial reference used by the other point.
+        :return:
+        """
+        other = self._point_geom(x,y, projection=spat_ref)
+        distance = self.point_geom.distanceTo(other)
+
+        return distance
+
     @staticmethod
     def _reproject(reference_geom, point_geom):
         route_spat_ref = reference_geom.spatialReference
