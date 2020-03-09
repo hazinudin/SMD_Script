@@ -160,12 +160,9 @@ class FindCoordinateError(object):
                         format(route, lane, distance_to_ref, ref_dist)
                     error_messages.append(msg)
 
-        if len(error_messages) == 0:
-            return None
-        else:
-            return error_messages
+        return error_messages
 
-    def find_lane_group_error(self, threshold=30, ref='L1'):
+    def find_lane_error(self, threshold=30, ref='L1'):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
@@ -173,12 +170,31 @@ class FindCoordinateError(object):
         :param ref: Lane coordinate used as reference.
         :return:
         """
-        grouped = self.df.groupby([self.from_m_col])
+        grouped = self.df.groupby([self.from_m_col, self.to_m_col])
         groups = grouped.groups
+        error_group = list()
 
         for group in groups.keys():
-            rows = self.df.loc[groups[group]]
-            ref_x = rows.at[rows[self.lane_code_col] == ref]
+            group_rows = self.df.loc[groups[group]]
+            ref_row = group_rows[self.lane_code_col] == ref
+            other_row = group_rows.loc[~ref_row]
+            other_dist = list()
+
+            ref_x = group_rows.loc[ref_row, self.long_col].values[0]
+            ref_y = group_rows.loc[ref_row, self.lat_col].values[0]
+            ref_p = InputPoint(ref_x, ref_y)
+
+            for index, row in other_row.iterrows():
+                other_x = row[self.long_col]
+                other_y = row[self.lat_col]
+                distance = ref_p.distance_to_point(other_x, other_y)
+                other_dist.append(distance)
+
+            error = np.any(np.array(other_dist) > threshold)
+            if error:
+                error_group.append(group)
+
+        return error_group
 
 
 def _find_error_runs(df, column, window, threshold):
