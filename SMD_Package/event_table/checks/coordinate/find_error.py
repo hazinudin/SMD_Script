@@ -174,34 +174,34 @@ class FindCoordinateError(object):
         groups = grouped.groups
         error_messages = list()
 
-        for group in groups.keys():
-            group_rows = self.df.loc[groups[group]]
-            ref_row = group_rows[self.lane_code_col] == ref
-            ref_missing = np.any(ref_row)
-            other_row = group_rows.loc[~ref_row]
+        for group in groups.keys():  # Iterate over all available group
+            group_rows = self.df.loc[groups[group]]  # All row from a group
+            ref_row = group_rows[self.lane_code_col] == ref  # Referenced lane row
+            ref_missing = np.any(ref_row)  # Referenced lane is missing
+            other_row = group_rows.loc[~ref_row]  # All row from other lane (not referenced lane)
 
             if (len(other_row) == 0) or ref_missing:
                 continue
 
-            other_dist = dict()
+            other_dist = dict()  # Dictionary for every other lane distance to referenced lane
 
-            ref_x = group_rows.loc[ref_row, self.long_col].values[0]
+            ref_x = group_rows.loc[ref_row, self.long_col].values[0]  # Referenced lane coordinate
             ref_y = group_rows.loc[ref_row, self.lat_col].values[0]
             ref_p = InputPoint(ref_x, ref_y)
 
-            for index, row in other_row.iterrows():
-                lane = row[self.lane_code_col]
+            for index, row in other_row.iterrows():  # Iterate over all row from other lane
+                lane = row[self.lane_code_col]  # Other lane coordinates
                 other_x = row[self.long_col]
                 other_y = row[self.lat_col]
-                distance = ref_p.distance_to_point(other_x, other_y)
-                other_dist[lane] = distance
+                distance = ref_p.distance_to_point(other_x, other_y)  # Distance to referenced lane
+                other_dist[lane] = distance  # Insert to other distance dictionary
 
-            if np.any(np.array([other_dist[x] for x in other_dist]) > threshold):
+            if np.any(np.array([other_dist[x] for x in other_dist]) > threshold):  # If any lane exceeds threshold
                 msg = "Rute {0} pada segmen {1}-{2} memiliki kelompok koordinat lane yang berjarak lebih dari {3}m dari {4}. {5}".\
                     format(route, group[0], group[1], threshold, ref, other_dist)
                 error_messages.append(msg)
 
-        return error_messages
+        return error_messages  # Return all error message
 
 
 def _find_error_runs(df, column, window, threshold):
