@@ -162,7 +162,7 @@ class FindCoordinateError(object):
 
         return error_messages
 
-    def find_lane_error(self, threshold=30, ref='L1'):
+    def find_lane_error(self, route, threshold=30, ref='L1'):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
@@ -172,29 +172,35 @@ class FindCoordinateError(object):
         """
         grouped = self.df.groupby([self.from_m_col, self.to_m_col])
         groups = grouped.groups
-        error_group = list()
+        error_messages = list()
 
         for group in groups.keys():
             group_rows = self.df.loc[groups[group]]
             ref_row = group_rows[self.lane_code_col] == ref
             other_row = group_rows.loc[~ref_row]
-            other_dist = list()
+
+            if len(other_row) == 0:
+                continue
+
+            other_dist = dict()
 
             ref_x = group_rows.loc[ref_row, self.long_col].values[0]
             ref_y = group_rows.loc[ref_row, self.lat_col].values[0]
             ref_p = InputPoint(ref_x, ref_y)
 
             for index, row in other_row.iterrows():
+                lane = row[self.lane_code_col]
                 other_x = row[self.long_col]
                 other_y = row[self.lat_col]
                 distance = ref_p.distance_to_point(other_x, other_y)
-                other_dist.append(distance)
+                other_dist[lane] = distance
 
-            error = np.any(np.array(other_dist) > threshold)
-            if error:
-                error_group.append(group)
+            if np.any(np.array([other_dist[x] for x in other_dist]) > threshold):
+                msg = "Rute {0} pada segmen {1}-{2} memiliki kelompok koordinat lane yang berjarak lebih dari {3}m dari {4}. {5}".\
+                    format(route, group[0], group[1], threshold, ref, other_dist)
+                error_messages.append(msg)
 
-        return error_group
+        return error_messages
 
 
 def _find_error_runs(df, column, window, threshold):
