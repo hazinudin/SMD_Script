@@ -177,9 +177,10 @@ class FindCoordinateError(object):
         for group in groups.keys():
             group_rows = self.df.loc[groups[group]]
             ref_row = group_rows[self.lane_code_col] == ref
+            ref_missing = np.any(ref_row)
             other_row = group_rows.loc[~ref_row]
 
-            if len(other_row) == 0:
+            if (len(other_row) == 0) or ref_missing:
                 continue
 
             other_dist = dict()
