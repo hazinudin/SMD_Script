@@ -766,6 +766,7 @@ class EventValidation(object):
         rni_lane = self.config.table_fields['rni']['lane_code']
         rni_long = self.config.table_fields['rni']['longitude']
         rni_lat = self.config.table_fields['rni']['latitude']
+        rni_lane_width = self.config.table_fields['rni']['lane_width']
         initial_comparison = comparison
 
         if routes == 'ALL':  # Only process selected routes, if 'ALL' then process all routes in input table
@@ -780,8 +781,8 @@ class EventValidation(object):
             added_cols = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
             df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)  # Get LRS route geometry
-            rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat], route, rni_routeid,
-                                    self.sde_connection, True)  # Get the RNI table
+            rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat, rni_lane_width],
+                                    route, rni_routeid, self.sde_connection, True)  # Get the RNI table
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
@@ -879,7 +880,7 @@ class EventValidation(object):
 
                 if (comparison == 'RNIline-LRS') or (comparison == 'RNIPoint-LRS'):
                     errors = df_route.loc[(df_route['rniDistance'] > threshold) & (df_route['lrsDistance'] > threshold),
-                    [from_m_col, to_m_col, lane_code]]
+                                          [from_m_col, to_m_col, lane_code]]
 
                 if (from_m_col is None) or (to_m_col is None) or (lane_code is None):
                     if len(errors) != 0:
@@ -899,6 +900,9 @@ class EventValidation(object):
 
             if segment_data and (comparison == 'LRS'):
                 lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
+                start_error = coordinate_error.find_end_error(route, route_geom, 'start')
+                end_error = coordinate_error.find_end_error(route, route_geom, 'end')
+                lane_error = coordinate_error.find_lane_error(route, rni_df=rni_df, lane_w_col=rni_lane_width)
 
                 for lane in lrs_dist_error.keys():
                     errors = lrs_dist_error[lane]
@@ -920,6 +924,10 @@ class EventValidation(object):
             if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
                 double_check_error = coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window,
                                                                             threshold=threshold)
+                start_error = coordinate_error.find_end_error(route, rni_line, 'start', 'rniDistance')
+                end_error = coordinate_error.find_end_error(route, rni_line, 'end', 'rniDistance')
+                lane_error = coordinate_error.find_lane_error(route)
+
                 for lane in double_check_error.keys():
                     errors = double_check_error[lane]
 
