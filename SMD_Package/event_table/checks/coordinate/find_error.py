@@ -165,7 +165,7 @@ class FindCoordinateError(object):
 
         return error_messages  # Return all error message
 
-    def find_lane_error(self, route, rni_df=None, default_width=30, ref='L1'):
+    def find_lane_error(self, route, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1'):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
@@ -177,14 +177,25 @@ class FindCoordinateError(object):
         :return:
         """
         grouped = self.df.groupby([self.from_m_col, self.to_m_col])
+
+        if rni_df is not None:
+            rni_lane_w = rni_df.groupby([self.from_m_col, self.to_m_col])[lane_w_col].sum()
+        else:
+            rni_lane_w = None
+
         groups = grouped.groups
         error_messages = list()
 
         for group in groups.keys():  # Iterate over all available group
             group_rows = self.df.loc[groups[group]]  # All row from a group
             ref_row = group_rows[self.lane_code_col] == ref  # Referenced lane row
-            ref_missing = np.any(ref_row)  # Referenced lane is missing
+            ref_missing = ~np.any(ref_row)  # Referenced lane is missing
             other_row = group_rows.loc[~ref_row]  # All row from other lane (not referenced lane)
+
+            if rni_lane_w is None:
+                width = len(group_rows)*default_width  # Determine the surface width
+            else:
+                width = rni_lane_w[group]
 
             if (len(other_row) == 0) or ref_missing:
                 continue
@@ -202,8 +213,8 @@ class FindCoordinateError(object):
                 distance = ref_p.distance_to_point(other_x, other_y)  # Distance to referenced lane
                 other_dist[lane] = distance  # Insert to other distance dictionary
 
-            if np.any(np.array([other_dist[x] for x in other_dist]) > default_width):  # If any lane exceeds threshold
-                msg = "Rute {0} pada segmen {1}-{2} memiliki kelompok koordinat lane yang berjarak lebih dari {3}m dari {4}. {5}".\
+            if np.any(np.array([other_dist[x] for x in other_dist]) > width):  # If any lane exceeds threshold
+                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} yaitu {5}".\
                     format(route, group[0], group[1], default_width, ref, other_dist)
                 error_messages.append(msg)
 
