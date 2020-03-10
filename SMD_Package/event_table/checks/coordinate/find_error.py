@@ -10,17 +10,20 @@ class FindCoordinateError(object):
     This class is used to process the input point distance to a specified point of reference
     and also point's measurement pattern.
     """
-    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col, long_col='STATO_LONG', lat_col='STATO_LAT'):
+    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col, routeid_col='LINKID', long_col='STATO_LONG',
+                 lat_col='STATO_LAT'):
         """
         Initialization.
         :param data_frame: The input DataFrame with distance column.
         :param from_m_col: The from measure column in the input DataFrame.
         :param to_m_col: The to measure column in the input DataFrame.
         :param lane_code_col: The lane code column in the input DataFrame.
+        :param routeid_col: The Route ID column in the input DataFrame.
         :param long_col: The longitude column.
         :param lat_col: The latitude column.
         """
         self.df = data_frame
+        self.routeid = routeid_col
         self.from_m_col = from_m_col
         self.to_m_col = to_m_col
         self.lane_code_col = lane_code_col
@@ -162,11 +165,14 @@ class FindCoordinateError(object):
 
         return error_messages  # Return all error message
 
-    def find_lane_error(self, route, threshold=30, ref='L1'):
+    def find_lane_error(self, route, rni_df=None, default_width=30, ref='L1'):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
-        :param threshold: Distance error threshold in meters.
+        :param route: Currently processed route.
+        :param rni_df: RNI DataFrame for calculating lane width.
+        :param default_width: Default width for every lane if the RNI DataFrame is not specified.
+        Distance error threshold in meters.
         :param ref: Lane coordinate used as reference.
         :return:
         """
@@ -196,9 +202,9 @@ class FindCoordinateError(object):
                 distance = ref_p.distance_to_point(other_x, other_y)  # Distance to referenced lane
                 other_dist[lane] = distance  # Insert to other distance dictionary
 
-            if np.any(np.array([other_dist[x] for x in other_dist]) > threshold):  # If any lane exceeds threshold
+            if np.any(np.array([other_dist[x] for x in other_dist]) > default_width):  # If any lane exceeds threshold
                 msg = "Rute {0} pada segmen {1}-{2} memiliki kelompok koordinat lane yang berjarak lebih dari {3}m dari {4}. {5}".\
-                    format(route, group[0], group[1], threshold, ref, other_dist)
+                    format(route, group[0], group[1], default_width, ref, other_dist)
                 error_messages.append(msg)
 
         return error_messages  # Return all error message
