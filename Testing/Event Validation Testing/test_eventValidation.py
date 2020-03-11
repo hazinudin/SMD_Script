@@ -33,12 +33,12 @@ class TestEventValidation(TestCase):
     @staticmethod
     def read_roughconfig():
         # Load the roughness script config JSON file
-        with open('RoughnessCheck/roughness_config.json') as config_f:
+        with open('RNICheck/rni_config_2019App.json') as config_f:
             roughness_config = json.load(config_f)
 
         return roughness_config
 
-    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/Test File/RoughValid_240911B.xlsx", "balai":"7", "year":2019, "semester":1, "routes":"ALL"}',
+    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/excel_survey/rni/rni_3_25-11-2019_015804.xlsx", "balai":"3", "year":2019, "routes":"06001"}',
                          data_type='ROUGHNESS', multiply_row=None):
 
         if data_type == 'ROUGHNESS':
@@ -54,7 +54,7 @@ class TestEventValidation(TestCase):
         db_connection = smd_config['smd_database']['instance']
 
         # Load the input JSON
-        input_details = input_json_check(input_json, 1, req_keys=['file_name', 'balai', 'year', 'semester'])
+        input_details = input_json_check(input_json, 1, req_keys=['file_name', 'balai', 'year'])
         table_path = input_details["file_name"]
         # All the column details in the roughness_config.json
         column_details = data_config['column_details']  # Load the roughness column details dictionary
@@ -71,7 +71,7 @@ class TestEventValidation(TestCase):
 
         return event_check
 
-    def _test_year_and_semester_check(self):
+    def test_year_and_semester_check(self):
         check = self.validation_class()  # Create the class
 
         check.year_and_semester_check(2017, 1)
@@ -90,7 +90,7 @@ class TestEventValidation(TestCase):
         self.assertTrue(len(check.route_results) == 0., 'Matched year only and not semester semester (year only test)')
         check.route_results = {}
 
-    def _test_route_domain(self):
+    def test_route_domain(self):
         check = self.validation_class()  # Create the EventValidation class
 
         balai_code = '7'
@@ -105,7 +105,7 @@ class TestEventValidation(TestCase):
         self.assertTrue(len(check.route_results) != 0, 'Invalid')
         check.route_results = {}
 
-    def _test_range_domain_check(self):
+    def test_range_domain_check(self):
         check = self.validation_class()
 
         check.df_string['IRI'] = 3.1
@@ -135,5 +135,6 @@ class TestEventValidation(TestCase):
         check.coordinate_check(comparison='RNIseg-LRS')
 
     def test_coordinate_line(self):
-        check = self.validation_class(multiply_row=12)
-        check.coordinate_check(comparison='RNIline-LRS')
+        check = self.validation_class()
+        check.coordinate_check(comparison='LRS')
+        self.assertTrue(True)

@@ -29,6 +29,7 @@ class FindCoordinateError(object):
         self.lane_code_col = lane_code_col
         self.long_col = long_col
         self.lat_col = lat_col
+        self.error_msg = list()
 
     def distance_double_check(self, column1, column2, window=5, threshold=30):
         """
