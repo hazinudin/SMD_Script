@@ -232,6 +232,28 @@ class FindCoordinateError(object):
 
         return error_messages  # Return all error message
 
+    def close_to_zero(self, route, distance_col, tolerance=0.3, percentage=0.2):
+        """
+        This class method finds any coordinate which has a distance of 0 within tolerance, and if the amount of
+        coordinate which fulfill the first condition exceeds 80% of total row count of the input DataFrame then an
+        error message will be raised.
+        :param route: Currently processed route.
+        :param distance_col: The distance column which the value will be evaluated.
+        :param tolerance: The distance threshold.
+        :param percentage: The minimum percentage of error rows.
+        :return:
+        """
+        total = len(self.df)
+        error_row = self.df.loc[np.isclose(self.df[distance_col], 0, atol=tolerance)]
+        error_count = len(error_row)
+        err_percentage = float(error_count)/float(total)
+        error_msg = None
+
+        if err_percentage > percentage:
+            error_msg = "Rute {0} memiliki {2}% koordinat survey yang berjarak kurang dari {3}m."
+
+        return error_msg
+
 
 def _find_error_runs(df, column, window, threshold):
     runs = list()  # Runs list result
