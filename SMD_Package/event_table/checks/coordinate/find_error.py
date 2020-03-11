@@ -165,15 +165,19 @@ class FindCoordinateError(object):
 
         return error_messages  # Return all error message
 
-    def find_lane_error(self, route, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1'):
+    def find_lane_error(self, route, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1',
+                        m_col='measureOnLine', m_threshold=30):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
         :param route: Currently processed route.
         :param rni_df: RNI DataFrame for calculating lane width.
+        :param lane_w_col: The lane width column in the RNI DataFrame.
         :param default_width: Default width for every lane if the RNI DataFrame is not specified.
         Distance error threshold in meters.
         :param ref: Lane coordinate used as reference.
+        :param m_col: The measurement value column.
+        :param m_threshold: The threshold for M-Value difference.
         :return:
         """
         grouped = self.df.groupby([self.from_m_col, self.to_m_col])
@@ -201,21 +205,28 @@ class FindCoordinateError(object):
                 continue
 
             other_dist = dict()  # Dictionary for every other lane distance to referenced lane
+            other_meas_diff = dict()
 
             ref_x = group_rows.loc[ref_row, self.long_col].values[0]  # Referenced lane coordinate
             ref_y = group_rows.loc[ref_row, self.lat_col].values[0]
             ref_p = InputPoint(ref_x, ref_y)
+            ref_m = group_rows.loc[ref_row, m_col].values[0]
 
             for index, row in other_row.iterrows():  # Iterate over all row from other lane
                 lane = row[self.lane_code_col]  # Other lane coordinates
                 other_x = row[self.long_col]
                 other_y = row[self.lat_col]
+                other_m = row[m_col]
                 distance = ref_p.distance_to_point(other_x, other_y)  # Distance to referenced lane
+                m_diff = abs(ref_m-other_m)  # Calculate M-Value difference from reference.
                 other_dist[lane] = distance  # Insert to other distance dictionary
+                other_meas_diff[lane] = m_diff
 
-            if np.any(np.array([other_dist[x] for x in other_dist]) > width):  # If any lane exceeds threshold
-                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} yaitu {5}".\
-                    format(route, group[0], group[1], default_width, ref, other_dist)
+            # If any lane exceeds threshold
+            if (np.any(np.array([other_dist[x] for x in other_dist]) > width)) or \
+               (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
+                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7})".\
+                    format(route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff)
                 error_messages.append(msg)
 
         return error_messages  # Return all error message
