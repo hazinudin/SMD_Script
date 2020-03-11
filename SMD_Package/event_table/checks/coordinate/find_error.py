@@ -250,7 +250,8 @@ class FindCoordinateError(object):
         error_msg = None
 
         if err_percentage > percentage:
-            error_msg = "Rute {0} memiliki {2}% koordinat survey yang berjarak kurang dari {3}m."
+            error_msg = "Rute {0} memiliki {2}% koordinat survey yang berjarak kurang dari {3}m.".\
+                format(route, percentage*100, tolerance)
 
         return error_msg
 
