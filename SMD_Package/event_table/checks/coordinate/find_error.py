@@ -10,11 +10,12 @@ class FindCoordinateError(object):
     This class is used to process the input point distance to a specified point of reference
     and also point's measurement pattern.
     """
-    def __init__(self, data_frame, from_m_col, to_m_col, lane_code_col, routeid_col='LINKID', long_col='STATO_LONG',
-                 lat_col='STATO_LAT'):
+    def __init__(self, data_frame, route, from_m_col, to_m_col, lane_code_col, routeid_col='LINKID',
+                 long_col='STATO_LONG', lat_col='STATO_LAT'):
         """
         Initialization.
         :param data_frame: The input DataFrame with distance column.
+        :param route: The selected route.
         :param from_m_col: The from measure column in the input DataFrame.
         :param to_m_col: The to measure column in the input DataFrame.
         :param lane_code_col: The lane code column in the input DataFrame.
@@ -23,6 +24,7 @@ class FindCoordinateError(object):
         :param lat_col: The latitude column.
         """
         self.df = data_frame
+        self.route = route
         self.routeid = routeid_col
         self.from_m_col = from_m_col
         self.to_m_col = to_m_col
@@ -92,7 +94,7 @@ class FindCoordinateError(object):
 
         return errors
 
-    def find_non_monotonic(self, measure_column, route):
+    def find_non_monotonic(self, measure_column):
         """
         This class method find any error related to measurement value pattern.
         :param measure_column:
@@ -109,16 +111,16 @@ class FindCoordinateError(object):
             if check_unique.all():  # Check whether the result only contain True
                 pass  # This means OK
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas.'.format(lane, route)
+                error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas.'.\
+                    format(lane, self.route)
                 errors.append(error_message)
 
         return errors
 
-    def find_end_error(self, route, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
+    def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
                        lat_col='STATO_LAT', threshold=30):
         """
         This class method find error for start or end point.
-        :param route which currently being processed.
         :param ref_polyline: The reference data used, should be a Polyline object.
         :param end_type: The end type either 'start' or 'end'.
         :param ref_distance: The reference distance column.
@@ -155,23 +157,22 @@ class FindCoordinateError(object):
                    (dist_to_end > (rads+threshold)) and \
                    (ref_dist > threshold):
                     msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (start_dist = {2}, line_dist = {3})".\
-                        format(route, lane, dist_to_end, ref_dist)
+                        format(self.route, lane, dist_to_end, ref_dist)
                     error_messages.append(msg)
 
             else:
                 if (dist_to_end > threshold) and (ref_dist > threshold):
                     msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (end_dist = {2}, line_dist = {3})".\
-                        format(route, lane, dist_to_end, ref_dist)
+                        format(self.route, lane, dist_to_end, ref_dist)
                     error_messages.append(msg)
 
         return error_messages  # Return all error message
 
-    def find_lane_error(self, route, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1',
+    def find_lane_error(self, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1',
                         m_col='measureOnLine', m_threshold=30):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
-        :param route: Currently processed route.
         :param rni_df: RNI DataFrame for calculating lane width.
         :param lane_w_col: The lane width column in the RNI DataFrame.
         :param default_width: Default width for every lane if the RNI DataFrame is not specified.
@@ -227,17 +228,16 @@ class FindCoordinateError(object):
             if (np.any(np.array([other_dist[x] for x in other_dist]) > width)) or \
                (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
                 msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7})".\
-                    format(route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff)
+                    format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff)
                 error_messages.append(msg)
 
         return error_messages  # Return all error message
 
-    def close_to_zero(self, route, distance_col, tolerance=0.3, percentage=0.2):
+    def close_to_zero(self, distance_col, tolerance=0.3, percentage=0.2):
         """
         This class method finds any coordinate which has a distance of 0 within tolerance, and if the amount of
         coordinate which fulfill the first condition exceeds 80% of total row count of the input DataFrame then an
         error message will be raised.
-        :param route: Currently processed route.
         :param distance_col: The distance column which the value will be evaluated.
         :param tolerance: The distance threshold.
         :param percentage: The minimum percentage of error rows.
@@ -251,7 +251,7 @@ class FindCoordinateError(object):
 
         if err_percentage > percentage:
             error_msg = "Rute {0} memiliki {2}% koordinat survey yang berjarak kurang dari {3}m.".\
-                format(route, percentage*100, tolerance)
+                format(self.route, percentage*100, tolerance)
             self.error_msg.append(error_msg)
 
         return error_msg
