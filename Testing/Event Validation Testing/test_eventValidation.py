@@ -33,12 +33,12 @@ class TestEventValidation(TestCase):
     @staticmethod
     def read_roughconfig():
         # Load the roughness script config JSON file
-        with open('RNICheck/rni_config_2019App.json') as config_f:
+        with open('RoughnessCheck/roughness_config.json') as config_f:
             roughness_config = json.load(config_f)
 
         return roughness_config
 
-    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/excel_survey/rni/rni_3_25-11-2019_015804.xlsx", "balai":"3", "year":2019, "routes":"06001"}',
+    def validation_class(self, input_json='{"file_name":"//10.10.25.12/smd/excel_survey/iri/iri_2_17-01-2020_101537.xlsx", "balai":"2", "year":2019, "semester":2, "routes":"03045"}',
                          data_type='ROUGHNESS', multiply_row=None):
 
         if data_type == 'ROUGHNESS':
@@ -136,5 +136,5 @@ class TestEventValidation(TestCase):
 
     def test_coordinate_line(self):
         check = self.validation_class()
-        check.coordinate_check(comparison='LRS')
+        check.coordinate_check(routes='03045', comparison='RNIline-LRS')
         self.assertTrue(True)

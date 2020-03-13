@@ -60,6 +60,10 @@ class FindCoordinateError(object):
 
                     if not existin2:  # If there is no overlay then pop the current runs
                         col1_error[lane].pop(run_index)
+                    else:
+                        msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
+                            format(self.route, lane, start, end, threshold, run[2])
+                        self.error_msg.append(msg)
 
         return col1_error
 
@@ -104,7 +108,7 @@ class FindCoordinateError(object):
     def find_non_monotonic(self, measure_column):
         """
         This class method find any error related to measurement value pattern.
-        :param measure_column:
+        :param measure_column: The column which contain the segment measurement value.
         :return:
         """
         lanes = self.df[self.lane_code_col].unique().tolist()
