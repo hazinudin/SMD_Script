@@ -874,7 +874,7 @@ class EventValidation(object):
             elif comparison not in ['LRS', 'RNIline-LRS', 'RNIseg-LRS', 'RNIPoint-LRS']:
                 raise TypeError("Comparison is invalid.")
 
-            coordinate_error = coordinate.FindCoordinateError(df_route, from_m_col, to_m_col, lane_code)
+            coordinate_error = coordinate.FindCoordinateError(df_route, route, from_m_col, to_m_col, lane_code)
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
 
@@ -899,50 +899,23 @@ class EventValidation(object):
                             self.insert_route_message(route, 'error', error_message)
 
             if segment_data and (comparison == 'LRS'):
-                lrs_dist_error = coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
-                start_error = coordinate_error.find_end_error(route, route_geom, 'start')
-                end_error = coordinate_error.find_end_error(route, route_geom, 'end')
-                lane_error = coordinate_error.find_lane_error(route, rni_df=rni_df, lane_w_col=rni_lane_width)
-
-                for lane in lrs_dist_error.keys():
-                    errors = lrs_dist_error[lane]
-
-                    for range_error in errors:
-                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
-                            format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
-                        self._coordinate_status[route].append(1)
-                        if write_error:
-                            self.insert_route_message(route, 'error', error_message)
-
-                monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
-                if monotonic_error is None:
-                    pass
-                elif write_error:
-                    for error_msg in monotonic_error:
-                        self.insert_route_message(route, 'error', error_msg)
+                coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
+                coordinate_error.find_end_error(route_geom, 'start')
+                coordinate_error.find_end_error(route_geom, 'end')
+                coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
+                coordinate_error.close_to_zero('lrsDistance')
+                coordinate_error.find_non_monotonic('measureOnLine')
 
             if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
-                double_check_error = coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window,
-                                                                            threshold=threshold)
-                start_error = coordinate_error.find_end_error(route, rni_line, 'start', 'rniDistance')
-                end_error = coordinate_error.find_end_error(route, rni_line, 'end', 'rniDistance')
-                lane_error = coordinate_error.find_lane_error(route)
+                coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window, threshold=threshold)
+                coordinate_error.find_end_error(rni_line, 'start', 'rniDistance')
+                coordinate_error.find_end_error(rni_line, 'end', 'rniDistance')
+                coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
+                coordinate_error.close_to_zero('rniDistance')
+                coordinate_error.find_non_monotonic('measureOnLine')
 
-                for lane in double_check_error.keys():
-                    errors = double_check_error[lane]
-
-                    for range_error in errors:
-                        error_message = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
-                            format(route, lane, range_error[0], range_error[1], threshold, range_error[2])
-                        if write_error:
-                            self.insert_route_message(route, 'error', error_message)
-
-                monotonic_error = coordinate_error.find_non_monotonic('measureOnLine', route)
-                if monotonic_error is None:
-                    pass
-                elif write_error:
-                    for error_msg in monotonic_error:
-                        self.insert_route_message(route, 'error', error_msg)
+            for error_message in coordinate_error.error_msg:
+                self.insert_route_message(route, 'error', error_message)
 
         return self
 
