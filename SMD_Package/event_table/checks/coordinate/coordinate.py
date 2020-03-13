@@ -116,7 +116,8 @@ class InputPoint(object):
         else:
             segment_endpoint = route_geom.positionAlongLine(point_meas)  # The end point of a segment
             reprojected_point = self._reproject(route_geom, self.point_geom)
-            distance_to_ref = reprojected_point.distanceTo(segment_endpoint)  # Distance from input point to endpoint
+            # Distance from input point to endpoint
+            distance_to_ref = reprojected_point.angleAndDistanceTo(segment_endpoint)[1]
 
         return distance_to_ref
 
@@ -126,9 +127,11 @@ class InputPoint(object):
         :param route_geom: The LRS route geometry. Polyline object geometry.
         :return:
         """
-        reprojected_point = self._reproject(route_geom, self.point_geom)
-        dist_to_center_line = reprojected_point.distanceTo(route_geom)
-        return dist_to_center_line
+        reprojected_point = self._reproject(route_geom, self.point_geom)  # Re-project the line to match the line
+        nearest_p = route_geom.queryPointAndDistance(reprojected_point)[0]  # The nearest Point Geometry
+        dist_to_center_line = reprojected_point.angleAndDistanceTo(nearest_p)[1]
+
+        return dist_to_center_line  # Return distance in meters
 
     def point_meas_on_route(self, route_geom):
         """
@@ -178,8 +181,8 @@ class InputPoint(object):
         :param spat_ref: Spatial reference used by the other point.
         :return:
         """
-        other = self._point_geom(x,y, projection=spat_ref)
-        distance = self.point_geom.distanceTo(other)
+        other = self._point_geom(x, y, projection=spat_ref)
+        distance = self.point_geom.angleAndDistanceTo(other)[1]
 
         return distance
 
