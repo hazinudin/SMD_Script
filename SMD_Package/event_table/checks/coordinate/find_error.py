@@ -35,15 +35,16 @@ class FindCoordinateError(object):
 
     def distance_double_check(self, column1, column2, window=5, threshold=30):
         """
-
-        :param column1:
-        :param column2:
-        :param window:
-        :param threshold:
+        This class method finds distance error on two specified columns within the specified threshold. If the error
+        exist in both of the specified distance column, then an error message will be written.
+        :param column1: The first distance column.
+        :param column2:  The second distance column.
+        :param window:  The error window.
+        :param threshold:  The distance threshold in meters.
         :return:
         """
-        col1_error = self.find_distance_error(column1, window=window, threshold=threshold)
-        col2_error = self.find_distance_error(column2, window=window, threshold=threshold)
+        col1_error = self.find_distance_error(column1, window=window, threshold=threshold, write_message=False)
+        col2_error = self.find_distance_error(column2, window=window, threshold=threshold, write_message=False)
 
         for lane in col1_error.keys():
             if lane in col2_error:
@@ -55,19 +56,20 @@ class FindCoordinateError(object):
                     start = run[0]
                     end = run[1]
 
-                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df >= end)].empty()
+                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df['to'] >= end)].empty()
 
                     if not existin2:  # If there is no overlay then pop the current runs
                         col1_error[lane].pop(run_index)
 
         return col1_error
 
-    def find_distance_error(self, distance_column, window=5, threshold=30):
+    def find_distance_error(self, distance_column, window=5, threshold=30, write_message=True):
         """
         This class method find error related to distance error.
         :param distance_column: The distance from input point to a reference point.
         :param window: The minimal window for error detection.
         :param threshold: The distance threshold for error detection.
+        :param write_message: If True then an error message will be written to error_msg class attribute list.
         :return: If there is no error detected then None will be returned, otherwise a list object will be returned.
         {lane: [from_m, to_m, [dist, dist, dist,...]}
         """
@@ -81,13 +83,18 @@ class FindCoordinateError(object):
             index_ranges = _run_to_range(runs)  # Convert run to range
 
             for index_range in index_ranges:
-                range_start = index_range[0]
-                range_end = index_range[1]
-                meas_start = df_lane.at[range_start, self.from_m_col]
-                meas_end = df_lane.at[range_end, self.to_m_col]
-                distance_list = df_lane.loc[range_start:range_end, distance_column].tolist()
+                range_start = index_range[0]  # The runs starting index
+                range_end = index_range[1]  # The runs ends
+                meas_start = df_lane.at[range_start, self.from_m_col]  # Runs start measurement
+                meas_end = df_lane.at[range_end, self.to_m_col]  # Runs end measurement
+                distance_list = df_lane.loc[range_start:range_end, distance_column].tolist()  # All the error distance
 
-                if lane not in errors.keys():
+                if write_message:
+                    msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
+                        format(self.route, lane, meas_start, meas_end, threshold, distance_list)
+                    self.error_msg.append(msg)  # Append the error message
+
+                if lane not in errors.keys():  # If the lane does not exist in the errors dictionary
                     errors[lane] = list()
 
                 errors[lane].append([meas_start, meas_end, distance_list])  # Append the value
@@ -101,7 +108,6 @@ class FindCoordinateError(object):
         :return:
         """
         lanes = self.df[self.lane_code_col].unique().tolist()
-        errors = list()
         for lane in lanes:
             df_lane = self.df.loc[self.df[self.lane_code_col] == lane]  # Create a DataFrame for every available lane
             df_lane.sort_values(by=[self.from_m_col, self.to_m_col], inplace=True)  # Sort the DataFrame
@@ -113,9 +119,9 @@ class FindCoordinateError(object):
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
                 error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas.'.\
                     format(lane, self.route)
-                errors.append(error_message)
+                self.error_msg.append(error_message)
 
-        return errors
+        return self
 
     def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
                        lat_col='STATO_LAT', threshold=30):
@@ -144,7 +150,6 @@ class FindCoordinateError(object):
             rads = 0  # Actually not used
 
         first_ind_rows = self.df.loc[groups[start_ind]]  # Rows of the last/start segment
-        error_messages = list()  # List for storing error messages
 
         for index, row in first_ind_rows.iterrows():  # Iterate all row in last/start segment
             lane = row[self.lane_code_col]
@@ -158,15 +163,15 @@ class FindCoordinateError(object):
                    (ref_dist > threshold):
                     msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (start_dist = {2}, line_dist = {3})".\
                         format(self.route, lane, dist_to_end, ref_dist)
-                    error_messages.append(msg)
+                    self.error_msg.append(msg)
 
             else:
                 if (dist_to_end > threshold) and (ref_dist > threshold):
                     msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (end_dist = {2}, line_dist = {3})".\
                         format(self.route, lane, dist_to_end, ref_dist)
-                    error_messages.append(msg)
+                    self.error_msg.append(msg)
 
-        return error_messages  # Return all error message
+        return self  # Return all error message
 
     def find_lane_error(self, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1',
                         m_col='measureOnLine', m_threshold=30):
@@ -190,7 +195,6 @@ class FindCoordinateError(object):
             rni_lane_w = None
 
         groups = grouped.groups
-        error_messages = list()
 
         for group in groups.keys():  # Iterate over all available group
             group_rows = self.df.loc[groups[group]]  # All row from a group
@@ -198,7 +202,7 @@ class FindCoordinateError(object):
             ref_missing = ~np.any(ref_row)  # Referenced lane is missing
             other_row = group_rows.loc[~ref_row]  # All row from other lane (not referenced lane)
 
-            if rni_lane_w is None:
+            if (rni_lane_w is None) or (group not in rni_lane_w.index.tolist()):
                 width = len(group_rows)*default_width  # Determine the surface width
             else:
                 width = rni_lane_w[group]
@@ -229,9 +233,9 @@ class FindCoordinateError(object):
                (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
                 msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7})".\
                     format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff)
-                error_messages.append(msg)
+                self.error_msg.append(msg)
 
-        return error_messages  # Return all error message
+        return self
 
     def close_to_zero(self, distance_col, tolerance=0.3, percentage=0.2):
         """
@@ -247,14 +251,13 @@ class FindCoordinateError(object):
         error_row = self.df.loc[np.isclose(self.df[distance_col], 0, atol=tolerance)]
         error_count = len(error_row)
         err_percentage = float(error_count)/float(total)
-        error_msg = None
 
         if err_percentage > percentage:
-            error_msg = "Rute {0} memiliki {2}% koordinat survey yang berjarak kurang dari {3}m.".\
+            error_msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m.".\
                 format(self.route, percentage*100, tolerance)
             self.error_msg.append(error_msg)
 
-        return error_msg
+        return self
 
 
 def _find_error_runs(df, column, window, threshold):
