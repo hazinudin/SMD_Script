@@ -11,7 +11,7 @@ class FindCoordinateError(object):
     and also point's measurement pattern.
     """
     def __init__(self, data_frame, route, from_m_col, to_m_col, lane_code_col, routeid_col='LINKID',
-                 long_col='STATO_LONG', lat_col='STATO_LAT'):
+                 long_col='STATO_LONG', lat_col='STATO_LAT', comparison=None):
         """
         Initialization.
         :param data_frame: The input DataFrame with distance column.
@@ -32,6 +32,7 @@ class FindCoordinateError(object):
         self.long_col = long_col
         self.lat_col = lat_col
         self.error_msg = list()
+        self.comparison = comparison
 
     def distance_double_check(self, column1, column2, window=5, threshold=30):
         """
@@ -61,8 +62,8 @@ class FindCoordinateError(object):
                     if no_match_in_2:  # If there is no overlay then pop the current runs
                         col1_error[lane].pop(run_index)
                     else:
-                        msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
-                            format(self.route, lane, start, end, threshold, run[2])
+                        msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5} (Pembanding={6}).".\
+                            format(self.route, lane, start, end, threshold, run[2], self.comparison)
                         self.error_msg.append(msg)
 
         return col1_error
@@ -94,8 +95,8 @@ class FindCoordinateError(object):
                 distance_list = df_lane.loc[range_start:range_end, distance_column].tolist()  # All the error distance
 
                 if write_message:
-                    msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
-                        format(self.route, lane, meas_start, meas_end, threshold, distance_list)
+                    msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}. (Pembanding={6})".\
+                        format(self.route, lane, meas_start, meas_end, threshold, distance_list, self.comparison)
                     self.error_msg.append(msg)  # Append the error message
 
                 if lane not in errors.keys():  # If the lane does not exist in the errors dictionary
@@ -121,8 +122,8 @@ class FindCoordinateError(object):
             if check_unique.all():  # Check whether the result only contain True
                 pass  # This means OK
             elif len(check_unique) == 1:  # Else if only contain one value, then the result is entirely False
-                error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas.'.\
-                    format(lane, self.route)
+                error_message = 'Data koordinat di lajur {0} pada rute {1} tidak sesuai dengan arah geometri ruas. Pembanding={2}'.\
+                    format(lane, self.route, self.comparison)
                 self.error_msg.append(error_message)
 
         return self
@@ -165,14 +166,14 @@ class FindCoordinateError(object):
                 if (dist_to_end < (rads-threshold)) and \
                    (dist_to_end > (rads+threshold)) and \
                    (ref_dist > threshold):
-                    msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (start_dist = {2}, line_dist = {3})".\
-                        format(self.route, lane, dist_to_end, ref_dist)
+                    msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (Jarak ke awal = {2}, line_dist = {3}, pembanding = {4})".\
+                        format(self.route, lane, dist_to_end, ref_dist, self.comparison)
                     self.error_msg.append(msg)
 
             else:
                 if (dist_to_end > threshold) and (ref_dist > threshold):
-                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (end_dist = {2}, line_dist = {3})".\
-                        format(self.route, lane, dist_to_end, ref_dist)
+                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (Jarak ke akhir = {2}, line_dist = {3}, pembanding = {4})".\
+                        format(self.route, lane, dist_to_end, ref_dist, self.comparison)
                     self.error_msg.append(msg)
 
         return self  # Return all error message
@@ -235,8 +236,9 @@ class FindCoordinateError(object):
             # If any lane exceeds threshold
             if (np.any(np.array([other_dist[x] for x in other_dist]) > width)) or \
                (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
-                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7})".\
-                    format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff)
+                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7}, pembanding = {8})".\
+                    format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff,
+                           self.comparison)
                 self.error_msg.append(msg)
 
         return self
@@ -257,8 +259,8 @@ class FindCoordinateError(object):
         err_percentage = float(error_count)/float(total)
 
         if err_percentage > percentage:
-            error_msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m.".\
-                format(self.route, percentage*100, tolerance)
+            error_msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m. Pembanding = {3}.".\
+                format(self.route, percentage*100, tolerance, self.comparison)
             self.error_msg.append(error_msg)
 
         return self

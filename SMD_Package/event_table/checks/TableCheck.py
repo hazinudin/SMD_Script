@@ -874,7 +874,8 @@ class EventValidation(object):
             elif comparison not in ['LRS', 'RNIline-LRS', 'RNIseg-LRS', 'RNIPoint-LRS']:
                 raise TypeError("Comparison is invalid.")
 
-            coordinate_error = coordinate.FindCoordinateError(df_route, route, from_m_col, to_m_col, lane_code)
+            coordinate_error = coordinate.FindCoordinateError(df_route, route, from_m_col, to_m_col, lane_code,
+                                                              comparison=comparison)
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
 
