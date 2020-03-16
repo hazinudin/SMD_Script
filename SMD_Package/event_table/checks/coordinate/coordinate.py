@@ -54,13 +54,15 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
     return Series([segment_distance, rni_distance, lrs_distance, meas_value])
 
 
-def to_polyline(dataframe, sorting_col, long_col, lat_col, to_m_col, projections='4326', to_meters=10):
+def to_polyline(dataframe, sorting_col, long_col, lat_col, to_m_col, lane_col='LANE_CODE', projections='4326',
+                to_meters=10, ref_lane='L1'):
     if dataframe.empty:
         return None
     else:
-        dataframe.sort_values(by=sorting_col, inplace=True)
-        dataframe['Point'] = dataframe.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]*to_meters), axis=1)
-        coord_array = dataframe['Point'].values.tolist()
+        ref_data = dataframe.loc[dataframe[lane_col] == ref_lane]  # Only select referenced lane
+        ref_data.sort_values(by=sorting_col, inplace=True)
+        ref_data['Point'] = ref_data.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]*to_meters), axis=1)
+        coord_array = ref_data['Point'].values.tolist()
         arcpy_ar = Array(coord_array)
         spat_ref = SpatialReference(int(projections))
 
@@ -140,7 +142,7 @@ class InputPoint(object):
         :return:
         """
         reprojected_point = self._reproject(route_geom, self.point_geom)
-        point_meas = route_geom.measureOnLine(reprojected_point)
+        point_meas = route_geom.snapToLine(reprojected_point).lastPoint.M
         return point_meas
 
     def distance_to_rni(self, from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code, rni_lat, rni_long):
