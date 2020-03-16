@@ -49,16 +49,16 @@ class FindCoordinateError(object):
         for lane in col1_error.keys():
             if lane in col2_error:
                 runs1 = col1_error[lane]
-                runs2_df = DataFrame(col2_error[lane], columns=['from', 'to'])
+                runs2_df = DataFrame(col2_error[lane], columns=['from', 'to', 'distance'])
 
                 for run in runs1:
                     run_index = runs1.index(run)
                     start = run[0]
                     end = run[1]
 
-                    existin2 = runs2_df.loc[(runs2_df['from'] <= start) and (runs2_df['to'] >= end)].empty()
+                    no_match_in_2 = runs2_df.loc[(runs2_df['from'] <= start) & (runs2_df['to'] >= end)].empty
 
-                    if not existin2:  # If there is no overlay then pop the current runs
+                    if no_match_in_2:  # If there is no overlay then pop the current runs
                         col1_error[lane].pop(run_index)
                     else:
                         msg = "Rute {0} pada lane {1} dari {2}-{3} memiliki koordinat yang melebihi batas {4}m {5}.".\
