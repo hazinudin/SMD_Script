@@ -253,12 +253,12 @@ class FindCoordinateError(object):
         :param percentage: The minimum percentage of error rows.
         :return:
         """
-        total = len(self.df)
-        error_row = self.df.loc[np.isclose(self.df[distance_col], 0, atol=tolerance)]
-        error_count = len(error_row)
+        total = len(self.df)  # The total row count
+        error_row = self.df.loc[np.isclose(self.df[distance_col], 0, atol=tolerance)]  # Error rows
+        error_count = len(error_row)  # Error row count
         err_percentage = float(error_count)/float(total)
 
-        if err_percentage > percentage:
+        if err_percentage > percentage:  # If the error percentage exceed the specified percentage
             error_msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m. Pembanding = {3}.".\
                 format(self.route, percentage*100, tolerance, self.comparison)
             self.error_msg.append(error_msg)
