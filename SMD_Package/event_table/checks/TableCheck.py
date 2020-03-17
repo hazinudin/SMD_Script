@@ -604,7 +604,7 @@ class EventValidation(object):
                         format(last_interval, route, lane, from_m_col, to_m_col)
                     self.insert_route_message(route, 'error', error_message)
                 else:
-                    if len_statedlen_diff > 0.01 and (not np.isclose(len_statedlen_diff, 0.01, atol=0.001)):
+                    if len_statedlen_diff > 0.01 and (last_segment_statedlen > last_segment_len):
                         # Create error message
                         error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
                             format(last_interval, route, lane, length_col, last_segment_statedlen)
