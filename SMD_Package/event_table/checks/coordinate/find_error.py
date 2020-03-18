@@ -142,17 +142,16 @@ class FindCoordinateError(object):
         """
         grouped = self.df.groupby([self.to_m_col])
         groups = grouped.groups
+        rads = 100  # Radius threshold for start is rads +- threshold
 
         if end_type not in ['start', 'end']:
             raise ValueError("end_type is not 'start' or 'end'.")
         elif end_type == 'start':  # Get the 'end point' based on end_type
             ref_geom = PointGeometry(ref_polyline.firstPoint).projectAs(ref_polyline.spatialReference)
             start_ind = np.min(groups.keys())
-            rads = 100  # Radius threshold for start is rads +- threshold
         else:
             ref_geom = PointGeometry(ref_polyline.lastPoint).projectAs(ref_polyline.spatialReference)
             start_ind = np.max(groups.keys())
-            rads = 0  # Actually not used
 
         first_ind_rows = self.df.loc[groups[start_ind]]  # Rows of the last/start segment
 
@@ -160,18 +159,18 @@ class FindCoordinateError(object):
             lane = row[self.lane_code_col]
             ref_dist = row[ref_distance]  # Distance to nearest point in referenced line
             input_p = InputPoint(row[long_col], row[lat_col])  # The input point
-            dist_to_end = input_p.point_geom.projectAs(ref_geom.spatialReference).distanceTo(ref_geom)  # End point dist
+            dist_to_end = input_p.point_geom.projectAs(ref_geom.spatialReference).angleAndDistanceTo(ref_geom)[1]
 
             if end_type == 'start':
-                if (dist_to_end < (rads-threshold)) and \
-                   (dist_to_end > (rads+threshold)) and \
+                if (dist_to_end < (rads-threshold)) or \
+                   (dist_to_end > (rads+threshold)) or \
                    (ref_dist > threshold):
                     msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (Jarak ke awal = {2}, line_dist = {3}, pembanding = {4})".\
                         format(self.route, lane, dist_to_end, ref_dist, self.comparison)
                     self.error_msg.append(msg)
 
             else:
-                if (dist_to_end > threshold) and (ref_dist > threshold):
+                if (dist_to_end > threshold) or (ref_dist > threshold):
                     msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (Jarak ke akhir = {2}, line_dist = {3}, pembanding = {4})".\
                         format(self.route, lane, dist_to_end, ref_dist, self.comparison)
                     self.error_msg.append(msg)
