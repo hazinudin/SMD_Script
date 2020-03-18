@@ -207,9 +207,9 @@ class FindCoordinateError(object):
             other_row = group_rows.loc[~ref_row]  # All row from other lane (not referenced lane)
 
             if (rni_lane_w is None) or (group not in rni_lane_w.index.tolist()):
-                width = len(group_rows)*default_width  # Determine the surface width
+                width = len(group_rows)*default_width  # Use default value if RNI data is not available
             else:
-                width = rni_lane_w[group]
+                width = rni_lane_w[group]  # Get lane width from RNI data
 
             if (len(other_row) == 0) or ref_missing:
                 continue
