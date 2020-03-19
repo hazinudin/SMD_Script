@@ -37,7 +37,7 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
 
     if (from_m is not None) or (to_m is not None) or (lane is not None):  # If the measurement column is not available
         segment_distance = input_point.distance_to_segment(from_m, to_m, lane, route_geom, segm_start=at_start)
-        meas_value = input_point.point_meas_on_route(route_geom)
+        meas_value = input_point.point_meas_on_route(route_geom, to_meters=1000)
 
         if (rni_df is not None) and (rni_polyline is None):  # Comparison to RNI segment coordinate
             rni_distance = input_point.distance_to_rni(from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code,
@@ -135,15 +135,16 @@ class InputPoint(object):
 
         return dist_to_center_line  # Return distance in meters
 
-    def point_meas_on_route(self, route_geom):
+    def point_meas_on_route(self, route_geom, to_meters=1):
         """
         The measurement value of point geometry on the LRS route geometry.
         :param route_geom: The LRS route geometry. Polyline object geometry.
+        :param to_meters: This conversion is used to multiply measurement value into Meter unit.
         :return:
         """
         reprojected_point = self._reproject(route_geom, self.point_geom)
         point_meas = route_geom.snapToLine(reprojected_point).lastPoint.M
-        return point_meas
+        return point_meas * to_meters  # Convert the measurement value to Meters
 
     def distance_to_rni(self, from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code, rni_lat, rni_long):
         """
