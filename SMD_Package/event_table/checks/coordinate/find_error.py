@@ -33,6 +33,10 @@ class FindCoordinateError(object):
         self.lat_col = lat_col
         self.error_msg = list()
         self.comparison = comparison
+        self.side_col = '_side'
+
+        if self.lane_code_col is not None:
+            self.df[self.side_col] = self.df.apply(lambda x: x[lane_code_col][0], axis=1)  # Adding side column
 
     def distance_double_check(self, column1, column2, window=5, threshold=30):
         """
@@ -177,7 +181,7 @@ class FindCoordinateError(object):
 
         return self  # Return all error message
 
-    def find_lane_error(self, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, ref='L1',
+    def find_lane_error(self, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, left_ref='L1', right_ref='R1',
                         m_col='measureOnLine', m_threshold=30):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
@@ -186,12 +190,14 @@ class FindCoordinateError(object):
         :param lane_w_col: The lane width column in the RNI DataFrame.
         :param default_width: Default width for every lane if the RNI DataFrame is not specified.
         Distance error threshold in meters.
-        :param ref: Lane coordinate used as reference.
+        :param left_ref: Lane used as reference for left side.
+        :param right_ref = Lane used as reference for right side.
         :param m_col: The measurement value column.
         :param m_threshold: The threshold for M-Value difference.
         :return:
         """
-        grouped = self.df.groupby([self.from_m_col, self.to_m_col])
+        # Group by using from measure, to measure and side column
+        grouped = self.df.groupby([self.from_m_col, self.to_m_col, self.side_col])
 
         if rni_df is not None:
             rni_lane_w = rni_df.groupby([self.from_m_col, self.to_m_col])[lane_w_col].sum()
@@ -201,6 +207,13 @@ class FindCoordinateError(object):
         groups = grouped.groups
 
         for group in groups.keys():  # Iterate over all available group
+            group_side = group[2]  # The group side whether left or right
+
+            if group_side == 'L':  # Determine the referenced lane from group side
+                ref = left_ref
+            else:
+                ref = right_ref
+
             group_rows = self.df.loc[groups[group]]  # All row from a group
             ref_row = group_rows[self.lane_code_col] == ref  # Referenced lane row
             ref_missing = ~np.any(ref_row)  # Referenced lane is missing
@@ -215,11 +228,11 @@ class FindCoordinateError(object):
                 continue
 
             other_dist = dict()  # Dictionary for every other lane distance to referenced lane
-            other_meas_diff = dict()
+            other_meas_diff = dict()  # Dictionary for every other lane M-Value difference to ref
 
             ref_x = group_rows.loc[ref_row, self.long_col].values[0]  # Referenced lane coordinate
             ref_y = group_rows.loc[ref_row, self.lat_col].values[0]
-            ref_p = InputPoint(ref_x, ref_y)
+            ref_p = InputPoint(ref_x, ref_y)  # Construct reference Point as InputPoint class
             ref_m = group_rows.loc[ref_row, m_col].values[0]
 
             for index, row in other_row.iterrows():  # Iterate over all row from other lane
