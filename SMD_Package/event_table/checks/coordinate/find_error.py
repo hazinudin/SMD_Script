@@ -169,14 +169,15 @@ class FindCoordinateError(object):
                 if (dist_to_end < (rads-threshold)) or \
                    (dist_to_end > (rads+threshold)) or \
                    (ref_dist > threshold):
-                    msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat awal data referensi. (Jarak ke awal = {2}, line_dist = {3}, pembanding = {4})".\
-                        format(self.route, lane, dist_to_end, ref_dist, self.comparison)
+                    msg = "Koordinat awal pada rute {0} di lane {1} berjarak lebih dari {2}m atau kurang dari {3}m dari titik koordinat awal data referensi (Jarak ke awal = {4}) atau memiliki jarak lebih dari {7}m dari geometri referensi (Jarak ke referensi = {5}, referensi = {6})".\
+                        format(self.route, lane, rads+threshold, rads-threshold, dist_to_end, ref_dist, self.comparison,
+                               threshold)
                     self.error_msg.append(msg)
 
             else:
                 if (dist_to_end > threshold) or (ref_dist > threshold):
-                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi. (Jarak ke akhir = {2}, line_dist = {3}, pembanding = {4})".\
-                        format(self.route, lane, dist_to_end, ref_dist, self.comparison)
+                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi (Jarak ke akhir = {3}) atau memiliki jarak lebih dari {2}m dari geometri referensi (Jarak ke referensi = {4}, referensi = {5})".\
+                        format(self.route, lane, threshold, dist_to_end, ref_dist, self.comparison)
                     self.error_msg.append(msg)
 
         return self  # Return all error message
@@ -211,8 +212,10 @@ class FindCoordinateError(object):
 
             if group_side == 'L':  # Determine the referenced lane from group side
                 ref = left_ref
+                side_msg = 'kiri'
             else:
                 ref = right_ref
+                side_msg = 'kanan'
 
             group_rows = self.df.loc[groups[group]]  # All row from a group
             ref_row = group_rows[self.lane_code_col] == ref  # Referenced lane row
@@ -248,9 +251,9 @@ class FindCoordinateError(object):
             # If any lane exceeds threshold
             if (np.any(np.array([other_dist[x] for x in other_dist]) > width)) or \
                (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
-                msg = "Rute {0} pada segmen {1}-{2} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu (Jarak = {6}, selisih M-Value = {7}, pembanding = {8})".\
+                msg = "Rute {0} pada segmen {1}-{2} lajur {9} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} yaitu({6}) atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu ({7}, referensi = {8})".\
                     format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff,
-                           self.comparison)
+                           self.comparison, side_msg)
                 self.error_msg.append(msg)
 
         return self
