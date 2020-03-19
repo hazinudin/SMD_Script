@@ -144,7 +144,12 @@ class FindCoordinateError(object):
         :param threshold: The distance threshold in meters.
         :return:
         """
-        grouped = self.df.groupby([self.to_m_col])
+        left_side_only = self.df.loc[self.df[self.side_col] == 'L']  # Only use the left side
+
+        if left_side_only.empty:  # If the input DataFrame does not contain any left side lane
+            return self
+
+        grouped = left_side_only.groupby([self.to_m_col])
         groups = grouped.groups
         rads = 100  # Radius threshold for start is rads +- threshold
 
