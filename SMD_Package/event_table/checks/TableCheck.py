@@ -778,17 +778,22 @@ class EventValidation(object):
         for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
             column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]
-            added_cols = ['segDistance', 'rniDistance', 'lrsDistance', 'measureOnLine']
+            added_cols = ['rniSegDistance', 'rniDistance', 'lrsDistance', 'measureOnLine', 'previousYear']
             df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
-            route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)  # Get LRS route geometry
+
+            # Get LRS route geometry
+            route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
+
+            # Get the RNI table
             rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat, rni_lane_width],
-                                    route, rni_routeid, self.sde_connection, True)  # Get the RNI table
+                                    route, rni_routeid, self.sde_connection, True)
             rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
             rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
             rni_segment_count = len(rni_df.groupby([rni_from_m, rni_to_m]).groups)  # The count of RNI data segment/s
 
-            long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)  # Check if the coordinate is valid
+            # Check if the coordinate is valid
+            long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)
             lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
             valid_coords = np.all(long_condition & lat_condition)
             self._coordinate_status[route] = [0]  # Initiate the route's status value.
