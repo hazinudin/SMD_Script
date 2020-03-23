@@ -738,7 +738,8 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
-                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5, write_error=True):
+                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5, write_error=True,
+                         previous_year_table=None, previous_data_mfactor=100):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -755,6 +756,8 @@ class EventValidation(object):
         :param segment_data: If True then the check will measure the distance from the input point to the segment's end.
         :param comparison: Coordinate data used to check for error. ('LRS' or 'RNI-LRS')
         :param write_error: If True then error messages will be written into route message class attribute.
+        :param previous_year_table: Previous year table used to check coordinate similarity.
+        :param previous_data_mfactor: Conversion factor to convert previous data from-to measurement to match the input.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -792,6 +795,18 @@ class EventValidation(object):
             rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
             rni_segment_count = len(rni_df.groupby([rni_from_m, rni_to_m]).groups)  # The count of RNI data segment/s
 
+            # Get the previous year data if available
+            if previous_year_table is not None:
+                prev_df = event_fc_to_df(previous_year_table, column_selection, route, routeid_col, self.sde_connection,
+                                         True)
+                if prev_df.empty is False:  # If the data available is not empty then do the conversion
+                    prev_df[[from_m_col, to_m_col]] = prev_df[[from_m_col, to_m_col]].\
+                        apply(lambda x: pd.Series(x*previous_data_mfactor).astype(int))
+                else:
+                    prev_df = None  # The previous data is None.
+            else:
+                prev_df = None  # The previous data table is not defined.
+
             # Check if the coordinate is valid
             long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)
             lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
@@ -819,7 +834,8 @@ class EventValidation(object):
                                                                                             to_m=_x[to_m_col],
                                                                                             lane=_x[lane_code],
                                                                                             projections=spatial_ref,
-                                                                                            at_start=at_start), axis=1)
+                                                                                            at_start=at_start,
+                                                                                            previous_df=prev_df), axis=1)
             if segment_data and (comparison == 'RNIseg-LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
@@ -834,7 +850,8 @@ class EventValidation(object):
                                                                                             rni_to_m=rni_to_m,
                                                                                             rni_lane_code=rni_lane,
                                                                                             rni_lat=rni_lat,
-                                                                                            rni_long=rni_long), axis=1)
+                                                                                            rni_long=rni_long,
+                                                                                            previous_df=prev_df), axis=1)
             if segment_data and (comparison == 'RNIline-LRS'):
                 rni_line = coordinate.to_polyline(rni_df, rni_from_m, rni_long, rni_lat, to_m_col, projections=spatial_ref)
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
@@ -851,7 +868,8 @@ class EventValidation(object):
                                                                                             rni_lane_code=rni_lane,
                                                                                             rni_lat=rni_lat,
                                                                                             rni_long=rni_long,
-                                                                                            rni_polyline=rni_line), axis=1)
+                                                                                            rni_polyline=rni_line,
+                                                                                            previous_df=prev_df), axis=1)
 
             if not segment_data and (comparison == 'LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
@@ -910,6 +928,7 @@ class EventValidation(object):
                 coordinate_error.find_end_error(route_geom, 'end')
                 coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
                 coordinate_error.close_to_zero('lrsDistance')
+                coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
 
             if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
@@ -918,6 +937,7 @@ class EventValidation(object):
                 coordinate_error.find_end_error(rni_line, 'end', 'rniDistance')
                 coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
                 coordinate_error.close_to_zero('rniDistance')
+                coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
 
             for error_message in coordinate_error.error_msg:
