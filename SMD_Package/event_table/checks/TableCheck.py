@@ -942,6 +942,8 @@ class EventValidation(object):
 
             for error_message in coordinate_error.error_msg:
                 self.insert_route_message(route, 'error', error_message)
+            for warning_msg in coordinate_error.warning_msg:
+                self.insert_route_message(route, 'VerifiedWithWarning', warning_msg)
 
         return self
 
@@ -2040,7 +2042,8 @@ class EventValidation(object):
         if route not in self.route_results:
             self.route_results[route] = {
                 "error": [],
-                "ToBeReviewed": []
+                "ToBeReviewed": [],
+                "VerifiedWithWarning": []
             }
 
         self.route_results[route][message_type].append(message)
