@@ -31,7 +31,8 @@ class FindCoordinateError(object):
         self.lane_code_col = lane_code_col
         self.long_col = long_col
         self.lat_col = lat_col
-        self.error_msg = list()
+        self.error_msg = list()  # List for all error message string
+        self.warning_msg = list()  # List for all warning message string
         self.comparison = comparison
         self.side_col = '_side'
 
@@ -263,7 +264,7 @@ class FindCoordinateError(object):
 
         return self
 
-    def close_to_zero(self, distance_col, tolerance=0.3, percentage=0.2):
+    def close_to_zero(self, distance_col, tolerance=0.3, percentage=0.2, as_error=False):
         """
         This class method finds any coordinate which has a distance of 0 within tolerance, and if the amount of
         coordinate which fulfill the first condition exceeds 80% of total row count of the input DataFrame then an
@@ -279,9 +280,13 @@ class FindCoordinateError(object):
         err_percentage = float(error_count)/float(total)
 
         if err_percentage > percentage:  # If the error percentage exceed the specified percentage
-            error_msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m. Pembanding = {3}.".\
+            msg = "Rute {0} memiliki {1}% koordinat survey yang berjarak kurang dari {2}m. Pembanding = {3}.".\
                 format(self.route, percentage*100, tolerance, distance_col)
-            self.error_msg.append(error_msg)
+
+            if as_error:
+                self.error_msg.append(msg)
+            else:
+                self.warning_msg.append(msg)
 
         return self
 
