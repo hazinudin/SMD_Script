@@ -290,6 +290,42 @@ class FindCoordinateError(object):
 
         return self
 
+    def find_segment_len_error(self, measure_col, segment_len_col, tolerance=30):
+        """
+        This class method check the consistency between measured M-Value difference between segment and stated segment
+        length in the input table, if the M-Value difference between two segment is not the same with the stated
+        segment value within the defined tolerance then an error message will be written.
+        :param measure_col: The M-Value column of each segment.
+        :param segment_len_col: The segment length column.
+        :param tolerance: The error tolerance in meters.
+        :return:
+        """
+        lane_grouped = self.df.groupby(self.lane_code_col)
+        groups = lane_grouped.groups
+
+        for group in groups:
+            indexes = groups[group]  # Group index
+            group_df = self.df.loc[indexes]  # Group rows
+            group_df.sort_values(self.from_m_col, inplace=True)
+            group_df['_diff'] = group_df[measure_col].diff()
+            group_df[segment_len_col] = group_df[segment_len_col]*1000  # Convert segment length to meters
+            group_df.dropna(inplace=True)
+
+            error_rows = group_df.loc[~np.isclose(group_df[segment_len_col], group_df['_diff'], atol=tolerance)]
+            for index, row in error_rows.iterrows():
+                route = row[self.routeid]
+                from_m = row[self.from_m_col]
+                to_m = row[self.to_m_col]
+                lane = row[self.lane_code_col]
+                length = row[segment_len_col]
+                m_diff = row['_diff']
+
+                msg = "Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai panjang segmen ({4}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({5}m).".\
+                    format(route, from_m, to_m, lane, length, m_diff)
+                self.error_msg.append(msg)
+
+        return self
+
 
 def _find_error_runs(df, column, window, threshold):
     runs = list()  # Runs list result
