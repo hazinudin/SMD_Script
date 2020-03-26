@@ -738,8 +738,8 @@ class EventValidation(object):
 
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
-                         threshold=30, at_start=False, segment_data=True, comparison='LRS', window=5, write_error=True,
-                         previous_year_table=None, previous_data_mfactor=100):
+                         length_col='SEGMENT_LENGTH', threshold=30, at_start=False, segment_data=True, comparison='LRS',
+                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -780,7 +780,7 @@ class EventValidation(object):
         # Iterate for every requested routes
         for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
             # Create a selected route DF
-            column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code]
+            column_selection = [routeid_col, long_col, lat_col, from_m_col, to_m_col, lane_code, length_col]
             added_cols = ['rniSegDistance', 'rniDistance', 'lrsDistance', 'measureOnLine', 'previousYear']
             df_route = df.loc[df[routeid_col] == route, (column_selection+added_cols)]
 
@@ -930,6 +930,7 @@ class EventValidation(object):
                 coordinate_error.close_to_zero('lrsDistance')
                 coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
+                coordinate_error.find_segment_len_error('measureOnLine')
 
             if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
                 coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window, threshold=threshold)
@@ -939,6 +940,7 @@ class EventValidation(object):
                 coordinate_error.close_to_zero('rniDistance')
                 coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
+                coordinate_error.find_segment_len_error('measureOnLine')
 
             for error_message in coordinate_error.error_msg:
                 self.insert_route_message(route, 'error', error_message)

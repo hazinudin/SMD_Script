@@ -134,7 +134,7 @@ class FindCoordinateError(object):
         return self
 
     def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
-                       lat_col='STATO_LAT', threshold=30):
+                       lat_col='STATO_LAT', threshold=30, side='ALL'):
         """
         This class method find error for start or end point.
         :param ref_polyline: The reference data used, should be a Polyline object.
@@ -143,14 +143,20 @@ class FindCoordinateError(object):
         :param long_col: The longitude column of the input table.
         :param lat_col: The latitude column of the input table.
         :param threshold: The distance threshold in meters.
+        :param side: Selected side 'L', 'R' or 'ALL', if 'ALL' then both side will be analyzed.
         :return:
         """
-        left_side_only = self.df.loc[self.df[self.side_col] == 'L']  # Only use the left side
+        if side not in ['L', 'R', 'ALL']:
+            raise TypeError("{0} is invalid side type").format(side)
+        elif side == 'ALL':
+            side_selection = self.df  # Use both side
+        else:
+            side_selection = self.df.loc[self.df[self.side_col] == side]  # Only use the selected side
 
-        if left_side_only.empty:  # If the input DataFrame does not contain any left side lane
+        if side_selection.empty:  # If the selection is empty
             return self
 
-        grouped = left_side_only.groupby([self.to_m_col])
+        grouped = side_selection.groupby([self.to_m_col])
         groups = grouped.groups
         rads = 100  # Radius threshold for start is rads +- threshold
 
@@ -290,7 +296,7 @@ class FindCoordinateError(object):
 
         return self
 
-    def find_segment_len_error(self, measure_col, segment_len_col, tolerance=30):
+    def find_segment_len_error(self, measure_col, segment_len_col='SEGMENT_LENGTH', tolerance=30):
         """
         This class method check the consistency between measured M-Value difference between segment and stated segment
         length in the input table, if the M-Value difference between two segment is not the same with the stated
