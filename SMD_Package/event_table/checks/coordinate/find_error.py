@@ -134,7 +134,7 @@ class FindCoordinateError(object):
         return self
 
     def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
-                       lat_col='STATO_LAT', threshold=30, side='ALL'):
+                       lat_col='STATO_LAT', threshold=30, side='ALL', same_method=True):
         """
         This class method find error for start or end point.
         :param ref_polyline: The reference data used, should be a Polyline object.
@@ -144,10 +144,11 @@ class FindCoordinateError(object):
         :param lat_col: The latitude column of the input table.
         :param threshold: The distance threshold in meters.
         :param side: Selected side 'L', 'R' or 'ALL', if 'ALL' then both side will be analyzed.
+        :param same_method: The method to calculate valid radius is same for both start and end.
         :return:
         """
         if side not in ['L', 'R', 'ALL']:
-            raise TypeError("{0} is invalid side type").format(side)
+            raise TypeError("{0} is invalid side type".format(side))
         elif side == 'ALL':
             side_selection = self.df  # Use both side
         else:
@@ -161,13 +162,15 @@ class FindCoordinateError(object):
         rads = 100  # Radius threshold for start is rads +- threshold
 
         if end_type not in ['start', 'end']:
-            raise ValueError("end_type is not 'start' or 'end'.")
+            raise TypeError("end_type {0} is not 'start' or 'end'.".format(end_type))
         elif end_type == 'start':  # Get the 'end point' based on end_type
             ref_geom = PointGeometry(ref_polyline.firstPoint).projectAs(ref_polyline.spatialReference)
             start_ind = np.min(groups.keys())
+            end_msg = 'awal'
         else:
             ref_geom = PointGeometry(ref_polyline.lastPoint).projectAs(ref_polyline.spatialReference)
             start_ind = np.max(groups.keys())
+            end_msg = 'akhir'
 
         first_ind_rows = self.df.loc[groups[start_ind]]  # Rows of the last/start segment
 
@@ -177,7 +180,7 @@ class FindCoordinateError(object):
             input_p = InputPoint(row[long_col], row[lat_col])  # The input point
             dist_to_end = input_p.point_geom.projectAs(ref_geom.spatialReference).angleAndDistanceTo(ref_geom)[1]
 
-            if end_type == 'start':
+            if end_type == 'start' and not same_method:
                 if (dist_to_end < (rads-threshold)) or \
                    (dist_to_end > (rads+threshold)) or \
                    (ref_dist > threshold):
@@ -186,10 +189,10 @@ class FindCoordinateError(object):
                                threshold)
                     self.error_msg.append(msg)
 
-            else:
-                if (dist_to_end > threshold) or (ref_dist > threshold):
-                    msg = "Koordinat akhir pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat akhir data referensi (Jarak ke akhir = {3}) atau memiliki jarak lebih dari {2}m dari geometri referensi (Jarak ke referensi = {4}, referensi = {5})".\
-                        format(self.route, lane, threshold, dist_to_end, ref_dist, self.comparison)
+            elif end_type == 'end' or same_method:
+                if (dist_to_end > rads+threshold) or (ref_dist > threshold):
+                    msg = "Koordinat {6} pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat {6} data referensi (Jarak ke {6} = {3}) atau memiliki jarak lebih dari {2}m dari geometri referensi (Jarak ke referensi = {4}, referensi = {5})".\
+                        format(self.route, lane, threshold, dist_to_end, ref_dist, self.comparison, end_msg)
                     self.error_msg.append(msg)
 
         return self  # Return all error message
