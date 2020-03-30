@@ -45,8 +45,7 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
                                                                   rni_lane_code, rni_lat, rni_long)
 
         if previous_df is not None:  # Comparison to previous year data
-            previous_year = input_point.distance_to_df_segment(from_m, to_m, lane, previous_df, rni_from_m, rni_to_m,
-                                                               rni_lane_code, rni_lat, rni_long)
+            previous_year = input_point.distance_to_df_segment(from_m, to_m, lane, previous_df)
 
         # if rni_polyline is not None:
         #     segment_distance = input_point.distance_to_segment(from_m, to_m, lane, rni_polyline, segm_start=at_start)
@@ -154,8 +153,8 @@ class InputPoint(object):
         point_meas = route_geom.snapToLine(reprojected_point).lastPoint.M
         return point_meas * to_meters  # Convert the measurement value to Meters
 
-    def distance_to_df_segment(self, from_m, to_m, lane, rni_df, rni_from_m, rni_to_m, rni_lane_code, rni_lat,
-                               rni_long):
+    def distance_to_df_segment(self, from_m, to_m, lane, rni_df, rni_from_m='STA_FROM', rni_to_m='STA_TO',
+                               rni_lane_code='LANE_CODE', rni_lat='STATO_LAT', rni_long='STATO_LONG'):
         """
         This method calculate the input point distance to a specified RNI segment coordinate.
         :param from_m: From measure value of the input point
