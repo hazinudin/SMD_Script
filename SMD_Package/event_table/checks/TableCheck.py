@@ -1805,16 +1805,12 @@ class EventValidation(object):
 
         return self
 
-    def compare_kemantapan(self, rni_table, surftype_col, grading_col, comp_fc, comp_from_col, comp_to_col,
-                           comp_route_col, comp_lane_code, comp_grading_col, routes='ALL', routeid_col='LINKID',
-                           lane_codes='LANE_CODE', from_m_col='STA_FROM', to_m_col='STA_TO', segment_len='SEGMENT_LENGTH',
-                           rni_route_col='LINKID', rni_from_col='FROMMEASURE', rni_to_col='TOMEASURE',
-                           rni_lane_code='LANE_CODE', threshold=0.05, lane_based = True):
+    def compare_kemantapan(self, grading_col, comp_fc, comp_from_col, comp_to_col, comp_route_col, comp_lane_code,
+                           comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='LANE_CODE',
+                           from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage = True):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
-        :param rni_table: The RNI Feature Class Table
-        :param surftype_col: The surface type column in the RNI Feature Class
         :param grading_col: The column in the input event DataFrame used for grading.
         :param comp_fc: The feature class used for kemantapan status comparison
         :param comp_from_col: The column in the comparison feature class which store the from measure
@@ -1826,12 +1822,11 @@ class EventValidation(object):
         :param lane_codes: The lane code column in the event DataFrame
         :param from_m_col: The from measure column in the event DataFrame
         :param to_m_col: The to measure column in the event DataFrame
-        :param rni_route_col: The RouteID column in the RNI Table
-        :param rni_from_col: The from measure column in the RNI Table
-        :param rni_to_col: The to measure column in the RNI Table
         :param threshold: The threshold for Kemantapan changes.
         :return:
         """
+        from SMD_Package.event_table.checks.error_runs import find_runs
+
         df = self.copy_valid_df()  # Create the valid DataFrame copy
 
         if routes == 'ALL':  # Check for route request
@@ -1842,90 +1837,68 @@ class EventValidation(object):
         route_list = self.route_lane_tuple(df, routeid_col, lane_codes, route_only=True)  # Create a route list
         for route in route_list:  # Iterate over all available route
             df_route = df.loc[df[routeid_col] == route]  # The DataFrame with only selected route
+
             # Create the comparison DataFrame
             comp_search_field = [comp_route_col, comp_from_col, comp_to_col, comp_grading_col, comp_lane_code]
             df_comp = event_fc_to_df(comp_fc, comp_search_field, route,
                                      comp_route_col, self.sde_connection, include_all=True, orderby=None)
-            df_comp[[comp_from_col, comp_to_col]] = df_comp[[comp_from_col, comp_to_col]].apply(lambda x: x*self.rni_mfactor).astype(int)
 
-            # Create the RNI Table DataFrame
-            rni_search_field = [rni_route_col, rni_from_col, rni_to_col, surftype_col, rni_lane_code]  # The column included in RNI
-            df_rni = event_fc_to_df(rni_table, rni_search_field, route, rni_route_col, self.sde_connection,
-                                    is_table=True, orderby=None)
+            if len(df_comp) == 0:  # Check if the specified route exist in the comparison table.
+                error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.". \
+                    format(route)
+                self.error_list.append(error_message)
+                self.insert_route_message(route, 'ToBeReviewed', error_message)
 
-            if len(df_comp) != 0 or len(df_rni) != 0:  # Check if the specified route exist in the comparison table.
+                return self
 
-                # Create Kemantapan instance for both input data and comparison data.
-                kemantapan = Kemantapan(df_rni, df_route, grading_col, routeid_col, from_m_col, to_m_col, lane_codes,
-                                        rni_route_col, rni_from_col, rni_to_col, rni_lane_code, surftype_col=surftype_col,
-                                        lane_based=lane_based)
-                kemantapan_compare = Kemantapan(df_rni, df_comp, comp_grading_col, comp_route_col, comp_from_col,
-                                                comp_to_col, comp_lane_code, rni_route_col, rni_from_col, rni_to_col,
-                                                rni_lane_code, surftype_col=surftype_col, lane_based=lane_based)
+            # Create Kemantapan instance for both input data and comparison data.
+            kemantapan = Kemantapan(df_route, grading_col, routeid_col, from_m_col, to_m_col, lane_codes,
+                                    lane_based=True)
+            kemantapan_compare = Kemantapan(df_comp, comp_grading_col, comp_route_col, comp_from_col,
+                                            comp_to_col, comp_lane_code, lane_based=True, to_km_factor=1)
 
-                if not lane_based:  # If the comparison is not lane based
-                    current = kemantapan.mantap_percent.at['mantap', '_len']
-                    compare = kemantapan_compare.at['mantap', '_len']
+            if percentage:  # If the comparison is not lane based
+                current = kemantapan.mantap_percent.at['mantap', '_len']
+                compare = kemantapan_compare.mantap_percent.at['mantap', '_len']
 
-                    # Compare the kemantapan percentage between current data and previous data
-                    if np.isclose(compare, current, atol=(compare*threshold)):
-                        pass  # If true then pass
-                    else:
-                        # Create the error message
-                        error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
-                            format(route, (100*threshold))
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'ToBeReviewed', error_message)
-
-                elif lane_based:  # If the comparison is lane based
-                    current = kemantapan.graded_df
-                    compare = kemantapan_compare.graded_df
-
-                    # Merge the current input data and comparison table
-                    current_key = [routeid_col, from_m_col, to_m_col, lane_codes]
-                    compare_key = [comp_route_col, comp_from_col, comp_to_col, comp_lane_code]
-                    _merge = pd.merge(current, compare, how='inner', left_on=current_key,
-                                      right_on=compare_key)
-
-                    # Create the new column for difference in grade level
-                    diff_col = '_level_diff'
-                    grade_diff = 2
-                    _merge[diff_col] = abs(_merge['_grade_level_x'].astype(float) - _merge['_grade_level_y'].astype(float))
-                    _error_rows = _merge.loc[_merge[diff_col] >= grade_diff]
-                    df_rni['_segm_len'] = df_rni[rni_to_col] - df_rni[rni_from_col]  # Create segment len col for RNI
-
-                    # If the lane code between the input table and comparison table is same
-                    if lane_codes in list(compare):
-                        lane_codes = lane_codes+'_x'  # Use the lane code from the input
-
-                    if segment_len in list(compare):
-                        segment_len = segment_len+'_x'  # Use the segment langth from the input
-
-                    # Iterate over all error rows
-                    for index, row in _error_rows.iterrows():
-                        sta_fr = row[from_m_col]
-                        sta_to = row[to_m_col]
-                        lane = row[lane_codes]
-
-                        # Compare the RNI and input table lane length
-                        rni_lane_len = df_rni.loc[df_rni[rni_lane_code] == lane, '_segm_len'].sum()
-                        input_lane_len = _error_rows.loc[_error_rows[lane_codes] == lane, segment_len].sum()
-
-                        if input_lane_len >= (rni_lane_len*0.1):
-                            error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
-                                format(route, sta_fr, sta_to, lane, grade_diff)
-                            self.insert_route_message(route, 'ToBeReviewed', error_message)
-
-            else:  # If the route does not exist in the comparison table
-                if len(df_comp) == 0:
-                    error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.".\
-                        format(route)
+                # Compare the kemantapan percentage between current data and previous data
+                if np.isclose(compare, current, atol=(compare*threshold)):
+                    pass  # If true then pass
+                else:
+                    # Create the error message
+                    error_message = "{0} memiliki perbedaan persen kemantapan yang melebihi batas ({1}%) dari data Roughness sebelumnya.".\
+                        format(route, (100*threshold))
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'ToBeReviewed', error_message)
-                if len(df_rni) == 0:
-                    error_message = "Data RNI rute {0} tidak tersedia".format(route)
-                    self.error_list.append(error_message)
-                    self.insert_route_message(route, "error", error_message)
+
+            current = kemantapan.graded_df
+            compare = kemantapan_compare.graded_df
+
+            # Merge the current input data and comparison table
+            current_key = [routeid_col, from_m_col, to_m_col, lane_codes]
+            compare_key = [comp_route_col, comp_from_col, comp_to_col, comp_lane_code]
+            merge = pd.merge(current, compare, how='inner', left_on=current_key, right_on=compare_key)
+            lanes = merge[lane_codes].unique().tolist()
+
+            for lane in lanes:
+                # Create the new column for difference in grade level
+                merge_lane = merge.loc[merge[lane_codes] == lane]
+                merge_lane.sort_values(from_m_col, inplace=True)  # Sort the lane rows
+                diff_col = '_level_diff'
+                grade_diff = -2
+                merge_lane[diff_col] = merge_lane['_grade_level_x'].astype(int) - \
+                                       merge_lane['_grade_level_y'].astype(int)
+                error_rows = merge_lane.loc[merge_lane[diff_col] <= grade_diff]
+                runs = find_runs(error_rows, 5)
+
+                # Iterate over all error rows
+                for index in runs:
+                    sta_fr = merge_lane.at[index[0], from_m_col]
+                    sta_to = merge_lane.at[index[1], to_m_col]
+
+                    error_message = "{0} pada segmen {1}-{2} {3} memiliki perbedaan {4} tingkat kemantapan dengan data tahun sebelumnya.".\
+                        format(route, sta_fr, sta_to, lane, grade_diff)
+                    self.insert_route_message(route, 'ToBeReviewed', error_message)
 
         return self
 
