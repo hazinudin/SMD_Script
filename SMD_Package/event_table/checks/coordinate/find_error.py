@@ -3,6 +3,7 @@ from arcpy import PointGeometry
 from pandas import DataFrame
 
 from SMD_Package.event_table.checks.coordinate.coordinate import InputPoint
+from SMD_Package.event_table.checks.error_runs import find_runs
 
 
 class FindCoordinateError(object):
@@ -89,8 +90,8 @@ class FindCoordinateError(object):
             df_lane = self.df.loc[self.df[self.lane_code_col] == lane]
             df_lane.sort_values(by=[self.from_m_col, self.to_m_col], inplace=True)
             df_lane.reset_index(inplace=True)
-            runs = _find_error_runs(df_lane, distance_column, window, threshold)  # Find runs
-            index_ranges = _run_to_range(runs)  # Convert run to range
+            error_rows = df_lane.loc[df_lane[distance_column] > threshold]
+            index_ranges = find_runs(error_rows, window)  # Convert run to range
 
             for index_range in index_ranges:
                 range_start = index_range[0]  # The runs starting index
@@ -334,41 +335,3 @@ class FindCoordinateError(object):
                 self.error_msg.append(msg)
 
         return self
-
-
-def _find_error_runs(df, column, window, threshold):
-    runs = list()  # Runs list result
-    error_rows = df.loc[df[column] > threshold]
-    error_ind = error_rows.index.tolist()  # Find row with value above the threshold
-    padded_ind = np.concatenate(([0], error_ind, [0]))  # Add zero at start and end of the array
-    ind_diff = np.diff(padded_ind)
-
-    if ind_diff[0] == 1:  # This means there is a run a the beginning
-        error_runs_end = list([0])
-        error_runs_end = error_runs_end + np.where(ind_diff != 1)[0].tolist()
-    else:
-        error_runs_end = np.where(ind_diff != 1)[0].tolist()
-
-    runs_count = len(error_runs_end) - 1  # The total count of runs found in the column
-
-    for runs_end in range(0, runs_count):
-        start = error_runs_end[runs_end]
-        end = error_runs_end[runs_end+1]
-        run_index = error_rows.index[start:end].tolist()
-
-        if len(run_index) >= window:  # Check the runs length
-            runs.append(run_index)
-
-    return runs
-
-
-def _run_to_range(runs_list):
-    error_ranges = list()
-
-    for run in runs_list:
-        run_starts = run[0]
-        run_ends = run[len(run) - 1]
-        index_range = [run_starts, run_ends]
-        error_ranges.append(index_range)
-
-    return error_ranges
