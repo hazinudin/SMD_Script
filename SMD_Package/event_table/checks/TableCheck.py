@@ -1543,9 +1543,9 @@ class EventValidation(object):
         :param surftype_col: Surface type column.
         :return:
         """
-        df = self.selected_route_df(self.copy_valid_df(), routes)
+        df = self.selected_route_df(self.copy_valid_df(), routes)  # Route selection
         grouped = df.groupby([routeid_col, from_m_col, lane_code])
-        group_surface_count = grouped[surftype_col].nunique().reset_index()
+        group_surface_count = grouped[surftype_col].nunique().reset_index()  # Count of surface type unique value
         error_row = group_surface_count.loc[group_surface_count[surftype_col] > 1]
 
         for index, row in error_row.iterrows():
