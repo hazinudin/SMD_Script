@@ -1530,6 +1530,35 @@ class EventValidation(object):
 
                 self.insert_route_message(route, 'ToBeReviewed', result)
 
+    def rni_surftype_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                           lane_code='LANE_CODE', surftype_col='SURF_TYPE'):
+        """
+        This class method check for consistency in surface type for every segment in the input table. A single segment
+        should have same surface type for every available lane in that segment, otherwise that segment will be reviewed.
+        :param routes: Route selection.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From Measure column.
+        :param to_m_col: To Measure column.
+        :param lane_code: Lane code column.
+        :param surftype_col: Surface type column.
+        :return:
+        """
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        grouped = df.groupby([routeid_col, from_m_col, lane_code])
+        group_surface_count = grouped[surftype_col].nunique().reset_index()
+        error_row = group_surface_count.loc[group_surface_count[surftype_col] > 1]
+
+        for index, row in error_row.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+
+            msg = "Rute {0} pada segmen {1}-{2} memiliki jalur dengan {3} yang tidak konsisten antara satu sama lain.".\
+                format(route, from_m, to_m, surftype_col)
+            self.insert_route_message(route, "ToBeReviewed", msg)
+
+        return self
+
     def pci_asp_check(self, routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM',
                       to_m_col='STA_TO', lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH'):
         """
@@ -1931,6 +1960,10 @@ class EventValidation(object):
         :return:
         """
         route_list = []  # List for storing all requested routes
+
+        if routes == 'ALL':
+            return df
+
         if type(routes) != list:
             route_list.append(routes)  # Append the requested routes to the list
         else:
