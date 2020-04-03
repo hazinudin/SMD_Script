@@ -27,11 +27,6 @@ class Kemantapan(object):
         df_event[to_m_col] = df_event[to_m_col].astype(float)*to_km_factor*100
         df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(1).astype(int)
 
-        module_folder = os.path.dirname(__file__)
-        surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
-        with open(surftype_json_file) as group_json:
-            group_details = json.load(group_json)  # Load the surface type group JSON
-
         # make sure the kemantapan_type is between 'ROUGHNESS' and 'PCI'
         if kemantapan_type not in ['ROUGHNESS', 'PCI']:
             raise Exception('{0} is not a valid kemantapan type.'.format(kemantapan_type))  # Raise an exception
@@ -63,7 +58,7 @@ class Kemantapan(object):
         self.grading_col = grading_col
         self.route_col = route_col
 
-        self.group_details = group_details
+        self.group_details = self.group_details()
         self.lane_based = lane_based
         self.lane_code = lane_code
 
@@ -73,7 +68,7 @@ class Kemantapan(object):
                                        match_only=False, lane_code=lane_code, rni_lane_code=rni_lane_code)
         self.merged_df = merge_df
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
-        self.graded_df = self.grading(self.match_only, surftype_col, grading_col, group_details, kemantapan_type)
+        self.graded_df = self.grading(self.match_only, surftype_col, grading_col, self.group_details, kemantapan_type)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
         self.no_match_event = len(merge_df.loc[merge_df['_merge'] == 'left_only'])
 
@@ -399,7 +394,7 @@ class Kemantapan(object):
 
     @staticmethod
     def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade',
-                grading_level='_grade_level'):
+                grading_level='_grade_level', surftype_group='_surf_type', surftype_cat='_surf_group'):
         """
         This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan", "rusak_berat")
         based on the segment surface type group and value in the grading column.
@@ -409,29 +404,32 @@ class Kemantapan(object):
         :param group_details: The surface type group details (grading value and surface type (paved or unpaved)).
         :param kemantapan_type: The kemantapan type tha will be calculated
         :param grading_result: The new column used to store the grading result.
+        :param grading_level: The new column used to store the grade leve in integer.
+        :param surftype_group: The new column used to store the surface group (asphalt, penmac, rigid)
+        :param surftype_cat: The new column used to store the surface category (paved or unpaved)
         :return: The df_merge with new column which store the grading result.
         """
         # Iterate over all row in the df_merge
         for index, row in df_merge.iterrows():
+            group_not_found = True
+
+            while group_not_found:  # Iterate until a group is found
+
+                for group in group_details:
+                    if row[surftype_col] in group_details[group]['group']:  # If the group was found
+                        group_not_found = False  # group not found is False
+                        surface_group = str(group)  # surface group
+                        paved_group = group_details[group]['category']
+                        range = np.array(group_details[group]['range'])  # group's range in np.array
+
+            lower_bound = np.amin(range)  # The lower bound
+            upper_bound = np.amax(range)  # The upper bound
+            mid = range[1]  # The mid value
+
+            df_merge.loc[index, surftype_group] = surface_group  # Write the surface group name in '_surf_group'
+            df_merge.loc[index, surftype_cat] = paved_group
 
             if kemantapan_type == 'ROUGHNESS':  # If the kemantapan type is ROUGHNESS
-                group_not_found = True
-
-                while group_not_found:  # Iterate until a group is found
-
-                    for group in group_details:
-                        if row[surftype_col] in group_details[group]['group']:  # If the group was found
-                            group_not_found = False  # group not found is False
-                            surface_group = str(group)  # surface group
-                            paved_group = group_details[group]['category']
-                            range = np.array(group_details[group]['range'])  # group's range in np.array
-
-                lower_bound = np.amin(range)  # The lower bound
-                upper_bound = np.amax(range)  # The upper bound
-                mid = range[1]  # The mid value
-
-                df_merge.loc[index, '_surf_type'] = surface_group  # Write the surface group name in '_surf_group'
-                df_merge.loc[index, '_surf_group'] = paved_group
 
                 # Start the grading process
                 if row[grading_col] <= lower_bound:
@@ -451,7 +449,10 @@ class Kemantapan(object):
                 df_merge.loc[index, grading_level] = level
 
             elif kemantapan_type == 'PCI':  # If the kemantapan type is PCI
-                pass
+                continue
+
+            else:
+                continue
 
         return df_merge
 
@@ -475,6 +476,15 @@ class Kemantapan(object):
         kemantapan_prcnt.set_index(kemantapan_col, inplace=True)
 
         return kemantapan_prcnt
+
+    @staticmethod
+    def group_details():
+        module_folder = os.path.dirname(__file__)
+        surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
+        with open(surftype_json_file) as group_json:
+            group_details = json.load(group_json)  # Load the surface type group JSON
+
+        return group_details
 
 
 
