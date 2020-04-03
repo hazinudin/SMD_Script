@@ -1383,9 +1383,8 @@ class EventValidation(object):
         rni_search_field = [rni_routeid, rni_from_m, rni_to_m, rni_lane_code, rni_lane_w]
         rni_df = event_fc_to_df(rni_table, rni_search_field, routes, rni_routeid, self.sde_connection, is_table=True)
 
-    def rni_compare_surftype_len(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, year_comp,
-                                 comp_lane_code, rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
-                                 rni_surftype_col='SURF_TYPE', rni_lane_code='LANE_CODE', routes='ALL'):
+    def rni_compare_surftype(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                             surftype_col='SURF_TYPE', lane_code='LANE_CODE', routes='ALL'):
         """
         This class method will compare the surface type length of a route to previous year data. If there is a
         difference in the surface type length of a route, then an error message will be written.
@@ -1405,55 +1404,39 @@ class EventValidation(object):
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a copy of valid DataFrame
-        route_list = self.route_lane_tuple(df, rni_route_col, None, True)  # List of all route in the input DataFrame.
+        route_list = self.route_lane_tuple(df, routeid_col, None, True)  # List of all route in the input DataFrame.
 
         for route in route_list:
-            df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_surftype_col, comp_lane_code],
-                                     route, comp_route_col, self.sde_connection, include_all=True, orderby=None)
             df_route = self.selected_route_df(df, route)  # The input selected route DataFrame
+            merged = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
+                                  surftype_col, 'outer')
 
-            if len(df_comp) == 0:
-                # If the route does not exist in the comparison table
-                result = 'Rute {0} tidak terdapat pada data tahun {1}.'.format(route, year_comp)
-                self.insert_route_message(route, 'ToBeReviewed', result)
-                continue
+            input_surftype = surftype_col + '_x'  # The surface type column for input and ref after merge
+            ref_surftype = surftype_col + '_y'
 
-            for _, lane in self.route_lane_tuple(df_route, rni_route_col, rni_lane_code):
-                df_comp_lane = df_comp.loc[df_comp[comp_lane_code] == lane]  # The comparison route+lane DataFrame
-                df_route_lane = df_route.loc[df_route[rni_lane_code] == lane]  # The input DataFrame route+lane
+            # Add surface group and category column
+            merged = Kemantapan.grading(merged, input_surftype, None, Kemantapan.group_details(), None,
+                                        surftype_group='input_group', surftype_cat='input_cat')
+            merged = Kemantapan.grading(merged, ref_surftype, None, Kemantapan.group_details(), None,
+                                        surftype_group='ref_group', surftype_cat='ref_cat')
 
-                if len(df_comp_lane) == 0:
-                    # If the lane does not exist in the comparison table
-                    result = 'Tidak terdapat lane {0} pada rute {1} di tahun {2}'.format(lane, route, year_comp)
-                    self.insert_route_message(route, 'ToBeReviewed', result)
-                    continue
+            merged['status'] = pd.Series(np.nan)
+            merged.loc[(merged['ref_cat'] == 'paved') & (merged['input_cat'] == 'unpaved'), ['status']] = 'error'
+            merged.loc[(merged['ref_cat'] == 'unpaved') & (merged['input_cat'] == 'paved'), ['status']] = 'ToBeReviewed'
 
-                comp_surftype_len = RNIRouteDetails(df_comp_lane, comp_route_col, comp_from_col, comp_to_col, comp_surftype_col)
-                input_surftype_len = RNIRouteDetails(df_route_lane, rni_route_col, rni_from_col, rni_to_col, rni_surftype_col)
+            for index, row in merged.loc[merged['status'].notnull()].iterrows():
+                from_m = row[from_m_col]
+                to_m = row[to_m_col]
+                lane = row[lane_code]
+                input_cat = row['input_cat']
+                ref_cat = row['ref_cat']
+                msg_status = row['status']
 
-                input_percent = input_surftype_len.details_percentage(route)  # The input DataFrame surftype group
-                comp_percent = comp_surftype_len.details_percentage(route)  # The Comparison surftype group
+                msg = "Rute {0} pada segmen {1}-{2} lajur {3} memiliki tipe perkerasan yang berbeda dengan data tahun sebelumnya, yaitu (input = {4}, tahun sebelumnya = {5}).".\
+                    format(route, from_m, to_m, lane, input_cat, ref_cat)
+                self.insert_route_message(route, msg_status, msg)
 
-                # Join the surface type DataFrame from the input and the comparison table.
-                merge = pd.merge(input_percent, comp_percent, how='outer', on='index', indicator=True)
-                merge_input_only = merge.loc[merge['_merge'] == 'left_only']  # Surface type only on the input
-                merge_comp_only = merge.loc[merge['_merge'] == 'right_only']  # Surface type only on the comparison table
-                both = merge.loc[merge['_merge'] == 'both']
-
-                if len(merge_input_only) != 0:
-                    input_only_surftype = merge_input_only['index'].tolist()
-                    result = 'Rute {0} pada lane {4} memiliki {1} yang tidak terdapat pada data tahun {2}. {1}-{3}'.\
-                        format(route, rni_surftype_col, year_comp, input_only_surftype, lane)
-                    self.insert_route_message(route, 'ToBeReviewed', result)
-
-                if len(merge_comp_only) != 0:
-                    comp_only_surftype = merge_comp_only['index'].tolist()
-                    result = 'Rute {0} pada lane {4} tidak memiliki tipe {1} yang terdapat pada data tahun {2}. {1}-{3}'.\
-                        format(route, rni_surftype_col, year_comp, comp_only_surftype, lane)
-                    self.insert_route_message(route, 'ToBeReviewed', result)
-
-                if ((len(merge_input_only) != 0) or (len(merge_comp_only) != 0)) and (len(both) != 0):
-                    pass
+        return self
 
     def rni_compare_surfwidth(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_lane_width, year_comp,
                               rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
