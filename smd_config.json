@@ -31,7 +31,8 @@
       "surface_type":"SURF_TYPE",
       "lane_width":"LANE_WIDTH",
       "longitude":"STATO_LONG",
-      "latitude":"STATO_LAT"
+      "latitude":"STATO_LAT",
+      "median":"MED_WIDTH"
     },
     "balai_table":{
       "prov_code":"NO_PROV",
