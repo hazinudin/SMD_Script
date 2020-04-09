@@ -1919,12 +1919,12 @@ class EventValidation(object):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
-        :param check_col:
-        :param routes:
-        :param routeid_col:
-        :param from_m_col:
-        :param to_m_col:
-        :param lane_code:
+        :param check_col: Value in the column which the value will be checked.
+        :param routes: Route selection.
+        :param routeid_col: The Route ID column.
+        :param from_m_col: The From Measure column.
+        :param to_m_col: The To Measure column.
+        :param lane_code: The lane code column.
         :return:
         """
         def group_function(series):
