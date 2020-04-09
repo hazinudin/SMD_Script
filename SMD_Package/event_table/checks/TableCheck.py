@@ -814,6 +814,8 @@ class EventValidation(object):
             self._coordinate_status[route] = [0]  # Initiate the route's status value.
 
             if not valid_coords:
+                msg = "Rute {0} memiliki koordinat yang tidak valid.".format(route)
+                self.insert_route_message(route, 'error', msg)
                 continue
 
             if rni_segment_count < 2 and (comparison != 'LRS'):
