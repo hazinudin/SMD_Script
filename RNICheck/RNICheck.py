@@ -111,8 +111,8 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
     passed_routes = EventCheck.no_error_route
 
     if len(passed_routes) != 0:  # Only process the route which passed the Error check.
-        EventCheck.rni_compare_surftype_len(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType,
-                                            2018, CompLaneCode, routes=passed_routes)
+        EventCheck.rni_compare_surftype(ComparisonTable, CompRouteID, CompFromM, CompToM, CompSurfaceType,
+                                        2018, CompLaneCode, routes=passed_routes)
         EventCheck.rni_compare_surfwidth(ComparisonTable, CompRouteID, CompFromM, CompToM, CompLaneWidth, 2018,
                                          routes=passed_routes)
 

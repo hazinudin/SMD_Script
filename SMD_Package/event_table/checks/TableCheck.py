@@ -1943,9 +1943,11 @@ class EventValidation(object):
 
             # Check if there is more than 1 value
             # Null is not counted in
-            d['check_value_count'] = series[check_col].nunique(True)
+            value_count = series[check_col].nunique(True)
+            d['check_value_count'] = value_count
+            d['inconsistent'] = value_count > 1
 
-            return pd.Series(d, index=['all_empty', 'check_value_count'])
+            return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent'])
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
         side_column = 'side'
@@ -1955,7 +1957,7 @@ class EventValidation(object):
 
         # Start check for any error
         all_empty = side_group['all_empty']
-        inconsistent = side_group['check_value_count'] > 1
+        inconsistent = side_group['inconsistent']
         error_rows = side_group.loc[all_empty | inconsistent]
 
         for index, row in error_rows.iterrows():
@@ -1964,7 +1966,7 @@ class EventValidation(object):
             to_m = row[to_m_col]
             side = row[side_column]
             empty = row['all_empty']
-            val_count_error = row['check_value_count'] > 1
+            val_count_error = row['inconsistent']
 
             if empty:
                 msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\

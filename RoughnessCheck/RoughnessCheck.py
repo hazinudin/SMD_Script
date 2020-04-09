@@ -123,7 +123,7 @@ if (header_check_result is None) & (dtype_check_result is None) & (year_sem_chec
         # if str(forceWrite) == 'true':
         #     adjust.survey_direction()
         adjust.trim_to_reference(fit_to='RNI')  # Trim and convert to reference
-        gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
+        # gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
         # Write the JSON Output string for all error.
         errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')

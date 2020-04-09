@@ -114,7 +114,7 @@ if (header_check_result is None) & (dtype_check_result is None):
         #     adjust.survey_direction()
         # adjust.convert()  # Convert the measurement value
         adjust.df.loc[adjust.df['STATO_ALT'] < 0, ['STATO_ALT']] = 1
-        gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
+        # gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails, new_table=False)
 
     # Write the JSON Output string for all error.
     errors = EventCheck.altered_route_result(include_valid_routes=True, message_type='error')
