@@ -809,7 +809,7 @@ class EventValidation(object):
 
             # Check if the coordinate is valid
             long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)
-            lat_condition = (df_route[lat_col] > -8) & (df_route[lat_col] < 13)
+            lat_condition = (df_route[lat_col] > -9) & (df_route[lat_col] < 13)
             valid_coords = np.all(long_condition & lat_condition)
             self._coordinate_status[route] = [0]  # Initiate the route's status value.
 
@@ -1979,6 +1979,36 @@ class EventValidation(object):
                 self.insert_route_message(route, 'error', msg)
 
         return self
+
+    def median_direction_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                               direction_col='SURVEY_DIREC'):
+        """
+        This class method merge the input table with RNI data to get the median width and compare the median data with
+        the amount of available survey direction. A segment with median should have both of direction, otherwise an
+        error message will be raised.
+        :param routes: Route selection.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From measure column.
+        :param to_m_col: To measure column.
+        :param direction_col: The survey direction column.
+        :return:
+        """
+        smd_config = SMDConfigs()
+        rni_medwidth = smd_config.table_fields['rni']['median']
+
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        merged = add_rni_data(df, routeid_col, from_m_col, to_m_col, None, self.sde_connection, rni_medwidth)
+        grouped = merged.groupby([routeid_col, from_m_col])[direction_col].nunique().reset_index()
+        error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
+
+        for index, row in error_rows.iterrows():
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            route = row[routeid_col]
+
+            msg = "Rute {0} pada segmen {1}-{2} memiliki median namum hanya memiliki data pada di satu arah saja.".\
+                format(route, from_m, to_m)
+            self.insert_route_message(route, 'error', msg)
 
     def copy_valid_df(self, dropna=False, ignore=False):
         """
