@@ -1925,6 +1925,7 @@ class EventValidation(object):
         :param from_m_col: The From Measure column.
         :param to_m_col: The To Measure column.
         :param lane_code: The lane code column.
+        :param empty_as_null: The empty value is Null not 0.
         :return:
         """
         def group_function(series):
