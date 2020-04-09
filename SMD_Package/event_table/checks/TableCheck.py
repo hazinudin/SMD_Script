@@ -1195,7 +1195,8 @@ class EventValidation(object):
 
         # The groupped DataFrame by RouteID, FromMeasure, and ToMeasure
         df_groupped = df.groupby(by=[routeid_col, from_m_col, to_m_col]).\
-            agg({lane_codes: ['nunique', 'unique'], median_col: 'sum', road_type_col: 'unique'}).reset_index()
+            agg({lane_codes: ['nunique', 'unique'], median_col: ['sum', 'nunique'], road_type_col: 'unique'}).\
+            reset_index()
 
         for index, row in df_groupped.iterrows():
             route = str(row[routeid_col][0])
@@ -1217,6 +1218,7 @@ class EventValidation(object):
                 input_lane_count = row[lane_codes]['nunique']  # The lane count from the input
                 input_direction = len(set([x[0] for x in row[lane_codes]['unique']]))  # The direction from input 1 or 2 dir
                 input_median = row[median_col]['sum']  # The total median from the input
+                input_median_count = row[median_col]['nunique']
 
                 if input_lane_count != lane_count:
                     result = "Rute {0} pada segmen {1}-{2} memiliki jumlah lane ({3} lane) yang tidak sesuai dengan road type {4} ({5} lane).".\
@@ -1232,6 +1234,11 @@ class EventValidation(object):
                     result = "Rute {0} pada segmen {1}-{2} memiliki median yang tidak sesuai dengan road type {3}.".\
                         format(route, from_m, to_m, road_type_code)
                     self.insert_route_message(route, 'error', result)
+
+                if input_median_count > 1:
+                    msg = "Rute {0} pada segmen {1}-{2} memiliki nilai median yang tidak konsisten.".\
+                        format(route, from_m, to_m)
+                    self.insert_route_message(route, 'error', msg)
             else:
                 result = "Rute {0} pada segmen {1}-{2} memiliki road type yang tidak konsisten {3}.".\
                     format(route, from_m, to_m, road_type_code_list)
