@@ -114,9 +114,10 @@ class TestEventValidation(TestCase):
         check.coordinate_check(comparison='RNIseg-LRS')
 
     def test_coordinate_line(self):
-        check = self.validation_class()
-        check.coordinate_check(routes='0307112', comparison='RNIline-LRS',
-                               previous_year_table='SMD.ROUGHNESS_2_2019_RERUN_2')
+        check = self.validation_class('{"routes": "42045", "file_name": "//10.10.25.12/smd/excel_survey/rni/rni_9_21-11-2019_073342.xlsx", "balai": "9", "semester": 1, "year": 2019}',
+                                      'RNICheck/rni_config_2019App.json')
+        check.coordinate_check(routes='42045', comparison='LRS',
+                               previous_year_table='SMD.RNI_2019_RERUN_2')
         self.assertTrue(True)
 
     def test_compare_kemantapan(self):
