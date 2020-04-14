@@ -59,16 +59,19 @@ class TableCheckService(object):
             sys.exit(0)
 
         # Initialize the event validation class
-        self.event_check = EventValidation(input_df, column_details, lrs_network, 'ROUTEID', db_connection)
-        header_check_result = self.event_check.header_check_result
-        dtype_check_result = self.event_check.dtype_check_result
+        self.check = EventValidation(input_df, column_details, lrs_network, 'ROUTEID', db_connection)
+        header_check_result = self.check.header_check_result
+        dtype_check_result = self.check.dtype_check_result
 
-        if data_semester is not None:
-            output_table = output_table + "_{0}_{1}".format(data_year, table_suffix)
-            year_sem_check_result = self.event_check.year_and_semester_check(data_year, None, year_check_only=True)
+        if not semester_data:
+            output_table = output_table + "_{0}".format(data_year)
+            year_sem_check_result = self.check.year_and_semester_check(data_year, None, year_check_only=True)
         else:
-            output_table = output_table + "_{0}_{1}_{2}".format(data_semester, data_year, table_suffix)
-            year_sem_check_result = self.event_check.year_and_semester_check(data_year, data_semester)
+            output_table = output_table + "_{0}_{1}".format(data_semester, data_year)
+            year_sem_check_result = self.check.year_and_semester_check(data_year, data_semester)
+
+        if table_suffix is not None:
+            output_table = output_table + "_{0}".format(table_suffix)
 
         initial_check_passed = False
         if (header_check_result is None) & (dtype_check_result is None) & (year_sem_check_result is None):
@@ -82,3 +85,119 @@ class TableCheckService(object):
         self.output_table = output_table  # The output table string
         self.route_list = route_list  # Route list from the specified balai in the input JSON
         self.route_req = route_req  # The route selection from input JSON
+        self.kode_balai = kode_balai
+        self.data_year = data_year
+        self.data_semester = data_semester
+        self.data_config = data_config
+        self.smd_config = smd_config
+        self.column_details = column_details
+        self.output_index = output_index
+
+    def rni_check(self, force_write):
+        """
+        This class method provide all the checks required for RNI data.
+        :param force_write: Use as force write. Boolean.
+        :return:
+        """
+        road_type_details = self.data_config.roadtype_details  # RNI road type details from data config file.
+        compare_fc = self.smd_config.table_names['rni']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='LRS')
+            self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
+                                            previous_data_mfactor=1)
+
+            # REVIEW
+            if len(self.check.no_error_route) != 0:
+                self.check.rni_compare_surftype(routes=self.check.no_error_route)
+                self.return_all_message()
+
+            self.write_to_table(self.check.passed_routes)  # Write passed routes to GDB
+            self.return_error_message()
+
+        else:
+            return self
+
+    def roughness_check(self, force_write):
+        """
+        This class method provide all the the checks required for the Roughness data.
+        :param force_write: Use as force write. Boolean.
+        :return:
+        """
+        compare_fc = self.data_config.compare_table['table_name']
+        comp_routeid = self.data_config.compare_table['route_id']
+        comp_from_m = self.data_config.compare_table['from_measure']
+        comp_to_m = self.data_config.compare_table['to_measure']
+        comp_lane_code = self.data_config.compare_table['lane_code']
+        comp_iri = self.data_config.compare_table['iri']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
+                                            previous_year_table=compare_fc)
+
+            # REVIEW
+            if len(self.check.no_error_route) != 0:
+                self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
+                                              comp_iri)
+                self.return_all_message()
+
+            self.write_to_table(self.check.passed_routes)  # Write passed routes to GDB
+            self.return_error_message()
+
+    def write_to_table(self, route_selection):
+        """
+
+        :param route_selection:
+        :return:
+        """
+        if len(self.check.passed_routes) != 0:
+            rows = self.check.selected_route_df(self.check.df_valid, route_selection)
+            gdb_table_writer(env.workspace, rows, self.output_table, self.column_details)
+
+        return self
+
+    def return_all_message(self):
+        """
+
+        :return:
+        """
+        errors = self.check.altered_route_result(include_valid_routes=True, message_type='error')
+        reviews = self.check.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
+        warning = self.check.altered_route_result(include_valid_routes=False, message_type='VerifiedWithWarning')
+        all_messages = errors + reviews + warning
+
+        SetParameterAsText(self.output_index, output_message("Succeeded", all_messages))
+
+        return self
+
+    def return_error_message(self):
+        """
+
+        :return:
+        """
+        errors = self.check.altered_route_result()
+        SetParameterAsText(self.output_index, output_message("Succeeded", errors))
+
+        return self
