@@ -2198,7 +2198,7 @@ class EventValidation(object):
         """
         df = pd.DataFrame(self.altered_route_result(include_valid_routes=False))
         if len(df) != 0:
-            routes = df['linkid'].unique().tolist()
+            routes = df.loc[df['status'] == 'error']['linkid'].unique().tolist()
             return routes
         else:
             return list()
