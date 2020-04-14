@@ -1,6 +1,7 @@
 from SMD_Package import SMDConfigs, Configs
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, verify_balai, \
-    read_input_excel, convert_and_trim
+    read_input_excel
+from SMD_Package.event_table.measurement.adjustment import Adjust
 from arcpy import SetParameterAsText, env
 
 
@@ -164,17 +165,24 @@ class TableCheckService(object):
                                               comp_iri)
                 self.return_all_message()
 
-            self.write_to_table(self.check.passed_routes)  # Write passed routes to GDB
+            self.write_to_table(self.check.passed_routes, 'RNI')  # Write passed routes to GDB
             self.return_error_message()
 
-    def write_to_table(self, route_selection):
+    def write_to_table(self, route_selection, trim_to_reference=None):
         """
         Function to write selected route from valid DataFrame to GDB.
         :param route_selection: List of route selection.
+        :param trim_to_reference: The reference used for trimming measurement value. Default is None
         :return:
         """
         if len(self.check.passed_routes) != 0:
             rows = self.check.selected_route_df(self.check.df_valid, route_selection)
+
+            if trim_to_reference is not None:
+                adjust = Adjust(rows, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE")
+                adjust.trim_to_reference(trim_to_reference)
+                rows = adjust.df
+
             gdb_table_writer(env.workspace, rows, self.output_table, self.column_details)
 
         return self
