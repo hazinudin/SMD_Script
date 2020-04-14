@@ -2210,11 +2210,10 @@ class EventValidation(object):
         The route is extracted from the route_result class attribute.
         :return:
         """
-        df = pd.DataFrame(self.altered_route_result(include_valid_routes=True))
-        passed_status = ['verified', 'VerifiedWithWarning']
+        df = pd.DataFrame(self.altered_route_result(include_valid_routes=True, message_type='VerifiedWithWarning'))
 
         if len(df) != 0:
-            routes = df.loc[df['status'].isin(passed_status)]['linkid'].unique().tolist()
+            routes = df['linkid'].unique().tolist()
             routes_intersect = np.intersect1d(routes, self.valid_route).tolist()
             return routes_intersect
         else:
