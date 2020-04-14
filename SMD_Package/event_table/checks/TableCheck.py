@@ -2157,13 +2157,13 @@ class EventValidation(object):
         :return:
         """
         result_list = []  # The list object to store the dictionary
-        failed_routes = self.route_results.keys()
+        route_with_msg = self.route_results.keys()
 
-        select_failed = ~self.df_valid[routeid_col].isin(failed_routes)
+        select_failed = ~self.df_valid[routeid_col].isin(route_with_msg)
         is_valid_route = self.df_valid[routeid_col].isin(self.valid_route)
         passed_routes_row = self.df_valid.loc[select_failed & is_valid_route, routeid_col].unique().tolist()
 
-        for route in failed_routes:
+        for route in route_with_msg:
             messages = self.route_results[route][message_type]
 
             for msg in messages:
