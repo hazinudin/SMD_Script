@@ -19,12 +19,12 @@
     "SURVEY_LENGTH":{"dtype":"double", "allow_null":true}
   },
   "compare_table":{
-    "table_name":"SMD.ROUGHNESS_2_2018",
+    "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
     "route_id":"LINKID",
-    "from_measure":"FROMMEASURE",
-    "to_measure":"TOMEASURE",
-    "lane_code":"CODE_LANE",
-    "iri":"IRI"
+    "from_measure":"STA_FROM",
+    "to_measure":"STA_TO",
+    "lane_code":"LANE_CODE",
+    "iri":"IRI_POK"
   },
   "output_table":"SMD.ROUGHNESS_1_2019"
 }
