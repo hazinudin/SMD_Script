@@ -2211,10 +2211,10 @@ class EventValidation(object):
         :return:
         """
         df = pd.DataFrame(self.altered_route_result(include_valid_routes=True))
-        passed_status = 'verified'
+        passed_status = ['verified', 'VerifiedWithWarning']
 
         if len(df) != 0:
-            routes = df.loc[df['status'] == passed_status]['linkid'].unique().tolist()
+            routes = df.loc[df['status'].isin(passed_status)]['linkid'].unique().tolist()
             routes_intersect = np.intersect1d(routes, self.valid_route).tolist()
             return routes_intersect
         else:
