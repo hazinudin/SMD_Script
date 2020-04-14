@@ -125,7 +125,7 @@ class TableCheckService(object):
                 self.check.rni_compare_surftype(routes=self.check.no_error_route)
                 self.return_all_message()
 
-            self.write_to_table(self.check.passed_routes)  # Write passed routes to GDB
+            self.write_to_table()  # Write passed routes to GDB
             self.return_error_message()
 
         else:
@@ -133,7 +133,7 @@ class TableCheckService(object):
 
     def roughness_check(self, force_write):
         """
-        This class method provide all the the checks required for the Roughness data.
+        This class method provide all the checks required for the Roughness data.
         :param force_write: Use as force write. Boolean.
         :return:
         """
@@ -165,18 +165,51 @@ class TableCheckService(object):
                                               comp_iri)
                 self.return_all_message()
 
-            self.write_to_table(self.check.passed_routes, 'RNI')  # Write passed routes to GDB
+            self.write_to_table('RNI')  # Write passed routes to GDB
             self.return_error_message()
 
-    def write_to_table(self, route_selection, trim_to_reference=None):
+    def pci_check(self, force_write):
+        """
+        This class method provide all the checks required for the PCI data.
+        :param force_write: Use as force write. Boolean.
+        :return:
+        """
+        compare_fc = self.data_config.compare_table['table_name']
+        # comp_routeid = self.data_config.compare_table['route_id']
+        # comp_from_m = self.data_config.compare_table['from_measure']
+        # comp_to_m = self.data_config.compare_table['to_measure']
+        # comp_lane_code = self.data_config.compare_table['lane_code']
+        # comp_iri = self.data_config.compare_table['iri']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
+            self.check.pci_asp_check(routes=valid_routes)
+            self.check.pci_val_check(routes=valid_routes)
+            self.check.pci_surftype_check(routes=valid_routes)
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
+                                            previous_year_table=compare_fc)
+
+            self.write_to_table('RNI')
+            self.return_all_message()
+
+    def write_to_table(self, trim_to_reference=None):
         """
         Function to write selected route from valid DataFrame to GDB.
-        :param route_selection: List of route selection.
         :param trim_to_reference: The reference used for trimming measurement value. Default is None
         :return:
         """
         if len(self.check.passed_routes) != 0:
-            rows = self.check.selected_route_df(self.check.df_valid, route_selection)
+            rows = self.check.selected_route_df(self.check.df_valid, self.check.passed_routes)
 
             if trim_to_reference is not None:
                 adjust = Adjust(rows, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE")
