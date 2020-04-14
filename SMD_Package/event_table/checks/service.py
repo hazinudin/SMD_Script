@@ -12,13 +12,13 @@ class TableCheckService(object):
                  table_suffix=None, semester_data=False):
         """
         Class initialization.
-        :param input_json:
-        :param config_path:
-        :param output_table:
-        :param output_index:
-        :param smd_dir:
-        :param table_suffix:
-        :param semester_data:
+        :param input_json: The input JSON string.
+        :param config_path: The config file path.
+        :param output_table: Output table string.
+        :param output_index: Index used for writing arcpy.SetParameterAsText output.
+        :param smd_dir: The root directory of SMD_Script.
+        :param table_suffix: Suffix used for the output table. Default is None.
+        :param semester_data: Boolean if the data is semester data. Default is False.
         """
         import os
         import sys
@@ -113,6 +113,7 @@ class TableCheckService(object):
             self.check.segment_len_check(routes=valid_routes)
             self.check.measurement_check(routes=valid_routes, compare_to='LRS')
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
+            # self.check.side_consistency_check()
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
@@ -168,8 +169,8 @@ class TableCheckService(object):
 
     def write_to_table(self, route_selection):
         """
-
-        :param route_selection:
+        Function to write selected route from valid DataFrame to GDB.
+        :param route_selection: List of route selection.
         :return:
         """
         if len(self.check.passed_routes) != 0:
@@ -180,7 +181,7 @@ class TableCheckService(object):
 
     def return_all_message(self):
         """
-
+        Function to write all type of message as arcpy.SetParameterAsText.
         :return:
         """
         errors = self.check.altered_route_result(include_valid_routes=True, message_type='error')
@@ -194,7 +195,7 @@ class TableCheckService(object):
 
     def return_error_message(self):
         """
-
+        Function to write all error messages as arcpy.SetParameterAsText.
         :return:
         """
         errors = self.check.altered_route_result()
