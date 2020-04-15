@@ -10,7 +10,7 @@ class TableCheckService(object):
     This class provide class method for multiple data type check.
     """
     def __init__(self, input_json, config_path, output_table, output_index=2, smd_dir='E:/SMD_Script',
-                 table_suffix=None, semester_data=False):
+                 table_suffix=None, semester_data=False, **kwargs):
         """
         Class initialization.
         :param input_json: The input JSON string.
@@ -131,43 +131,6 @@ class TableCheckService(object):
         else:
             return self
 
-    def roughness_check(self, force_write):
-        """
-        This class method provide all the checks required for the Roughness data.
-        :param force_write: Use as force write. Boolean.
-        :return:
-        """
-        compare_fc = self.data_config.compare_table['table_name']
-        comp_routeid = self.data_config.compare_table['route_id']
-        comp_from_m = self.data_config.compare_table['from_measure']
-        comp_to_m = self.data_config.compare_table['to_measure']
-        comp_lane_code = self.data_config.compare_table['lane_code']
-        comp_iri = self.data_config.compare_table['iri']
-
-        if self.initial_check_passed:
-            self.check.route_domain(self.kode_balai, self.route_list)
-            self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
-            valid_routes = self.check.valid_route
-
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
-
-            if str(force_write) == 'false':
-                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc)
-
-            # REVIEW
-            if len(self.check.no_error_route) != 0:
-                self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
-                                              comp_iri, routes=self.check.no_error_route)
-                self.return_all_message()
-
-            self.write_to_table('RNI')  # Write passed routes to GDB
-            self.return_error_message()
-
     def pci_check(self, force_write):
         """
         This class method provide all the checks required for the PCI data.
@@ -243,3 +206,42 @@ class TableCheckService(object):
         SetParameterAsText(self.output_index, output_message("Succeeded", errors))
 
         return self
+
+
+class RoughnessCheck(TableCheckService):
+    """
+    Class used for Roughness table check service.
+    """
+    def __init__(self, **kwargs):
+        super(RoughnessCheck, self).__init__(**kwargs)
+
+        compare_fc = self.data_config.compare_table['table_name']
+        comp_routeid = self.data_config.compare_table['route_id']
+        comp_from_m = self.data_config.compare_table['from_measure']
+        comp_to_m = self.data_config.compare_table['to_measure']
+        comp_lane_code = self.data_config.compare_table['lane_code']
+        comp_iri = self.data_config.compare_table['iri']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
+
+            if str(kwargs.get('force_write')) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
+                                            previous_year_table=compare_fc)
+
+            # REVIEW
+            if len(self.check.no_error_route) != 0:
+                self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
+                                              comp_iri, routes=self.check.no_error_route)
+                self.return_all_message()
+
+            self.write_to_table('RNI')  # Write passed routes to GDB
+            self.return_error_message()
