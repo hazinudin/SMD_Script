@@ -94,43 +94,6 @@ class TableCheckService(object):
         self.column_details = column_details
         self.output_index = output_index
 
-    def rni_check(self, force_write):
-        """
-        This class method provide all the checks required for RNI data.
-        :param force_write: Use as force write. Boolean.
-        :return:
-        """
-        road_type_details = self.data_config.roadtype_details  # RNI road type details from data config file.
-        compare_fc = self.smd_config.table_names['rni']
-
-        if self.initial_check_passed:
-            self.check.route_domain(self.kode_balai, self.route_list)
-            self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
-            valid_routes = self.check.valid_route
-
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='LRS')
-            self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
-            # self.check.side_consistency_check()
-
-            if str(force_write) == 'false':
-                self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
-                                            previous_data_mfactor=1)
-
-            # REVIEW
-            if len(self.check.no_error_route) != 0:
-                self.check.rni_compare_surftype(routes=self.check.no_error_route)
-                self.return_all_message()
-
-            self.write_to_table()  # Write passed routes to GDB
-            self.return_error_message()
-
-        else:
-            return self
-
     def pci_check(self, force_write):
         """
         This class method provide all the checks required for the PCI data.
@@ -212,7 +175,7 @@ class RoughnessCheck(TableCheckService):
     """
     Class used for Roughness table check service.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, force_write, **kwargs):
         super(RoughnessCheck, self).__init__(**kwargs)
 
         compare_fc = self.data_config.compare_table['table_name']
@@ -233,7 +196,7 @@ class RoughnessCheck(TableCheckService):
             self.check.segment_len_check(routes=valid_routes)
             self.check.measurement_check(routes=valid_routes, compare_to='RNI')
 
-            if str(kwargs.get('force_write')) == 'false':
+            if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
                                             previous_year_table=compare_fc)
 
@@ -244,4 +207,40 @@ class RoughnessCheck(TableCheckService):
                 self.return_all_message()
 
             self.write_to_table('RNI')  # Write passed routes to GDB
+            self.return_error_message()
+
+
+class RNICheck(TableCheckService):
+    """
+    Class used for RNI table check service.
+    """
+    def __init__(self, force_write, **kwargs):
+        super(RNICheck, self).__init__(**kwargs)
+
+        road_type_details = self.data_config.roadtype_details  # RNI road type details from data config file.
+        compare_fc = self.smd_config.table_names['rni']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='LRS')
+            self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
+            # self.check.side_consistency_check()
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
+                                            previous_data_mfactor=1)
+
+            # REVIEW
+            if len(self.check.no_error_route) != 0:
+                self.check.rni_compare_surftype(routes=self.check.no_error_route)
+                self.return_all_message()
+
+            self.write_to_table()  # Write passed routes to GDB
             self.return_error_message()
