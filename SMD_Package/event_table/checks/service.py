@@ -94,40 +94,6 @@ class TableCheckService(object):
         self.column_details = column_details
         self.output_index = output_index
 
-    def pci_check(self, force_write):
-        """
-        This class method provide all the checks required for the PCI data.
-        :param force_write: Use as force write. Boolean.
-        :return:
-        """
-        compare_fc = self.data_config.compare_table['table_name']
-        # comp_routeid = self.data_config.compare_table['route_id']
-        # comp_from_m = self.data_config.compare_table['from_measure']
-        # comp_to_m = self.data_config.compare_table['to_measure']
-        # comp_lane_code = self.data_config.compare_table['lane_code']
-        # comp_iri = self.data_config.compare_table['iri']
-
-        if self.initial_check_passed:
-            self.check.route_domain(self.kode_balai, self.route_list)
-            self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
-            valid_routes = self.check.valid_route
-
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
-            self.check.pci_asp_check(routes=valid_routes)
-            self.check.pci_val_check(routes=valid_routes)
-            self.check.pci_surftype_check(routes=valid_routes)
-
-            if str(force_write) == 'false':
-                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc)
-
-            self.write_to_table('RNI')
-            self.return_all_message()
-
     def write_to_table(self, trim_to_reference=None):
         """
         Function to write selected route from valid DataFrame to GDB.
@@ -244,3 +210,40 @@ class RNICheck(TableCheckService):
 
             self.write_to_table()  # Write passed routes to GDB
             self.return_error_message()
+
+
+class PCICheck(TableCheckService):
+    """
+    Class used for PCI table check service.
+    """
+    def __init__(self, force_write, **kwargs):
+        super(PCICheck, self).__init__(**kwargs)
+
+        compare_fc = self.data_config.compare_table['table_name']
+        # comp_routeid = self.data_config.compare_table['route_id']
+        # comp_from_m = self.data_config.compare_table['from_measure']
+        # comp_to_m = self.data_config.compare_table['to_measure']
+        # comp_lane_code = self.data_config.compare_table['lane_code']
+        # comp_iri = self.data_config.compare_table['iri']
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            self.check.segment_duplicate_check()
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(routes=valid_routes)
+            self.check.survey_year_check(self.data_year)
+            self.check.segment_len_check(routes=valid_routes)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
+            self.check.pci_asp_check(routes=valid_routes)
+            self.check.pci_val_check(routes=valid_routes)
+            self.check.pci_surftype_check(routes=valid_routes)
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
+                                            previous_year_table=compare_fc)
+
+            self.write_to_table('RNI')
+            self.return_all_message()
+
