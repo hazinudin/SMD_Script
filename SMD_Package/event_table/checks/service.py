@@ -247,3 +247,26 @@ class PCICheck(TableCheckService):
             self.write_to_table('RNI')
             self.return_all_message()
 
+
+class RTCCheck(TableCheckService):
+    """
+    Class used for RTC table check service.
+    """
+    def __init__(self, force_write, **kwargs):
+        super(RTCCheck, self).__init__(*kwargs)
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(from_m_col=None, to_m_col=None)
+            self.check.rtc_duration_check(routes=valid_routes)
+            self.check.rtc_time_interval_check(routes=valid_routes)
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
+                                            long_col='RTC_LONG', comparison='RNIline_LRS')
+
+            self.write_to_table(None)
+            self.return_all_message()
