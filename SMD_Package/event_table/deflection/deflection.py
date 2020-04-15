@@ -6,7 +6,7 @@ sorting process and table lookup from a database connection.
 
 class Deflection(object):
     def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, route_col='LINKID', from_m_col='STA_FROM',
-                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40):
+                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL'):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
@@ -24,7 +24,13 @@ class Deflection(object):
         if data_type == 'FWD' and (survey_direc is None):
             raise ValueError("Type is FWD but survey_direc is None")
 
-        self.df = df.copy(deep=True)
+        if routes == 'ALL':
+            self.df = df.copy(deep=True)
+        elif type(routes) == list:
+            self.df = df.loc[df[route_col].isin(routes)].copy(deep=True)
+        else:
+            self.df = df.loc[df[route_col] == routes].copy(deep=True)
+
         self.force_col = force_col
         self.route_col = route_col
         self.from_m = from_m_col
