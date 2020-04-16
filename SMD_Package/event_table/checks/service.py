@@ -2,6 +2,7 @@ from SMD_Package import SMDConfigs, Configs
 from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_writer, input_json_check, verify_balai, \
     read_input_excel
 from SMD_Package.event_table.measurement.adjustment import Adjust
+from SMD_Package.event_table.deflection.deflection import Deflection
 from arcpy import SetParameterAsText, env
 
 
@@ -267,6 +268,34 @@ class RTCCheck(TableCheckService):
             if str(force_write) == 'false':
                 self.check.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
                                             long_col='RTC_LONG', comparison='RNIline_LRS')
+
+            self.write_to_table(None)
+            self.return_all_message()
+
+
+class DeflectionCheck(TableCheckService):
+    """
+    Class used for Deflection (LWD, FWD, and BB) table check service.
+    """
+    def __init__(self, force_write, sorting=False, **kwargs):
+        super(DeflectionCheck, self).__init__(**kwargs)
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+            valid_routes = self.check.valid_route
+
+            self.check.range_domain_check(lane_code='SURVEY_DIREC')
+            self.check.segment_len_check(routes=valid_routes, segment_len=0.5, lane_code='SURVEY_DIREC')
+
+            if str(force_write) == 'false':
+                self.check.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT',
+                                            long_col='DEFL_LONG', comparison='RNIline-LRS')
+
+            if sorting:
+                deflection = Deflection(self.check.df_valid, 'FORCE', 'FWD', 'FWD_D1', 'FWD_D2', 'ASPHALT_TEMP',
+                                        routes=self.check.valid_route)
+                self.check.df_valid = deflection._sorting()
 
             self.write_to_table(None)
             self.return_all_message()
