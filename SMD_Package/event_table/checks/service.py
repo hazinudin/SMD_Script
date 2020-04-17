@@ -4,6 +4,8 @@ from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_wr
 from SMD_Package.event_table.measurement.adjustment import Adjust
 from SMD_Package.event_table.deflection.deflection import Deflection
 from arcpy import SetParameterAsText, env
+import pandas as pd
+import numpy as np
 
 
 class TableCheckService(object):
@@ -113,19 +115,58 @@ class TableCheckService(object):
 
         return self
 
-    def return_all_message(self):
+    def return_all_message(self, selection=True, return_df=False):
         """
         Function to write all type of message as arcpy.SetParameterAsText.
         :return:
         """
+        def group_function(series):
+            """
+            This function checks for every route available message
+            :param series: Input series from groupby object.
+            :return: Pandas Series.
+            """
+            d = dict()
+            status = 'status'
+            d['error'] = np.any(series[status] == 'error')
+            d['review'] = np.any(series[status] == 'ToBeReviewed')
+            d['warning'] = np.any(series[status] == 'VerifiedWithWarning')
+            d['verified'] = np.any(series[status] == 'verified')
+
+            return pd.Series(d, index=['error', 'review', 'warning', 'verified'])
+
         errors = self.check.altered_route_result(include_valid_routes=True, message_type='error')
         reviews = self.check.altered_route_result(include_valid_routes=False, message_type='ToBeReviewed')
         warning = self.check.altered_route_result(include_valid_routes=False, message_type='VerifiedWithWarning')
         all_messages = errors + reviews + warning
+        df = pd.DataFrame(all_messages)
+
+        if selection:
+            grouped = df.groupby('linkid')
+
+            for route, group in grouped:
+                g_status = group_function(group)
+                route_selection = df['linkid'] == route
+
+                if g_status['error']:
+                    tobe_dropped = df.loc[route_selection & (df['status'] != 'error')].index
+                    df.drop(tobe_dropped, inplace=True)
+                    continue
+
+                elif not g_status['verified']:
+                    if g_status['ToBeReviewed']:
+                        tobe_dropped = df.loc[route_selection & (df['status'] != 'ToBeReviewed')].index
+                        df.drop(tobe_dropped, inplace=True)
+                        continue
+
+            all_messages = df.to_dict(orient='records')
 
         SetParameterAsText(self.output_index, output_message("Succeeded", all_messages))
 
-        return self
+        if return_df:
+            return df
+        else:
+            return self
 
     def return_error_message(self):
         """
