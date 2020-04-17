@@ -103,8 +103,12 @@ class TableCheckService(object):
         :param trim_to_reference: The reference used for trimming measurement value. Default is None
         :return:
         """
-        if len(self.check.passed_routes) != 0:
-            rows = self.check.selected_route_df(self.check.df_valid, self.check.passed_routes)
+        df_msg = self.return_all_message(return_df=True)
+        verified_status = ['verified', 'VerifiedWithWarning']
+        passed_routes = df_msg.loc[df_msg['status'].isin(verified_status), 'linkid'].unique().tolist()
+
+        if len(passed_routes) != 0:
+            rows = self.check.selected_route_df(self.check.df_valid, passed_routes)
 
             if trim_to_reference is not None:
                 adjust = Adjust(rows, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE")
@@ -212,10 +216,9 @@ class RoughnessCheck(TableCheckService):
             if len(self.check.no_error_route) != 0:
                 self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
                                               comp_iri, routes=self.check.no_error_route)
-                self.return_all_message()
 
             self.write_to_table('RNI')  # Write passed routes to GDB
-            self.return_error_message()
+            self.return_all_message()
 
 
 class RNICheck(TableCheckService):
@@ -248,10 +251,9 @@ class RNICheck(TableCheckService):
             # REVIEW
             if len(self.check.no_error_route) != 0:
                 self.check.rni_compare_surftype(routes=self.check.no_error_route)
-                self.return_all_message()
 
             self.write_to_table()  # Write passed routes to GDB
-            self.return_error_message()
+            self.return_all_message()
 
 
 class PCICheck(TableCheckService):
