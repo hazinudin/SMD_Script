@@ -1924,7 +1924,7 @@ class EventValidation(object):
         return self
 
     def side_consistency_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
-                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True):
+                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
@@ -1946,9 +1946,15 @@ class EventValidation(object):
             d = dict()
             side = series['side'].values[0]
 
+            if side == 'L':
+                other_side = 'R'
+            else:
+                other_side = 'L'
+
             # DEVELOPMENT #
             # In the production version, the side should be a prefix not suffix.
             check_col_side = column + "_" + side
+            other_side_col = column + "_" + other_side
 
             if empty_as_null:
                 d['all_empty'] = np.all(series[check_col_side].isnull())  # If the value is all Null
@@ -1961,6 +1967,12 @@ class EventValidation(object):
             d['check_value_count'] = value_count
             d['inconsistent'] = value_count > 1
             d['column'] = check_col_side
+
+            if wipe:
+                if empty_as_null:
+                    self.df_valid.loc[series.index, [other_side_col]] = np.nan
+                else:
+                    self.df_valid.loc[series.index, [other_side_col]] = 0
 
             return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column'])
 
