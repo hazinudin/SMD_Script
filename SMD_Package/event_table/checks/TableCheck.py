@@ -1923,12 +1923,12 @@ class EventValidation(object):
 
         return self
 
-    def side_consistency_check(self, check_col, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
+    def side_consistency_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
                                to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
-        :param check_col: Value in the column which the value will be checked.
+        :param column: Value in the column which the value will be checked.
         :param routes: Route selection.
         :param routeid_col: The Route ID column.
         :param from_m_col: The From Measure column.
@@ -1944,24 +1944,30 @@ class EventValidation(object):
             :return: Pandas Series.
             """
             d = dict()
+            side = series['side'].values[0]
+
+            # DEVELOPMENT #
+            # In the production version, the side should be a prefix not suffix.
+            check_col_side = column + "_" + side
 
             if empty_as_null:
-                d['all_empty'] = np.all(series[check_col].isnull())  # If the value is all Null
+                d['all_empty'] = np.all(series[check_col_side].isnull())  # If the value is all Null
             else:
-                d['all_empty'] = np.all(series[check_col] == 0)
+                d['all_empty'] = np.all(series[check_col_side] == 0)
 
             # Check if there is more than 1 value
             # Null is not counted in
-            value_count = series[check_col].nunique(True)
+            value_count = series[check_col_side].nunique(True)
             d['check_value_count'] = value_count
             d['inconsistent'] = value_count > 1
+            d['column'] = check_col_side
 
-            return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent'])
+            return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column'])
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
         side_column = 'side'
         df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
-        side_group = df.groupby([routeid_col, from_m_col, side_column]).apply(group_function)
+        side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
         side_group.reset_index(inplace=True)  # Reset the group by index
 
         # Start check for any error
@@ -1976,15 +1982,16 @@ class EventValidation(object):
             side = row[side_column]
             empty = row['all_empty']
             val_count_error = row['inconsistent']
+            error_col = row['column']
 
             if empty:
                 msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\
-                    format(route, from_m, to_m, side, check_col)
+                    format(route, from_m, to_m, side, error_col)
                 self.insert_route_message(route, 'error', msg)
 
             if val_count_error:
                 msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
-                    format(route, from_m, to_m, side, check_col)
+                    format(route, from_m, to_m, side, error_col)
                 self.insert_route_message(route, 'error', msg)
 
         return self
