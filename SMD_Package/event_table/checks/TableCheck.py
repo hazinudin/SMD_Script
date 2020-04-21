@@ -1935,6 +1935,8 @@ class EventValidation(object):
         :param to_m_col: The To Measure column.
         :param lane_code: The lane code column.
         :param empty_as_null: The empty value is Null not 0.
+        :param wipe: If True then fill column from other side with empty value (Null or zero, defined from empty_as_null
+                     parameter)
         :return:
         """
         def group_function(series):
