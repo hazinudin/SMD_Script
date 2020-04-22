@@ -1924,7 +1924,7 @@ class EventValidation(object):
         return self
 
     def side_consistency_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
-                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True):
+                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True, fill=True):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
@@ -1937,6 +1937,7 @@ class EventValidation(object):
         :param empty_as_null: The empty value is Null not 0.
         :param wipe: If True then fill column from other side with empty value (Null or zero, defined from empty_as_null
                      parameter)
+        :param fill: If True then the function will fill all null row with the any value available in the other lane.
         :return:
         """
         def group_function(series):
@@ -1960,8 +1961,10 @@ class EventValidation(object):
 
             if empty_as_null:
                 d['all_empty'] = np.all(series[check_col_side].isnull())  # If the value is all Null
+                empty_value = np.nan
             else:
                 d['all_empty'] = np.all(series[check_col_side] == 0)
+                empty_value = 0
 
             # Check if there is more than 1 value
             # Null is not counted in
@@ -1971,10 +1974,9 @@ class EventValidation(object):
             d['column'] = check_col_side
 
             if wipe:
-                if empty_as_null:
-                    self.df_valid.loc[series.index, [other_side_col]] = np.nan
-                else:
-                    self.df_valid.loc[series.index, [other_side_col]] = 0
+                self.df_valid.loc[series.index, [other_side_col]] = empty_value
+            if fill and (value_count == 1):
+                self.df_valid.loc[series.index, [check_col_side]] = series[check_col_side].values[0]
 
             return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column'])
 
