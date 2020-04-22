@@ -1923,7 +1923,7 @@ class EventValidation(object):
 
         return self
 
-    def side_consistency_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
+    def side_consistency_check(self, columns, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
                                to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True, fill=True):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
@@ -1983,32 +1983,37 @@ class EventValidation(object):
         df = self.selected_route_df(self.copy_valid_df(), routes)
         side_column = 'side'
         df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
-        side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
-        side_group.reset_index(inplace=True)  # Reset the group by index
 
-        # Start check for any error
-        all_empty = side_group['all_empty']
-        inconsistent = side_group['inconsistent']
-        error_rows = side_group.loc[all_empty | inconsistent]
+        if type(columns) != list:  # Force columns variable as list type.
+            columns = [columns]
 
-        for index, row in error_rows.iterrows():
-            route = row[routeid_col]
-            from_m = row[from_m_col]
-            to_m = row[to_m_col]
-            side = row[side_column]
-            empty = row['all_empty']
-            val_count_error = row['inconsistent']
-            error_col = row['column']
+        for column in columns:
+            side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
+            side_group.reset_index(inplace=True)  # Reset the group by index
 
-            if empty:
-                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\
-                    format(route, from_m, to_m, side, error_col)
-                self.insert_route_message(route, 'error', msg)
+            # Start check for any error
+            all_empty = side_group['all_empty']
+            inconsistent = side_group['inconsistent']
+            error_rows = side_group.loc[all_empty | inconsistent]
 
-            if val_count_error:
-                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
-                    format(route, from_m, to_m, side, error_col)
-                self.insert_route_message(route, 'error', msg)
+            for index, row in error_rows.iterrows():
+                route = row[routeid_col]
+                from_m = row[from_m_col]
+                to_m = row[to_m_col]
+                side = row[side_column]
+                empty = row['all_empty']
+                val_count_error = row['inconsistent']
+                error_col = row['column']
+
+                if empty:
+                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\
+                        format(route, from_m, to_m, side, error_col)
+                    self.insert_route_message(route, 'error', msg)
+
+                if val_count_error:
+                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
+                        format(route, from_m, to_m, side, error_col)
+                    self.insert_route_message(route, 'error', msg)
 
         return self
 
