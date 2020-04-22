@@ -58,6 +58,8 @@ def _trim(dataframe, routeid_col, to_m_col, from_m_col, lane_code, fit_to=None, 
         elif fit_to == 'RNI':
             rni_df = event_fc_to_df(rni_table, [rni_to_col, rni_lane_code], route, rni_routeid, workspace,
                                     is_table=True)
+        else:
+            raise ValueError("{0} is not a valid reference for trimming.".format(fit_to))
 
         for lane in lanes:
             if fit_to == 'LRS':
