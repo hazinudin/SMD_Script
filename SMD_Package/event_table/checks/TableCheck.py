@@ -1928,7 +1928,7 @@ class EventValidation(object):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
-        :param column: Value in the column which the value will be checked.
+        :param columns: Value in the column which the value will be checked.
         :param routes: Route selection.
         :param routeid_col: The Route ID column.
         :param from_m_col: The From Measure column.
@@ -1954,7 +1954,7 @@ class EventValidation(object):
             else:
                 other_side = 'L'
 
-            # DEVELOPMENT #
+            # todo: DEVELOPMENT #
             # In the production version, the side should be a prefix not suffix.
             check_col_side = column + "_" + side
             other_side_col = column + "_" + other_side
@@ -2014,6 +2014,61 @@ class EventValidation(object):
                     msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
                         format(route, from_m, to_m, side, error_col)
                     self.insert_route_message(route, 'error', msg)
+
+        return self
+
+    def side_pattern_check(self, columns, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                           lane_code='LANE_CODE'):
+        """
+        This function check for filling pattern in the requested columns for every available side (L or R).
+        :param columns: Requested columns.
+        :param routes: Requested routes.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From Measure column.
+        :param to_m_col: To Measure column.
+        :param lane_code: Lane code column.
+        :return:
+        """
+        def group_function(g_df):
+            d = dict()
+            side = g_df['side'].values[0]
+
+            # todo: DEVELOPMENT #
+            # In the production version, the side should be a prefix not suffix.
+            check_col_side = [column + "_" + side for column in columns]
+
+            if len(g_df) > 1:
+                g_df[check_col_side] = g_df[check_col_side].apply(lambda x: x.isnull(), axis=1)
+                all_result = [g_df[check_col_side[0]].equals(g_df[col]) for col in check_col_side]
+                result = np.all(all_result)  # If all is True.
+            else:
+                result = True
+
+            d['correct_pattern'] = result
+            d['columns'] = check_col_side
+            return pd.Series(d, index=['correct_pattern', 'columns'])
+
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        side_column = 'side'
+        df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
+
+        if type(columns) != list:  # The input columns should be list, otherwise function will not be proceeded.
+            return self
+
+        side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
+        side_group.reset_index(inplace=True)
+        error_rows = side_group.loc[~side_group['correct_pattern']]
+
+        for index, row in error_rows.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            side = row[side_column]
+            columns = row['columns']
+
+            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki pola pengisian kolom {4} yang tidak konsisten.".\
+                format(route, from_m, to_m, side, columns)
+            self.insert_route_message(route, 'error', msg)
 
         return self
 
