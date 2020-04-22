@@ -242,7 +242,11 @@ class RNICheck(TableCheckService):
             self.check.segment_len_check(routes=valid_routes)
             self.check.measurement_check(routes=valid_routes, compare_to='LRS')
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
-            self.check.side_consistency_check('SHTYPE')
+
+            # todo: Change column for production.
+            for col in [["SHTYPE", "SHWIDTH"], ["DITYPE", "DITDEPTH"], "TERRTYPE", "LANDUSE"]:
+                self.check.side_pattern_check(col)
+                self.check.side_consistency_check(col)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
