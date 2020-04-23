@@ -1,9 +1,9 @@
 from arcpy import GetParameterAsText
-from SMD_Package.event_table.checks.service import TableCheckService
+from SMD_Package.event_table.checks.service import RNICheck
 
 # Get GeoProcessing input parameter
 inputJSON = GetParameterAsText(0)
 forceWrite = GetParameterAsText(1)
 
-check = TableCheckService(inputJSON, 'RNICheck/rni_config_2019App.json', 'SMD.RNI_TEST')
-check.rni_check(forceWrite)
+RNICheck(forceWrite, input_json=inputJSON, config_path='RNICheck/rni_config_2019App.json', output_table='SMD.RNI_TEST',
+         semester_data=False)
