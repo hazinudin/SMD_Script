@@ -39,5 +39,12 @@
     "ID_KONSULTAN":{"dtype":"integer"},
     "ID_TEAMLEADER":{"dtype":"integer"},
     "ID_ALATSURVEY":{"dtype":"integer"}
-  }
+  },
+    "compare_table":{
+      "table_name":"SMD.PCI_2019_RERUN_2",
+      "route_id":"LINKID",
+      "from_measure":"STA_FROM",
+      "to_measure":"STA_TO",
+      "lane_code":"LANE_CODE"
+      }
 }
