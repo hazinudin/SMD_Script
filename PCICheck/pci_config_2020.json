@@ -60,9 +60,9 @@
     "PCI":{"dtype":"double", "allow_null":true},
     "TO_STA_LONG":{"dtype":"double", "range":{"upper":143, "lower":94, "eq_lower":true, "eq_upper":true, "review":false}},
     "TO_STA_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
-    "ID_KONSULTAN":{"dtype":"integer"},
-    "ID_TEAMLEADER":{"dtype":"integer"},
-    "ID_ALATSURVEY":{"dtype":"integer"}
+    "CONSULTANT_ID":{"dtype":"integer"},
+    "TEAM_LEAD_ID":{"dtype":"integer"},
+    "SURV_TOOL_ID":{"dtype":"integer"}
   },
   "asphalt_columns":["ALG_CRACK", "LONG_CRACK", "OTHER_CRACK", "POTHOLE", "PATCHING", "RUTTING", "CORRUGATION", "DEPRESSION", "RAVELING", "BLEEDING", "SHDROP"],
   "rigid_columns":["CORN_BREAK", "DIV_SLAB", "FAULTING", "LINE_CRACK", "PUNCH_OUT", "SHRINKAGE", "PUMPING", "CORN_SPALL", "JOINT_SPALL", "SEAL_JOINT", "PATCHING", "SHDROP"],
