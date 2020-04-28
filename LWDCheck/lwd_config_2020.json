@@ -1,0 +1,28 @@
+{
+  "column_details":{
+    "LINKID":{"dtype":"string"},
+    "FROM_STA":{"dtype":"double"},
+    "TO_STA":{"dtype":"double"},
+    "SEGMENT_LENGTH":{"dtype":"double"},
+    "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
+    "SURVEY_YEAR":{"dtype":"integer"},
+    "SURVEY_DATE":{"dtype":"date"},
+    "DEFL_LONG":{"dtype":"double", "range":{"upper":143, "lower":94, "eq_lower":true, "eq_upper":true, "review":false}},
+    "DEFL_LAT":{"dtype":"double", "range":{"upper":13, "lower":-12, "eq_lower":true, "eq_upper":true, "review":false}},
+    "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
+    "AIR_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
+    "SURF_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
+    "SURF_THICKNESS":{"dtype":"double"},
+    "LOAD_KG":{"dtype":"double"},
+    "LWD_D0":{"dtype":"double"},
+    "LWD_D1":{"dtype":"double"},
+    "LWD_D2":{"dtype":"double"},
+    "EV_D0":{"dtype":"double"},
+    "EV_D1":{"dtype":"double"},
+    "D0_D2":{"dtype":"double"},
+    "CONSULTANT_ID":{"dtype":"integer", "allow_null":true},
+    "TEAM_LEAD_ID":{"dtype":"integer", "allow_null":true},
+    "SURV_TOOL_ID":{"dtype":"integer", "allow_null":true}
+  },
+  "search_radius":30
+}
