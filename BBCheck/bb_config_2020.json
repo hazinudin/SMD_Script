@@ -25,5 +25,12 @@
     "TEAM_LEAD_ID":{"dtype":"integer", "allow_null":true},
     "SURV_TOOL_ID":{"dtype":"integer", "allow_null":true}
   },
+  "kwargs":{
+    "routeid_col":"LINKID",
+    "from_m_col":"FROM_STA",
+    "to_m_col":"TO_STA",
+    "lat_col":"TO_STA_LAT",
+    "long_col":"TO_STA_LONG"
+  },
   "search_radius":30
 }

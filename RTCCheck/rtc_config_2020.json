@@ -23,5 +23,6 @@
     "TEAM_LEAD_ID":{"dtype":"integer"},
     "SURV_TOOL_ID":{"dtype":"integer"}
   },
+  "kwargs":{},
   "search_radius":30
 }
