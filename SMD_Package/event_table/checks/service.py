@@ -96,6 +96,7 @@ class TableCheckService(object):
         self.smd_config = smd_config
         self.column_details = column_details
         self.output_index = output_index
+        self.kwargs = data_config.kwargs
 
     def write_to_table(self, trim_to_reference=None):
         """
@@ -200,22 +201,22 @@ class RoughnessCheck(TableCheckService):
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
+            self.check.segment_duplicate_check(**self.kwargs)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
+            self.check.range_domain_check(routes=valid_routes, **self.kwargs)
+            self.check.survey_year_check(self.data_year, **self.kwargs)
+            self.check.segment_len_check(routes=valid_routes, **self.kwargs)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI', **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc)
+                                            previous_year_table=compare_fc, **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:
                 self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
-                                              comp_iri, routes=self.check.no_error_route)
+                                              comp_iri, routes=self.check.no_error_route, **self.kwargs)
 
             self.write_to_table('RNI')  # Write passed routes to GDB
             self.return_all_message()
