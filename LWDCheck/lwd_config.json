@@ -24,5 +24,6 @@
     "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true},
     "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true}
   },
+  "kwargs":{},
   "search_radius":30
 }

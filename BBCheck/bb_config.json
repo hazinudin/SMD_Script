@@ -28,9 +28,7 @@
   "kwargs":{
     "routeid_col":"LINKID",
     "from_m_col":"STA_FROM",
-    "to_m_col":"STA_TO",
-    "lat_col":"STATO_LAT",
-    "long_col":"STATO_LONG"
+    "to_m_col":"STA_TO"
   },
   "search_radius":30
 }
