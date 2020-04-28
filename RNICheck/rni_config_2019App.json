@@ -34,6 +34,13 @@
     "ID_TEAMLEADER":{"dtype":"integer", "allow_null":true, "raise":false},
     "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true, "raise":false}
   },
+  "kwargs":{
+    "routeid_col":"LINKID",
+    "from_m_col":"STA_FROM",
+    "to_m_col":"STA_TO",
+    "lat_col":"STATO_LAT",
+    "long_col":"STATO_LONG"
+  },
   "output_table":"SMD.RNI_2019",
   "compare_table":{
     "table_name":"SMD.RNI_2018",

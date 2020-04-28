@@ -17,6 +17,13 @@
     "TEAM_LEAD_ID":{"dtype":"integer"},
     "SURV_TOOL_ID":{"dtype":"integer"}
   },
+  "kwargs":{
+    "routeid_col":"LINKID",
+    "from_m_col":"FROM_STA",
+    "to_m_col":"TO_STA",
+    "lat_col":"TO_STA_LAT",
+    "long_col":"TO_STA_LONG"
+  },
   "compare_table":{
     "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
     "route_id":"LINKID",
