@@ -40,6 +40,13 @@
     "TEAM_LEAD_ID":{"dtype":"integer"},
     "SURV_TOOL_ID":{"dtype":"integer"}
   },
+  "kwargs":{
+    "routeid_col":"LINKID",
+    "from_m_col":"FROM_STA",
+    "to_m_col":"TO_STA",
+    "lat_col":"TO_STA_LAT",
+    "long_col":"TO_STA_LONG"
+  },
   "roadtype_details":{
     "1":{"lane_count":2, "direction":1, "median":false},
     "2":{"lane_count":2, "direction":2, "median":false},
