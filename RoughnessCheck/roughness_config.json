@@ -18,6 +18,13 @@
     "ID_ALATSURVEY":{"dtype":"integer", "allow_null":true},
     "SURVEY_LENGTH":{"dtype":"double", "allow_null":true}
   },
+  "kwargs":{
+    "routeid_col":"LINKID",
+    "from_m_col":"STA_FROM",
+    "to_m_col":"STA_TO",
+    "lat_col":"STATO_LAT",
+    "long_col":"STATO_LONG"
+  },
   "compare_table":{
     "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
     "route_id":"LINKID",
