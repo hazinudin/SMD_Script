@@ -268,11 +268,12 @@ class PCICheck(TableCheckService):
         super(PCICheck, self).__init__(**kwargs)
 
         compare_fc = self.data_config.compare_table['table_name']
-        # comp_routeid = self.data_config.compare_table['route_id']
-        # comp_from_m = self.data_config.compare_table['from_measure']
-        # comp_to_m = self.data_config.compare_table['to_measure']
-        # comp_lane_code = self.data_config.compare_table['lane_code']
-        # comp_iri = self.data_config.compare_table['iri']
+        asphalt_cols = self.data_config.asphalt_columns
+        rigid_cols = self.data_config.rigid_columns
+        comp_routeid = self.data_config.compare_table['route_id']
+        comp_from_m = self.data_config.compare_table['from_measure']
+        comp_to_m = self.data_config.compare_table['to_measure']
+        comp_lane_code = self.data_config.compare_table['lane_code']
 
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
@@ -288,6 +289,14 @@ class PCICheck(TableCheckService):
             self.check.pci_val_check(routes=valid_routes)
             self.check.pci_surftype_check(routes=valid_routes)
 
+            # Iterate all asphalt condition and severity column
+            for col in asphalt_cols:
+                self.check.pci_val_check(rg_pref='-', asp_pref='VOL_AS'+col, pci_col='SEV_AS'+col, max_value='NA',
+                                         min_value=None)
+            for col in rigid_cols:
+                self.check.pci_val_check(rg_pref='VOL_RG'+col, as_pref='-', pci_col='SEV_RG'+col, max_value='NA',
+                                         min_value=None)
+
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
                                             previous_year_table=compare_fc)
@@ -301,7 +310,7 @@ class RTCCheck(TableCheckService):
     Class used for RTC table check service.
     """
     def __init__(self, force_write, **kwargs):
-        super(RTCCheck, self).__init__(*kwargs)
+        super(RTCCheck, self).__init__(**kwargs)
 
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
