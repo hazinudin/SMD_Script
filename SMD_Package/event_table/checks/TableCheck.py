@@ -344,7 +344,7 @@ class EventValidation(object):
         return self
 
     def range_domain_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                           lane_code='LANE_CODE'):
+                           lane_code='LANE_CODE', **kwargs):
         """
         This function checks every value in a specified data column, to match the specified range value defined by
         parameter upper and lower (lower < [value] < upper).
@@ -483,7 +483,7 @@ class EventValidation(object):
         return self
 
     def survey_year_check(self, data_year, survey_date_col='SURVEY_DATE', routeid_col='LINKID', from_m_col='STA_FROM',
-                          to_m_col='STA_TO', lane_code='LANE_CODE'):
+                          to_m_col='STA_TO', lane_code='LANE_CODE', **kwargs):
         """
         This function checks for consistency between the stated data year and survey date year.
         :param survey_date_col:
@@ -511,7 +511,7 @@ class EventValidation(object):
         return self
 
     def segment_duplicate_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                                lane_code='LANE_CODE', drop=True):
+                                lane_code='LANE_CODE', drop=True, **kwargs):
         """
         This function checks for any duplicate segment determined by the keys defined in the parameter.
         :param routeid_col: The Route ID column
@@ -541,7 +541,7 @@ class EventValidation(object):
         return self
 
     def segment_len_check(self, routes='ALL', segment_len=0.1, routeid_col='LINKID', from_m_col='STA_FROM',
-                          to_m_col='STA_TO', lane_code='LANE_CODE', length_col='SEGMENT_LENGTH'):
+                          to_m_col='STA_TO', lane_code='LANE_CODE', length_col='SEGMENT_LENGTH', **kwargs):
         """
         This function check for every segment length. The segment length has to be 100 meters, and stated segment length
         has to match the stated From Measure and To Measure.
@@ -621,7 +621,7 @@ class EventValidation(object):
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False,
-                          tolerance=30):
+                          tolerance=30, **kwargs):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -739,7 +739,7 @@ class EventValidation(object):
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
                          length_col='SEGMENT_LENGTH', threshold=30, at_start=False, segment_data=True, comparison='LRS',
-                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100):
+                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100, **kwargs):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -952,7 +952,7 @@ class EventValidation(object):
         return self
 
     def lane_code_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
-                        to_m_col='STA_TO', find_no_match=False):
+                        to_m_col='STA_TO', find_no_match=False, **kwargs):
         """
         This function checks the lane code combination for all segment in the input table, the segment interval value
         has to be the same with interval value in the RNI Table.
@@ -1105,7 +1105,7 @@ class EventValidation(object):
         return self
 
     def lane_direction_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
-                             to_m_col='STA_TO', direction_col='SURVEY_DIREC',):
+                             to_m_col='STA_TO', direction_col='SURVEY_DIREC', **kwargs):
         """
         This class method will check for consistency between the stated lane and the direction. The Left lane e.g(L1,
         L2, L3, etc) should has a N(Normal) direction. Meanwhile, the Right lane e.g(R1, R2, R3, etc) should has a
@@ -1172,7 +1172,7 @@ class EventValidation(object):
         return missing_route.tolist()
 
     def rni_roadtype_check(self, road_type_details, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_codes='LANE_CODE',
-                           median_col='MED_WIDTH', road_type_col='ROAD_TYPE'):
+                           median_col='MED_WIDTH', road_type_col='ROAD_TYPE', **kwargs):
         """
         This class method will check the consistency of stated roadtype code with other details such as the lane count,
         the median information, and the segment direction.
@@ -1248,7 +1248,7 @@ class EventValidation(object):
 
     def rtc_duration_check(self, duration=3, routes='ALL', routeid_col='LINKID', surv_date_col='SURVEY_DATE',
                            hours_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE', direction_col='SURVEY_DIREC',
-                           interval=15):
+                           interval=15, **kwargs):
         """
         This class method will check the RTC survey direction for every available route in the input table.
         :param duration: The survey duration (in days), the default is 3 days.
@@ -1314,7 +1314,8 @@ class EventValidation(object):
         return self
 
     def rtc_time_interval_check(self, interval=15, routes='ALL', routeid_col='LINKID', surv_date_col='SURVEY_DATE',
-                                hours_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE', direction_col='SURVEY_DIREC'):
+                                hours_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE', direction_col='SURVEY_DIREC',
+                                **kwargs):
         """
         This class method will check the RTC survey time interval.
         :param interval: The survey interval time (in minutes), the default value is 15 minutes.
@@ -1393,7 +1394,7 @@ class EventValidation(object):
         rni_df = event_fc_to_df(rni_table, rni_search_field, routes, rni_routeid, self.sde_connection, is_table=True)
 
     def rni_compare_surftype(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                             surftype_col='SURF_TYPE', lane_code='LANE_CODE', routes='ALL'):
+                             surftype_col='SURF_TYPE', lane_code='LANE_CODE', routes='ALL', **kwargs):
         """
         This class method will compare the surface type length of a route to previous year data. If there is a
         difference in the surface type length of a route, then an error message will be written.
@@ -1448,8 +1449,8 @@ class EventValidation(object):
         return self
 
     def rni_compare_surfwidth(self, comp_fc, comp_route_col, comp_from_col, comp_to_col, comp_lane_width, year_comp,
-                              rni_route_col='LINKID', rni_from_col='STA_FROM', rni_to_col='STA_TO',
-                              rni_lane_width='LANE_WIDTH', routes='ALL'):
+                              routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                              rni_lane_width='LANE_WIDTH', routes='ALL', **kwargs):
         """
         This class method will compare the road width to a comparison feature class, if there is a difference in the
         road width percentage in the requested routes, then an error message will be written.
@@ -1459,15 +1460,15 @@ class EventValidation(object):
         :param comp_to_col: To Measure field in the ocmparison feature class.
         :param comp_lane_width: Lane Width in the comparison feature class.
         :param year_comp: The year of comparison feature class.
-        :param rni_route_col: The input RNI RouteID field.
-        :param rni_from_col: The input RNI From Measure field.
-        :param rni_to_col: The input RNI To Measure field.
+        :param routeid_col: The input RNI RouteID field.
+        :param from_m_col: The input RNI From Measure field.
+        :param to_m_col: The input RNI To Measure field.
         :param rni_lane_width: The input RNI Lane Width field.
         :param routes: The requested routes.
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Create a valid DataFrame copy
-        route_list = self.route_lane_tuple(df, rni_route_col, None, True)
+        route_list = self.route_lane_tuple(df, routeid_col, None, True)
 
         for route in route_list:  # Iterate over all available route in the input table.
             df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_lane_width], route,
@@ -1479,7 +1480,7 @@ class EventValidation(object):
                 self.insert_route_message(route, 'ToBeReviewed', result)
                 continue
 
-            input_surfwidth = RNIRouteDetails(df_route, rni_route_col, rni_from_col, rni_to_col, rni_lane_width,
+            input_surfwidth = RNIRouteDetails(df_route, routeid_col, from_m_col, to_m_col, rni_lane_width,
                                               agg_type='sum')
             comp_surfwidth = RNIRouteDetails(df_comp, comp_route_col, comp_from_col, comp_to_col, comp_lane_width,
                                              agg_type='sum')
@@ -1523,7 +1524,7 @@ class EventValidation(object):
                 self.insert_route_message(route, 'ToBeReviewed', result)
 
     def rni_surftype_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                           lane_code='LANE_CODE', surftype_col='SURF_TYPE'):
+                           lane_code='LANE_CODE', surftype_col='SURF_TYPE', **kwargs):
         """
         This class method check for consistency in surface type for every segment in the input table. A single segment
         should have same surface type for every available lane in that segment, otherwise that segment will be reviewed.
@@ -1552,7 +1553,7 @@ class EventValidation(object):
         return self
 
     def pci_asp_check(self, routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM',
-                      to_m_col='STA_TO', lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH'):
+                      to_m_col='STA_TO', lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH', **kwargs):
         """
         This method will check the consistency in as_ column value compared to the maximum calculated value
         (lane width*segment length). The value of as_ column should not exceed the calculated value, otherwise an error
@@ -1606,7 +1607,7 @@ class EventValidation(object):
         return self
 
     def pci_val_check(self, rg_pref='RG_', asp_pref='AS_', pci_col='PCI', routeid_col='LINKID', from_m_col='STA_FROM',
-                      to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL'):
+                      to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL', min_value=0, max_value=100, **kwargs):
         """
         This class method will check for consistency between the value of PCI and the RG_x and AS_x columns.
         :param rg_pref: The prefix of Rigid column.
@@ -1644,19 +1645,19 @@ class EventValidation(object):
                 asp_rg_cond = asp_rg.mask(asp_rg == 0)
                 asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero
 
-                if (pci_val == 0) and asp_rg_allzero:
-                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}=0 namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
-                        format(route, from_m, to_m, lane, pci_col)
+                if (pci_val == min_value) and asp_rg_allzero and (min_value is not None):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
+                        format(route, from_m, to_m, lane, pci_col, min_value)
                     self.insert_route_message(route, 'error', error_message)
-                if (pci_val == 100) and (not asp_rg_allzero):
-                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}=100 namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
-                        format(route, from_m, to_m, lane, pci_col)
+                if (pci_val == max_value) and (not asp_rg_allzero) and (max_value is not None):
+                    error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
+                        format(route, from_m, to_m, lane, pci_col, max_value)
                     self.insert_route_message(route, 'error', error_message)
 
         return self
 
     def pci_surftype_check(self, routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID',
-                           from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', pci_col='PCI'):
+                           from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', pci_col='PCI', **kwargs):
         """
         This class method check the consistency between segment's surface type and its AS_x and RG_x value.
         :param routes: Route selection
@@ -1770,7 +1771,7 @@ class EventValidation(object):
         return self
 
     def fwd_dropid_check(self, dropid_col='DROP_ID', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                         survey_dir='SURVEY_DIREC', id_count=3, starts_at=1, routes='ALL'):
+                         survey_dir='SURVEY_DIREC', id_count=3, starts_at=1, routes='ALL', **kwargs):
         """
         This class method will check for drop ID repetition pattern. Single segment should has a drop id pattern starting
         from 0 and has an increment pattern of 1.
@@ -1828,7 +1829,7 @@ class EventValidation(object):
 
     def compare_kemantapan(self, grading_col, comp_fc, comp_from_col, comp_to_col, comp_route_col, comp_lane_code,
                            comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='LANE_CODE',
-                           from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage = True):
+                           from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage = True, **kwargs):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -1924,7 +1925,8 @@ class EventValidation(object):
         return self
 
     def side_consistency_check(self, columns, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
-                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True, fill=True):
+                               to_m_col='STA_TO', lane_code='LANE_CODE', empty_as_null=True, wipe=True, fill=True,
+                               **kwargs):
         """
         This class method check for consistency in the specified check column for a single segment, the value of the
         check column for every lane in each "L" and "R" side should be the same.
@@ -2018,7 +2020,7 @@ class EventValidation(object):
         return self
 
     def side_pattern_check(self, columns, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                           lane_code='LANE_CODE'):
+                           lane_code='LANE_CODE', **kwargs):
         """
         This function check for filling pattern in the requested columns for every available side (L or R).
         :param columns: Requested columns.
@@ -2073,7 +2075,7 @@ class EventValidation(object):
         return self
 
     def median_direction_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                               direction_col='SURVEY_DIREC'):
+                               direction_col='SURVEY_DIREC', **kwargs):
         """
         This class method merge the input table with RNI data to get the median width and compare the median data with
         the amount of available survey direction. A segment with median should have both of direction, otherwise an
