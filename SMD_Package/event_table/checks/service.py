@@ -235,27 +235,27 @@ class RNICheck(TableCheckService):
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
+            self.check.segment_duplicate_check(**self.kwargs)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='LRS')
-            self.check.rni_roadtype_check(road_type_details, routes=valid_routes)
+            self.check.range_domain_check(routes=valid_routes, **self.kwargs)
+            self.check.survey_year_check(self.data_year, **self.kwargs)
+            self.check.segment_len_check(routes=valid_routes, **self.kwargs)
+            self.check.measurement_check(routes=valid_routes, compare_to='LRS', **self.kwargs)
+            self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
 
             # todo: Change column for production.
             for col in [["SHTYPE", "SHWIDTH"], ["DITYPE", "DITDEPTH"], "TERRTYPE", "LANDUSE"]:
-                self.check.side_pattern_check(col)
-                self.check.side_consistency_check(col)
+                self.check.side_pattern_check(col, **self.kwargs)
+                self.check.side_consistency_check(col, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
-                                            previous_data_mfactor=1)
+                                            previous_data_mfactor=1, **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:
-                self.check.rni_compare_surftype(routes=self.check.no_error_route)
+                self.check.rni_compare_surftype(routes=self.check.no_error_route, **self.kwargs)
 
             self.write_to_table()  # Write passed routes to GDB
             self.return_all_message()
@@ -279,28 +279,28 @@ class PCICheck(TableCheckService):
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check()
+            self.check.segment_duplicate_check(**self.kwargs)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(routes=valid_routes)
-            self.check.survey_year_check(self.data_year)
-            self.check.segment_len_check(routes=valid_routes)
-            self.check.measurement_check(routes=valid_routes, compare_to='RNI')
-            self.check.pci_asp_check(routes=valid_routes)
-            self.check.pci_val_check(routes=valid_routes)
-            self.check.pci_surftype_check(routes=valid_routes)
+            self.check.range_domain_check(routes=valid_routes, **self.kwargs)
+            self.check.survey_year_check(self.data_year, **self.kwargs)
+            self.check.segment_len_check(routes=valid_routes, **self.kwargs)
+            self.check.measurement_check(routes=valid_routes, compare_to='RNI', **self.kwargs)
+            self.check.pci_asp_check(routes=valid_routes, **self.kwargs)
+            self.check.pci_val_check(routes=valid_routes, **self.kwargs)
+            self.check.pci_surftype_check(routes=valid_routes, **self.kwargs)
 
             # Iterate all asphalt condition and severity column
             for col in asphalt_cols:
                 self.check.pci_val_check(rg_pref='-', asp_pref='VOL_AS'+col, pci_col='SEV_AS'+col, max_value='NA',
-                                         min_value=None)
+                                         min_value=None, **self.kwargs)
             for col in rigid_cols:
                 self.check.pci_val_check(rg_pref='VOL_RG'+col, as_pref='-', pci_col='SEV_RG'+col, max_value='NA',
-                                         min_value=None)
+                                         min_value=None, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc)
+                                            previous_year_table=compare_fc, **self.kwargs)
 
             self.write_to_table('RNI')
             self.return_all_message()
@@ -318,13 +318,13 @@ class RTCCheck(TableCheckService):
             self.check.route_selection(selection=self.route_req)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(from_m_col=None, to_m_col=None)
-            self.check.rtc_duration_check(routes=valid_routes)
-            self.check.rtc_time_interval_check(routes=valid_routes)
+            self.check.range_domain_check(from_m_col=None, to_m_col=None, **self.kwargs)
+            self.check.rtc_duration_check(routes=valid_routes, **self.kwargs)
+            self.check.rtc_time_interval_check(routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
-                                            long_col='RTC_LONG', comparison='RNIline_LRS')
+                                            long_col='RTC_LONG', comparison='RNIline_LRS', **self.kwargs)
 
             self.write_to_table(None)
             self.return_all_message()
@@ -342,13 +342,13 @@ class DeflectionCheck(TableCheckService):
             self.check.route_selection(selection=self.route_req)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(lane_code='SURVEY_DIREC')
-            self.check.segment_len_check(routes=valid_routes, segment_len=0.5, lane_code='SURVEY_DIREC')
-            self.check.median_direction_check(routes=valid_routes)
+            self.check.range_domain_check(lane_code='SURVEY_DIREC', **self.kwargs)
+            self.check.segment_len_check(routes=valid_routes, segment_len=0.5, lane_code='SURVEY_DIREC', **self.kwargs)
+            self.check.median_direction_check(routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT',
-                                            long_col='DEFL_LONG', comparison='RNIline-LRS')
+                                            long_col='DEFL_LONG', comparison='RNIline-LRS', **self.kwargs)
 
             if sorting:
                 deflection = Deflection(self.check.df_valid, 'FORCE', 'FWD', 'FWD_D1', 'FWD_D2', 'ASPHALT_TEMP',
