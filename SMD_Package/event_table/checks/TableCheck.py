@@ -818,7 +818,8 @@ class EventValidation(object):
                 prev_df = None  # The previous data table is not defined.
 
             # Check if the coordinate is valid
-            long_condition = (df_route[long_col] > 97) & (df_route[long_col] < 143)
+            # TODO: Determine the correct range for this
+            long_condition = (df_route[long_col] > 94) & (df_route[long_col] < 143)
             lat_condition = (df_route[lat_col] > -9) & (df_route[lat_col] < 13)
             valid_coords = np.all(long_condition & lat_condition)
             self._coordinate_status[route] = [0]  # Initiate the route's status value.
