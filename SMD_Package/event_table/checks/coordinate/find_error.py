@@ -4,6 +4,7 @@ from pandas import DataFrame
 
 from SMD_Package.event_table.checks.coordinate.coordinate import InputPoint
 from SMD_Package.event_table.checks.error_runs import find_runs
+from SMD_Package.load_config import SMDConfigs
 
 
 class FindCoordinateError(object):
@@ -36,6 +37,12 @@ class FindCoordinateError(object):
         self.warning_msg = list()  # List for all warning message string
         self.comparison = comparison
         self.side_col = '_side'
+
+        config = SMDConfigs()
+        self.rni_routeid = config.table_fields['rni']['route_id']
+        self.rni_from_m = config.table_fields['rni']['from_measure']
+        self.rni_to_m = config.table_fields['rni']['to_measure']
+        self.rni_lane_width = config.table_fields['rni']['lane_width']
 
         if self.lane_code_col is not None:
             self.df[self.side_col] = self.df.apply(lambda x: x[lane_code_col][0], axis=1)  # Adding side column
@@ -134,8 +141,8 @@ class FindCoordinateError(object):
 
         return self
 
-    def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', long_col='STATO_LONG',
-                       lat_col='STATO_LAT', threshold=30, side='ALL', same_method=True):
+    def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', threshold=30, side='ALL',
+                       same_method=True):
         """
         This class method find error for start or end point.
         :param ref_polyline: The reference data used, should be a Polyline object.
@@ -148,6 +155,9 @@ class FindCoordinateError(object):
         :param same_method: The method to calculate valid radius is same for both start and end.
         :return:
         """
+        long_col = self.long_col  # Get the coordinate column from the class attribute.
+        lat_col = self.lat_col
+
         if side not in ['L', 'R', 'ALL']:
             raise TypeError("{0} is invalid side type".format(side))
         elif side == 'ALL':
@@ -198,13 +208,12 @@ class FindCoordinateError(object):
 
         return self  # Return all error message
 
-    def find_lane_error(self, rni_df=None, lane_w_col='LANE_WIDTH', default_width=3.6, left_ref='L1', right_ref='R1',
+    def find_lane_error(self, rni_df=None, default_width=3.6, left_ref='L1', right_ref='R1',
                         m_col='measureOnLine', m_threshold=30):
         """
         This class method find distance between every lane coordinate in a segment to a referenced lane coordinate. If
         any lane coordinate distance to reference is greater than the threshold then an error message will be raised.
         :param rni_df: RNI DataFrame for calculating lane width.
-        :param lane_w_col: The lane width column in the RNI DataFrame.
         :param default_width: Default width for every lane if the RNI DataFrame is not specified.
         Distance error threshold in meters.
         :param left_ref: Lane used as reference for left side.
@@ -217,7 +226,7 @@ class FindCoordinateError(object):
         grouped = self.df.groupby([self.from_m_col, self.to_m_col, self.side_col])
 
         if rni_df is not None:
-            rni_lane_w = rni_df.groupby([self.from_m_col, self.to_m_col])[lane_w_col].sum()
+            rni_lane_w = rni_df.groupby([self.rni_from_m, self.rni_to_m])[self.rni_lane_width].sum()
         else:
             rni_lane_w = None
 

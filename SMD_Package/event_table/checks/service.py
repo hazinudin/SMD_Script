@@ -112,7 +112,12 @@ class TableCheckService(object):
             rows = self.check.selected_route_df(self.check.df_valid, passed_routes)
 
             if trim_to_reference is not None:
-                adjust = Adjust(rows, "LINKID", "STA_FROM", "STA_TO", "LANE_CODE")
+                routeid = self.kwargs.get('routeid_col')
+                from_m_col = self.kwargs.get('from_m_col')
+                to_m_col = self.kwargs.get('to_m_col')
+                lane_code = self.kwargs.get('lane_code')
+
+                adjust = Adjust(rows, routeid, from_m_col, to_m_col, lane_code)
                 adjust.trim_to_reference(trim_to_reference)
                 rows = adjust.df
 
@@ -211,7 +216,8 @@ class RoughnessCheck(TableCheckService):
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc, **self.kwargs)
+                                            previous_year_table=compare_fc,
+                                            kwargs_comparison=self.data_config.compare_table, **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:
