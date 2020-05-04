@@ -22,7 +22,8 @@
     "from_m_col":"FROM_STA",
     "to_m_col":"TO_STA",
     "lat_col":"TO_STA_LAT",
-    "long_col":"TO_STA_LONG"
+    "long_col":"TO_STA_LONG",
+    "lane_code":"LANE_CODE"
   },
   "compare_table":{
     "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
@@ -30,7 +31,9 @@
     "from_measure":"STA_FROM",
     "to_measure":"STA_TO",
     "lane_code":"LANE_CODE",
-    "iri":"IRI_POK"
+    "iri":"IRI_POK",
+    "long_col":"STATO_LONG",
+    "lat_col":"STATO_LAT"
   },
   "output_table":"SMD.ROUGHNESS_1_2019"
 }
