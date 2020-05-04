@@ -917,7 +917,7 @@ class EventValidation(object):
                 raise TypeError("Comparison is invalid.")
 
             coordinate_error = coordinate.FindCoordinateError(df_route, route, from_m_col, to_m_col, lane_code,
-                                                              comparison=comparison)
+                                                              comparison=comparison, long_col=long_col, lat_col=lat_col)
             if not segment_data:
                 errors = df_route.loc[df_route['lrsDistance'] > threshold, [from_m_col, to_m_col, lane_code]]
 
@@ -945,7 +945,7 @@ class EventValidation(object):
                 coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
                 coordinate_error.find_end_error(route_geom, 'start')
                 coordinate_error.find_end_error(route_geom, 'end')
-                coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
+                coordinate_error.find_lane_error(rni_df=rni_df)
                 coordinate_error.close_to_zero('lrsDistance')
                 coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
@@ -955,7 +955,7 @@ class EventValidation(object):
                 coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window, threshold=threshold)
                 coordinate_error.find_end_error(rni_line, 'start', 'rniDistance')
                 coordinate_error.find_end_error(rni_line, 'end', 'rniDistance')
-                coordinate_error.find_lane_error(rni_df=rni_df, lane_w_col=rni_lane_width)
+                coordinate_error.find_lane_error(rni_df=rni_df)
                 coordinate_error.close_to_zero('rniDistance')
                 coordinate_error.close_to_zero('previousYear')
                 coordinate_error.find_non_monotonic('measureOnLine')
