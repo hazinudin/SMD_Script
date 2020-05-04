@@ -739,7 +739,8 @@ class EventValidation(object):
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
                          length_col='SEGMENT_LENGTH', threshold=30, at_start=False, segment_data=True, comparison='LRS',
-                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100, **kwargs):
+                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100,
+                         kwargs_comparison={}, **kwargs):
         """
         This function checks whether if the segment starting coordinate located not further than
         30meters from the LRS Network.
@@ -797,13 +798,22 @@ class EventValidation(object):
 
             # Get the previous year data if available
             if previous_year_table is not None:
-                prev_df = event_fc_to_df(previous_year_table, column_selection, route, routeid_col, self.sde_connection,
-                                         True)
+
+                prev_routeid = kwargs_comparison.get('route_id')
+                prev_from_m = kwargs_comparison.get('from_measure')
+                prev_to_m = kwargs_comparison.get('to_measure')
+                prev_lane_code = kwargs_comparison.get('lane_code')
+                prev_long_col = kwargs_comparison.get('long_col')
+                prev_lat_col = kwargs_comparison.get('lat_col')
+
+                prev_cols = [prev_routeid, prev_from_m, prev_to_m, prev_lane_code, prev_long_col, prev_lat_col]
+                prev_df = event_fc_to_df(previous_year_table, prev_cols, route, routeid_col, self.sde_connection, True)
+
                 if prev_df.empty is False:  # If the data available is not empty then do the conversion
-                    prev_df[[from_m_col, to_m_col]] = prev_df[[from_m_col, to_m_col]].\
+                    prev_df[[prev_from_m, prev_to_m]] = prev_df[[prev_from_m, prev_to_m]].\
                         apply(lambda x: pd.Series(x*previous_data_mfactor).astype(int))
                 else:
-                    prev_df = None  # The previous data is None.
+                    prev_df = None  # The previous data is empty.
             else:
                 prev_df = None  # The previous data table is not defined.
 
@@ -837,7 +847,9 @@ class EventValidation(object):
                                                                                             lane=_x[lane_code],
                                                                                             projections=spatial_ref,
                                                                                             at_start=at_start,
-                                                                                            previous_df=prev_df), axis=1)
+                                                                                            previous_df=prev_df,
+                                                                                            kwargs_comparison=kwargs_comparison)
+                                                      , axis=1)
             if segment_data and (comparison == 'RNIseg-LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
                                                                                             _x[long_col],
@@ -853,7 +865,9 @@ class EventValidation(object):
                                                                                             rni_lane_code=rni_lane,
                                                                                             rni_lat=rni_lat,
                                                                                             rni_long=rni_long,
-                                                                                            previous_df=prev_df), axis=1)
+                                                                                            previous_df=prev_df,
+                                                                                            kwargs_comparison=kwargs_comparison)
+                                                      , axis=1)
             if segment_data and (comparison == 'RNIline-LRS'):
                 rni_line = coordinate.to_polyline(rni_df, rni_from_m, rni_long, rni_lat, to_m_col, projections=spatial_ref)
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
@@ -871,7 +885,9 @@ class EventValidation(object):
                                                                                             rni_lat=rni_lat,
                                                                                             rni_long=rni_long,
                                                                                             rni_polyline=rni_line,
-                                                                                            previous_df=prev_df), axis=1)
+                                                                                            previous_df=prev_df,
+                                                                                            kwargs_comparison=kwargs_comparison)
+                                                      , axis=1)
 
             if not segment_data and (comparison == 'LRS'):
                 df_route[added_cols] = df_route.apply(lambda _x: coordinate.distance_series(_x[lat_col],
