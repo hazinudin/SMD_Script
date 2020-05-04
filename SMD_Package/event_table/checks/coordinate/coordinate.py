@@ -8,7 +8,7 @@ from pandas import Series
 
 def distance_series(latitude, longitude, route_geom, projections='4326', from_m=None, to_m=None, lane=None,
                     at_start=False, rni_df=None, rni_from_m=None, rni_to_m=None, rni_lane_code=None,
-                    rni_lat=None, rni_long=None, rni_polyline=None, previous_df=None):
+                    rni_lat=None, rni_long=None, rni_polyline=None, previous_df=None, kwargs_comparison={}):
     """
     This function create a series which will be appended to a Pandas DataFrame.
     :param latitude: The latitude value.
@@ -45,7 +45,13 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
                                                                   rni_lane_code, rni_lat, rni_long)
 
         if previous_df is not None:  # Comparison to previous year data
-            previous_year = input_point.distance_to_df_segment(from_m, to_m, lane, previous_df)
+            previous_to_m = kwargs_comparison.get('to_measure')
+            previous_from_m = kwargs_comparison.get('from_measure')
+            previous_lane = kwargs_comparison.get('lane_code')
+            previous_year = input_point.distance_to_df_segment(from_m, to_m, lane, previous_df,
+                                                               rni_from_m=previous_from_m,
+                                                               rni_to_m=previous_to_m,
+                                                               rni_lane_code=previous_lane)
 
         # if rni_polyline is not None:
         #     segment_distance = input_point.distance_to_segment(from_m, to_m, lane, rni_polyline, segm_start=at_start)
