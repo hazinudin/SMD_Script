@@ -1,28 +1,34 @@
 import json
 from arcpy import da
 from pandas import DataFrame
+from SMD_Package.load_config import SMDConfigs
 
 
 class GetRoutes(object):
     """
     This Object is used for RouteID query based on requesty type either Province Code or Balai Code.
     """
-    def __init__(self, query_type, query_value, lrs_network, balai_table, balai_route_table, lrs_routeid='ROUTEID',
-                 lrs_prov_code='NOPROP', lrs_route_name='ROUTE_NAME', lrs_lintas='NAME_LINTAS', balai_code='NOMOR_BALAI',
-                 balai_prov='NO_PROV'):
+    def __init__(self, query_type, query_value, lrs_network, balai_table, balai_route_table):
         """
         :param query_type: The query type, either 'no_prov' or 'balai'
         :param query_value: The query value.
         :param lrs_network: The LRS Network which store all the route.
         :param balai_table: The Balai Table which store the Balai-Prov Mapping.
         :param balai_route_table: The Table which store the Balai-Route Mapping.
-        :param lrs_routeid: The RouteID column in LRS Network.
-        :param lrs_prov_code: The Prov Code column in LRS Network.
-        :param lrs_route_name: The Route Name column in LRS Network.
-        :param lrs_lintas: The Lintas Name column in LRS Network.
-        :param balai_code: The Balai Code column in Balai-Prov Table.
-        :param balai_prov: The Prov Code column in the Balai-Code Table.
         """
+        smd_configs = SMDConfigs()
+
+        lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
+        lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
+        lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
+        lrs_lintas = smd_configs.table_fields['lrs_network']['lintas']
+
+        balai_prov = smd_configs.table_fields['balai_table']['prov_code']
+        balai_code = smd_configs.table_fields['balai_table']['balai_code']
+
+        balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
+        balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
+
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
             pass
@@ -63,9 +69,9 @@ class GetRoutes(object):
                 codes = prov_code[balai_code]  # The Balai Code
 
                 # Read the Balai-Route Table
-                _arr = da.FeatureClassToNumPyArray(balai_route_table, [balai_code, lrs_routeid])
+                _arr = da.FeatureClassToNumPyArray(balai_route_table, [balai_route_code, balai_route_routeid])
                 _df = DataFrame(_arr)
-                in_route_map = _df[balai_code].isin([codes]).any()  # True if the codes exist in Balai-Route Map Table
+                in_route_map = _df[balai_route_code].isin([codes]).any()  # True if the codes exist in Balai-Route Map Table
 
                 # If code exist Balai-Route Mapping Table.
                 if in_route_map:
@@ -83,9 +89,16 @@ class GetRoutes(object):
                 search_val = prov_code[balai_prov]
 
             where_statement = '({0} in ({1}))'.format(in_field, search_val)
+
+            if lrs_lintas is None:  # In case the LRS lintas column is not available
+                req_columns = [lrs_routeid, lrs_route_name]
+            else:
+                req_columns = [lrs_routeid, lrs_route_name, lrs_lintas]
+
             date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)". \
                 format("FROMDATE", "TODATE")
-            with da.SearchCursor(lrs_network, [lrs_routeid, lrs_route_name, lrs_lintas],
+
+            with da.SearchCursor(lrs_network, req_columns,
                                  where_clause=where_statement + " and " + date_query) as search_cursor:
                 if codes not in balai_route_dict:
                     balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
