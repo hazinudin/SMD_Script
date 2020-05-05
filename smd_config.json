@@ -12,8 +12,8 @@
   },
   "table_names":{
     "lrs_network":"ELRS.Road_Network_2020",
-    "balai_table":"SMD.MAP_BALAI_PROV",
-    "balai_route_table":"SMD.MAP_BALAI_ROUTE",
+    "balai_table":"ELRS.map_balai_prov",
+    "balai_route_table":"SMD.map_balai_route",
     "rni": "SMD.RNI_2019_RERUN_2"
   },
   "table_fields":{
@@ -37,12 +37,16 @@
       "median":"MED_WIDTH"
     },
     "balai_table":{
-      "prov_code":"NO_PROV",
-      "balai_code":"NOMOR_BALAI"
+      "prov_code":"BM_PROV_ID",
+      "balai_code":"BALAI_ID",
+      "from_date":"START_DATE",
+      "to_date":"END_DATE"
     },
     "balai_route_table":{
-      "balai_code":"NOMOR_BALAI",
-      "route_id":"ROUTEID"
+      "balai_code":"BALAI_CODE",
+      "route_id":"LINKID",
+      "from_date":"START_DATE",
+      "to_date":"END_DATE"
     }
   },
   "output_tables":{
