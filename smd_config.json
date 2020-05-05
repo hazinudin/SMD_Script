@@ -13,7 +13,7 @@
   "table_names":{
     "lrs_network":"ELRS.Road_Network_2020",
     "balai_table":"ELRS.map_balai_prov",
-    "balai_route_table":"SMD.map_balai_route",
+    "balai_route_table":"ELRS.map_balai_route",
     "rni": "SMD.RNI_2019_RERUN_2"
   },
   "table_fields":{
