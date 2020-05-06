@@ -45,7 +45,7 @@ class TableCheckService(object):
         route_req = input_details['routes']
 
         lrs_network = smd_config.table_names['lrs_network']
-        lrs_routeid = smd_config.table_fields['lrs']['routeid']
+        lrs_routeid = smd_config.table_fields['lrs_network']['routeid']
         balai_table = smd_config.table_names['balai_table']
         balai_kode_balai = smd_config.table_fields['balai_table']['balai_code']
         db_connection = smd_config.smd_database['instance']
