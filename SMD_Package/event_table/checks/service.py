@@ -64,7 +64,7 @@ class TableCheckService(object):
             sys.exit(0)
 
         # Initialize the event validation class
-        self.check = EventValidation(input_df, column_details, lrs_network, 'ROUTEID', db_connection)
+        self.check = EventValidation(input_df, column_details, lrs_network, lrs_routeid, db_connection)
         header_check_result = self.check.header_check_result
         dtype_check_result = self.check.dtype_check_result
 
