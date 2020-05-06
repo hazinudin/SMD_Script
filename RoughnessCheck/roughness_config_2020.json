@@ -1,5 +1,4 @@
 {
-  "search_radius":30,
   "column_details":{
     "LINKID":{"dtype":"string"},
     "FROM_STA":{"dtype":"double"},
@@ -34,6 +33,5 @@
     "iri":"IRI_POK",
     "long_col":"STATO_LONG",
     "lat_col":"STATO_LAT"
-  },
-  "output_table":"SMD.ROUGHNESS_1_2019"
+  }
 }

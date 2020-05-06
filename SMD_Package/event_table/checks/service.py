@@ -281,10 +281,6 @@ class PCICheck(TableCheckService):
         compare_fc = self.data_config.compare_table['table_name']
         asphalt_cols = self.data_config.asphalt_columns
         rigid_cols = self.data_config.rigid_columns
-        comp_routeid = self.data_config.compare_table['route_id']
-        comp_from_m = self.data_config.compare_table['from_measure']
-        comp_to_m = self.data_config.compare_table['to_measure']
-        comp_lane_code = self.data_config.compare_table['lane_code']
 
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
@@ -296,8 +292,8 @@ class PCICheck(TableCheckService):
             self.check.survey_year_check(self.data_year, **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, **self.kwargs)
             self.check.measurement_check(routes=valid_routes, compare_to='RNI', **self.kwargs)
-            self.check.pci_asp_check(routes=valid_routes, **self.kwargs)
-            self.check.pci_val_check(routes=valid_routes, **self.kwargs)
+            self.check.pci_asp_check(routes=valid_routes, asp_pref='VOL_AS', **self.kwargs)
+            self.check.pci_val_check(routes=valid_routes, asp_pref='VOL_AS', rg_pref='VOL_RG', **self.kwargs)
             self.check.pci_surftype_check(routes=valid_routes, **self.kwargs)
 
             # Iterate all asphalt condition and severity column
