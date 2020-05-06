@@ -258,7 +258,8 @@ class RNICheck(TableCheckService):
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
-                                            previous_data_mfactor=1, **self.kwargs)
+                                            previous_data_mfactor=1, kwargs_comparison=self.data_config.compare_table,
+                                            **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:
