@@ -1973,10 +1973,9 @@ class EventValidation(object):
             else:
                 other_side = 'L'
 
-            # todo: DEVELOPMENT #
             # In the production version, the side should be a prefix not suffix.
-            check_col_side = column + "_" + side
-            other_side_col = column + "_" + other_side
+            check_col_side = side + "_" + column
+            other_side_col = other_side + "_" + column
 
             if empty_as_null:
                 d['all_empty'] = np.all(series[check_col_side].isnull())  # If the value is all Null
@@ -2052,9 +2051,8 @@ class EventValidation(object):
             d = dict()
             side = g_df['side'].values[0]
 
-            # todo: DEVELOPMENT #
             # In the production version, the side should be a prefix not suffix.
-            check_col_side = [column + "_" + side for column in columns]
+            check_col_side = [side + "_" + column for column in columns]
 
             if len(g_df) > 1:
                 g_df[check_col_side] = g_df[check_col_side].apply(lambda x: x.isnull(), axis=1)

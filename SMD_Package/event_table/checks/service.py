@@ -251,8 +251,10 @@ class RNICheck(TableCheckService):
             self.check.measurement_check(routes=valid_routes, compare_to='LRS', **self.kwargs)
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
 
-            # todo: Change column for production.
-            for col in [["SHTYPE", "SHWIDTH"], ["DITYPE", "DITDEPTH"], "TERRTYPE", "LANDUSE"]:
+            for col in [["INN_SHTYPE", "INN_SHWIDTH", "OUT_SHTYPE", "OUT_SHWIDTH"],
+                        ["INN_DITYPE", "INN_DITDEPTH", "OUT_DITYPE", "OUT_DITDEPTH"],
+                        "TERRTYPE",
+                        "LANDUSE"]:
                 self.check.side_pattern_check(col, **self.kwargs)
                 self.check.side_consistency_check(col, **self.kwargs)
 
