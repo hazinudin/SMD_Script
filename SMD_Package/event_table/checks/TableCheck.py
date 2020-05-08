@@ -1569,6 +1569,44 @@ class EventValidation(object):
 
         return self
 
+    def rni_median_inn_shwidth(self, inn_shwidth_cols, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
+                               to_m_col='STA_TO', lane_code='LANE_CODE', median_col='MED_WIDTH', empty_as_null=False,
+                               **kwargs):
+        """
+        This class method check for consistency between the value of median width and inner shoulder width columns,
+        inner shoulder width should only available when the median is also available, otherwise an error message will be
+        raised.
+        :param inn_shwidth_cols: The inner shoulder width columns to be checked.
+        :param routes: Route selection.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From measure column.
+        :param to_m_col: To measure column.
+        :param lane_code: Lane code column.
+        :param median_col: Median width column.
+        :param empty_as_null: If True then empty value is recognized as Null, otherwise recognized as 0.
+        :return:
+        """
+        df = self.selected_route_df(self.copy_valid_df(), routes)  # Route selection
+        no_median = np.isclose(df[median_col], 0)
+
+        if type(inn_shwidth_cols) == list:
+            with_shwidth = np.any(~np.isclose(df[inn_shwidth_cols], 0), axis=1)
+        else:
+            with_shwidth = ~np.isclose(df[inn_shwidth_cols], 0)
+
+        error_rows = df.loc[no_median & with_shwidth]
+        for index, row in error_rows.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            lane = row[lane_code]
+
+            msg = "Rute {0} pada segmen {1}-{2} di jalur {3} tidak memiliki median namun memiliki nilai {4}.".\
+                format(route, from_m, to_m, lane, inn_shwidth_cols)
+            self.insert_route_message(route, msg, 'error')
+
+        return self
+
     def pci_asp_check(self, routes='ALL', asp_pref='AS_', routeid_col='LINKID', from_m_col='STA_FROM',
                       to_m_col='STA_TO', lane_code='LANE_CODE', segment_len='SEGMENT_LENGTH', **kwargs):
         """
