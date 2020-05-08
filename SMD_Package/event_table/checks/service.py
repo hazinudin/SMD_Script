@@ -306,7 +306,8 @@ class PCICheck(TableCheckService):
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
-                                            previous_year_table=compare_fc, **self.kwargs)
+                                            previous_year_table=compare_fc,
+                                            kwargs_comparison=self.data_config.compare_table, **self.kwargs)
 
             self.write_to_table('RNI')
             self.return_all_message()
