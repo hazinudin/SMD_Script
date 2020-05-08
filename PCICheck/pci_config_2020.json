@@ -67,6 +67,7 @@
     "routeid_col":"LINKID",
     "from_m_col":"FROM_STA",
     "to_m_col":"TO_STA",
+    "lane_code":"LANE_CODE",
     "lat_col":"TO_STA_LAT",
     "long_col":"TO_STA_LONG"
   },
