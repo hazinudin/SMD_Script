@@ -6,4 +6,5 @@ inputJSON = GetParameterAsText(0)
 forceWrite = GetParameterAsText(1)
 
 # Load the input JSON
-DeflectionCheck(forceWrite, input_json=inputJSON, config_path='BBCheck/bb_config.json', output_table='SMD.BB_TEST')
+DeflectionCheck(forceWrite, input_json=inputJSON, config_path='BBCheck/bb_config_2020.json', output_table='SMD.BB_TEST',
+                smd_dir='E:/SMD_Script')
