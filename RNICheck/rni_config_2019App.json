@@ -43,13 +43,14 @@
   },
   "output_table":"SMD.RNI_2019",
   "compare_table":{
-    "table_name":"SMD.RNI_2018",
+    "table_name":"SMD.RNI_2019_RERUN_2",
     "route_id":"LINKID",
-    "from_measure":"FROMMEASURE",
-    "to_measure":"TOMEASURE",
-    "surface_type":"SURFTYPE",
+    "from_measure":"STA_FROM",
+    "to_measure":"STA_TO",
     "lane_code":"LANE_CODE",
-    "lane_width":"LANE_WIDTH"
+    "iri":"IRI_POK",
+    "long_col":"STATO_LONG",
+    "lat_col":"STATO_LAT"
   },
   "search_radius":30,
   "roadtype_details":{
