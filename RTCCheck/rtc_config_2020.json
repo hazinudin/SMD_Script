@@ -23,6 +23,8 @@
     "TEAM_LEAD_ID":{"dtype":"integer"},
     "SURV_TOOL_ID":{"dtype":"integer"}
   },
-  "kwargs":{},
+  "kwargs":{
+    "lane_code":null
+  },
   "search_radius":30
 }

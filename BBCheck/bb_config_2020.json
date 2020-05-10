@@ -17,7 +17,6 @@
     "BB_D1":{"dtype":"double"},
     "BB_D2":{"dtype":"double"},
     "BB_D3":{"dtype":"double"},
-    "ASPHALT_THICK":{"dtype":"double"},
     "OFFSET1":{"dtype":"double"},
     "OFFSET2":{"dtype":"double"},
     "OFFSET3":{"dtype":"double"},

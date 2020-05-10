@@ -25,12 +25,6 @@
     "FWD_D7":{"dtype":"double"},
     "FWD_D8":{"dtype":"double"},
     "FWD_D9":{"dtype":"double"},
-    "FWD_D10":{"dtype":"double"},
-    "FWD_D11":{"dtype":"double"},
-    "FWD_D12":{"dtype":"double"},
-    "FWD_D13":{"dtype":"double"},
-    "FWD_D14":{"dtype":"double"},
-    "FWD_D15":{"dtype":"double"},
     "CONSULTANT_ID":{"dtype":"integer", "allow_null":true},
     "TEAM_LEAD_ID":{"dtype":"integer", "allow_null":true},
     "SURV_TOOL_ID":{"dtype":"integer", "allow_null":true}
