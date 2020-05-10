@@ -2074,7 +2074,8 @@ class EventValidation(object):
         return self
 
     def side_pattern_check(self, columns, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                           lane_code='LANE_CODE', **kwargs):
+                           lane_code='LANE_CODE', in_type_cols='TYPE', type_as_suffix=True, empty_value_type=0,
+                           **kwargs):
         """
         This function check for filling pattern in the requested columns for every available side (L or R).
         :param columns: Requested columns.
@@ -2083,6 +2084,9 @@ class EventValidation(object):
         :param from_m_col: From Measure column.
         :param to_m_col: To Measure column.
         :param lane_code: Lane code column.
+        :param in_type_cols: Type columns specifier.
+        :param type_as_suffix: If True then the string in the in_type_cols will be used as suffix for type columns.
+        :param empty_value_type: The type which means other value should be Null/empty.
         :return:
         """
         def group_function(g_df):
@@ -2092,6 +2096,31 @@ class EventValidation(object):
             # In the production version, the side should be a prefix not suffix.
             check_col_side = [side + "_" + column for column in columns]
 
+            # Find the type columns
+            if type_as_suffix:  # "TYPE" as column suffix
+                type_cols = np.array(check_col_side)[np.char.endswith(check_col_side, in_type_cols)].tolist()
+            else:  # "TYPE" as column prefix
+                type_cols = np.array(check_col_side)[np.char.startswith(check_col_side, in_type_cols)].tolist()
+
+            # Type vs value consistency check.
+            type_value = dict()  # For storing  each type column result.
+            type_value_results = list()  # For storing row's type value check result.
+            for type_col in type_cols:
+                if type_as_suffix:
+                    type_domain = type_col.split(in_type_cols)[0]
+                    value_col = np.array(check_col_side)[np.char.startswith(check_col_side, type_domain)].\
+                        tolist()
+                else:
+                    type_domain = type_col.split(in_type_cols)[1]
+                    value_col = np.array(check_col_side)[np.char.endswith(check_col_side, type_domain)].\
+                        tolist()
+
+                value_col.remove(type_col)
+                type_value_error = g_df.loc[(g_df[type_col] == empty_value_type) & (g_df[value_col[0]] != 0)]
+                type_value[type_col] = type_value_error.empty  # If there is no error then True
+                type_value_results.append(type_value_error.empty)  # Append result without type column name
+
+            # The filling pattern check
             if len(g_df) > 1:
                 g_df[check_col_side] = g_df[check_col_side].apply(lambda x: x.isnull(), axis=1)
                 all_result = [g_df[check_col_side[0]].equals(g_df[col]) for col in check_col_side]
@@ -2101,7 +2130,11 @@ class EventValidation(object):
 
             d['correct_pattern'] = result
             d['columns'] = check_col_side
-            return pd.Series(d, index=['correct_pattern', 'columns'])
+            d['type_value'] = type_value
+            d['type_value_results'] = np.all(type_value_results)  # True, if all is correct.
+
+            return pd.Series(d, index=['correct_pattern', 'columns',
+                                       'type_value', 'type_value_results'])  # Returned row
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
         side_column = 'side'
@@ -2112,7 +2145,7 @@ class EventValidation(object):
 
         side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
         side_group.reset_index(inplace=True)
-        error_rows = side_group.loc[~side_group['correct_pattern']]
+        error_rows = side_group.loc[(~side_group['correct_pattern']) | (~side_group['type_value_results'])]
 
         for index, row in error_rows.iterrows():
             route = row[routeid_col]
@@ -2120,10 +2153,18 @@ class EventValidation(object):
             to_m = row[to_m_col]
             side = row[side_column]
             columns = row['columns']
+            correct_pattern = row['correct_pattern']
+            correct_type_value = row['type_value_results']
+            type_value = row['type_value']
 
-            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki pola pengisian kolom {4} yang tidak konsisten.".\
-                format(route, from_m, to_m, side, columns)
-            self.insert_route_message(route, 'error', msg)
+            if not correct_pattern:
+                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki pola pengisian kolom {4} yang tidak konsisten.".\
+                    format(route, from_m, to_m, side, columns)
+                self.insert_route_message(route, 'error', msg)
+
+            if not correct_type_value:
+                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai tipe yang tidak konsisten yaitu {4}.".\
+                    format(route, from_m, to_m, side, type_value)
 
         return self
 
