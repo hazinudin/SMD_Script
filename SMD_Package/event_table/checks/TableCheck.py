@@ -212,7 +212,7 @@ class EventValidation(object):
 
     def year_and_semester_check(self, year_input, semester_input, year_col='SURVEY_YEAR', sem_col='SURVEY_SMS',
                                 routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE',
-                                year_check_only=False):
+                                year_check_only=False, **kwargs):
         """
         This function check if the inputted data year and semester in JSON match with the data in input table.
         This function also check if the input year in the table is less than the current year.
@@ -1603,7 +1603,7 @@ class EventValidation(object):
 
             msg = "Rute {0} pada segmen {1}-{2} di jalur {3} tidak memiliki median namun memiliki nilai {4}.".\
                 format(route, from_m, to_m, lane, inn_shwidth_cols)
-            self.insert_route_message(route, msg, 'error')
+            self.insert_route_message(route, 'error', msg)
 
         return self
 

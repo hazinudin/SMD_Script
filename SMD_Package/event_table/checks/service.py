@@ -13,7 +13,7 @@ class TableCheckService(object):
     This class provide class method for multiple data type check.
     """
     def __init__(self, input_json, config_path, output_table, output_index=2, smd_dir='E:/SMD_Script',
-                 table_suffix=None, semester_data=False, **kwargs):
+                 table_suffix=None, semester_data=False, year_sem_check=True, **kwargs):
         """
         Class initialization.
         :param input_json: The input JSON string.
@@ -68,12 +68,18 @@ class TableCheckService(object):
         header_check_result = self.check.header_check_result
         dtype_check_result = self.check.dtype_check_result
 
-        if not semester_data:
-            output_table = output_table + "_{0}".format(data_year)
-            year_sem_check_result = self.check.year_and_semester_check(data_year, None, year_check_only=True)
+        if year_sem_check:
+            if not semester_data:
+                output_table = output_table + "_{0}".format(data_year)
+                year_sem_check_result = self.check.year_and_semester_check(data_year, None, year_check_only=True,
+                                                                           **data_config.kwargs)
+            else:
+                output_table = output_table + "_{0}_{1}".format(data_semester, data_year)
+                year_sem_check_result = self.check.year_and_semester_check(data_year, data_semester,
+                                                                           **data_config.kwargs)
         else:
-            output_table = output_table + "_{0}_{1}".format(data_semester, data_year)
-            year_sem_check_result = self.check.year_and_semester_check(data_year, data_semester)
+            year_sem_check_result = None
+            output_table = output_table + "_{0}".format(data_year)
 
         if table_suffix is not None:
             output_table = output_table + "_{0}".format(table_suffix)
@@ -254,15 +260,18 @@ class RNICheck(TableCheckService):
                                               **self.kwargs)
 
             for col in [["INN_SHTYPE", "INN_SHWIDTH", "OUT_SHTYPE", "OUT_SHWIDTH"],
-                        ["INN_DITYPE", "INN_DITDEPTH", "OUT_DITYPE", "OUT_DITDEPTH"],
-                        "TERRTYPE",
-                        "LANDUSE"]:
-                self.check.side_pattern_check(col, **self.kwargs)
-                self.check.side_consistency_check(col, **self.kwargs)
+                        "TERRAIN_TYPE",
+                        "LAND_USE"]:
+                self.check.side_pattern_check(col, empty_value_type=0, routes=valid_routes, **self.kwargs)
+                self.check.side_consistency_check(col, routes=valid_routes, **self.kwargs)
+
+            for col in [["DITCH_TYPE", "DITCH_DEPTH", "DITCH_WIDTH"]]:
+                self.check.side_pattern_check(col, empty_value_type=5, routes=valid_routes,  **self.kwargs)
+                self.check.side_consistency_check(col, routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
-                                            previous_data_mfactor=1, kwargs_comparison=self.data_config.compare_table,
+                                            kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
 
             # REVIEW
@@ -319,7 +328,7 @@ class RTCCheck(TableCheckService):
     """
     Class used for RTC table check service.
     """
-    def __init__(self, force_write, **kwargs):
+    def __init__(self, force_write,**kwargs):
         super(RTCCheck, self).__init__(**kwargs)
 
         if self.initial_check_passed:
@@ -333,7 +342,7 @@ class RTCCheck(TableCheckService):
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(from_m_col=None, routes=valid_routes, segment_data=False, lat_col='RTC_LAT',
-                                            long_col='RTC_LONG', comparison='RNIline_LRS', **self.kwargs)
+                                            long_col='RTC_LONG', comparison='RNIline-LRS', **self.kwargs)
 
             self.write_to_table(None)
             self.return_all_message()
