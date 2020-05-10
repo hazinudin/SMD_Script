@@ -2037,6 +2037,10 @@ class EventValidation(object):
             return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column'])
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
+
+        if df.empty:
+            return self
+
         side_column = 'side'
         df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
 
@@ -2116,7 +2120,14 @@ class EventValidation(object):
                         tolist()
 
                 value_col.remove(type_col)
-                type_value_error = g_df.loc[(g_df[type_col] == empty_value_type) & (g_df[value_col[0]] != 0)]
+                type_value_error = g_df.loc[((g_df[type_col] == empty_value_type) &
+                                            (np.any(g_df[value_col] != 0, axis=1)) &
+                                            (~g_df[type_col].isnull())) |
+
+                                            ((g_df[type_col] != empty_value_type) &
+                                            (np.any(g_df[value_col] == 0, axis=1)) &
+                                            (~g_df[type_col].isnull()))]
+
                 type_value[type_col] = type_value_error.empty  # If there is no error then True
                 type_value_results.append(type_value_error.empty)  # Append result without type column name
 
@@ -2137,6 +2148,10 @@ class EventValidation(object):
                                        'type_value', 'type_value_results'])  # Returned row
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
+
+        if df.empty:
+            return self
+
         side_column = 'side'
         df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
 
