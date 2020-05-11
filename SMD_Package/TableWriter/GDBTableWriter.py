@@ -29,11 +29,12 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
         for col in cols_dtype.keys():
             AddField_management(table_name, col, cols_dtype[col]['dtype'])
 
-    input_routes = dataframe[input_routeid].unique().tolist()  # List of every route in the input DataFrame
     existing_col = [str(f.name) for f in ListFields(table_name)]  # List all available table column
 
     if write_date and (date_column not in existing_col):  # If the date column does not exist
         AddField_management(table_name, date_column, "DATE")
+
+    input_routes = dataframe[input_routeid].unique().tolist()  # List of every route in the input DataFrame
 
     for route in input_routes:  # Iterate for every available route in the input
         df_route = dataframe.loc[dataframe[input_routeid] == route]  # The route DataFrame
