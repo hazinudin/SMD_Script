@@ -2201,7 +2201,8 @@ class EventValidation(object):
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
         merged = add_rni_data(df, routeid_col, from_m_col, to_m_col, None, self.sde_connection, rni_medwidth)
-        grouped = merged.groupby([routeid_col, from_m_col])[direction_col].nunique().reset_index()
+        grouped = merged.groupby([routeid_col, from_m_col]).agg({direction_col: lambda x: x.nunique(),
+                                                                 rni_medwidth: lambda x: x.max()}).reset_index()
         error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
 
         for index, row in error_rows.iterrows():
