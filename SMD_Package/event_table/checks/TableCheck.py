@@ -578,8 +578,8 @@ class EventValidation(object):
                 last_interval = '{0}-{1}'.format(last_from, last_to)  # The interval value in string
 
                 # Find the row with segment len error, find the index
-                error_i = df_route_lane.loc[~(np.isclose(df_route_lane['diff'], df_route_lane[length_col], rtol=0.001) &
-                                            (np.isclose(df_route_lane[length_col], segment_len, rtol=0.001)))].index
+                error_i = df_route_lane.loc[(~np.isclose(df_route_lane['diff'], df_route_lane[length_col], rtol=0.001) |
+                                            (~np.isclose(df_route_lane[length_col], segment_len, rtol=0.001)))].index
 
                 # Pop the last segment from the list of invalid segment
                 error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
