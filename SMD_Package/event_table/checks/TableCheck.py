@@ -2201,7 +2201,9 @@ class EventValidation(object):
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col, segment_len_col=kwargs.get('length_col'))
-        merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection, rni_medwidth)
+
+        merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection, rni_medwidth,
+                              agg_func={rni_medwidth: lambda x: x.max()})
         grouped = merged.groupby([routeid_col, from_m_col, to_m_col]).agg({direction_col: lambda x: x.nunique(),
                                                                            rni_medwidth: lambda x: x.max()}).reset_index()
         error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
