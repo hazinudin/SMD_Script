@@ -39,12 +39,14 @@ def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connectio
     if lane_code_col is not None:
         rni_key = [rni_routeid, rni_from_m, rni_to_m, rni_lane_code]  # RNI table merge key.
         input_key = [routeid_col, from_m_col, to_m_col, lane_code_col]  # Input table merge key.
+        request_cols = rni_key + added_column  # Requested columns.
+        df_rni = event_fc_to_df(rni_table, request_cols, routes, rni_routeid, connection, True)  # Get the RNI df.
+
     else:
         rni_key = [rni_routeid, rni_from_m, rni_to_m]  # RNI table merge key.
         input_key = [routeid_col, from_m_col, to_m_col]  # Input table merge key.
-
-    request_cols = rni_key + added_column  # Requested columns.
-    df_rni = event_fc_to_df(rni_table, request_cols, routes, rni_routeid, connection, True)  # Get the RNI df.
+        request_cols = rni_key + added_column  # Requested columns.
+        df_rni = event_fc_to_df(rni_table, request_cols, routes, rni_routeid, connection, True)  # Get the RNI df.
 
     if len(df_rni) == 0:  # If all of the requested route does not have RNI data then return None.
         return None
