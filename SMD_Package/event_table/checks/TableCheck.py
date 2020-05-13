@@ -2200,9 +2200,10 @@ class EventValidation(object):
         rni_medwidth = smd_config.table_fields['rni']['median']
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
-        merged = add_rni_data(df, routeid_col, from_m_col, to_m_col, None, self.sde_connection, rni_medwidth)
-        grouped = merged.groupby([routeid_col, from_m_col]).agg({direction_col: lambda x: x.nunique(),
-                                                                 rni_medwidth: lambda x: x.max()}).reset_index()
+        self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col, segment_len_col=kwargs.get('length_col'))
+        merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection, rni_medwidth)
+        grouped = merged.groupby([routeid_col, from_m_col, to_m_col]).agg({direction_col: lambda x: x.nunique(),
+                                                                           rni_medwidth: lambda x: x.max()}).reset_index()
         error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
 
         for index, row in error_rows.iterrows():
@@ -2232,6 +2233,53 @@ class EventValidation(object):
         elif not dropna:
             df = self.df_string
             return df.copy(deep=True)
+
+    @staticmethod
+    def expand_segment(input_df, segment_len=0.1, from_m_col='FROM_STA', to_m_col='TO_STA',
+                       segment_len_col='SEGMENT_LENGTH', len_to_m=100):
+        """
+        This static method expand the input DataFrame segment with segment length greater than the defined segment
+        length in the parameter.
+        :param input_df: The input DataFrame.
+        :param segment_len: Determined segment length.
+        :param from_m_col: From Measure column.
+        :param to_m_col: To Measure column.
+        :param segment_len_col: Segment length from the input table.
+        :param len_to_m: The conversion factor to convert the segment length to from-to measurement value.
+        :return:
+        """
+        n_from_m_col = '_' + from_m_col  # The new from and to measure column
+        n_to_m_col = '_' + to_m_col
+
+        # Create the new empty column
+        input_df[[n_from_m_col, n_to_m_col]] = pd.DataFrame(index=input_df.index, columns=[n_from_m_col, n_to_m_col])
+
+        for index, row in input_df.iterrows():
+            input_seg_len = row[segment_len_col]
+            input_from = row[from_m_col]
+            new_row_count = int(float(input_seg_len)/float(segment_len))-1  # Count of to be inserted rows.
+
+            # Fill the value for the existing segment row
+            first_to_m = input_from + int(float(segment_len)*len_to_m)  # The first corrected to measure value.
+            row[n_from_m_col] = input_from
+            row[n_to_m_col] = first_to_m
+            input_df.loc[index] = row
+
+            for n_row in range(new_row_count):  # Insert the new row
+                if n_row == 0:
+                    n_from = first_to_m
+                    n_to = first_to_m + int(float(segment_len) * len_to_m)
+                else:
+                    n_from = n_to
+                    n_to = n_to + int(float(segment_len) * len_to_m)
+
+                df_max_i = input_df.index.max()
+                row[n_from_m_col] = n_from
+                row[n_to_m_col] = n_to
+                input_df.loc[df_max_i+1] = row
+
+        input_df.sort_values([from_m_col, to_m_col], inplace=True)
+        return
 
     @staticmethod
     def selected_route_df(df, routes, routeid_col="LINKID"):
