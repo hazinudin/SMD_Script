@@ -5,7 +5,7 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 
 def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connection, added_column=None, how='inner',
-                 mfactor=1):
+                 mfactor=1, agg_func=None):
     """
     This functions perform a merge operation between the inputted DataFrame with RNI DataFrame to add requested RNI'
     column to the inputted DataFrame.
@@ -19,6 +19,7 @@ def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connectio
     :param how: Merge 'how', 'inner' or 'outer'.
     :param mfactor: The factor which will be multiplied to RNI from and to measurement value to match the input from-to
     measurement unit.
+    :param agg_func: Aggregate function in dictionary format to be used in the pandas GroupBy.agg() function.
     :return:
     """
 
@@ -47,6 +48,8 @@ def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connectio
         input_key = [routeid_col, from_m_col, to_m_col]  # Input table merge key.
         request_cols = rni_key + added_column  # Requested columns.
         df_rni = event_fc_to_df(rni_table, request_cols, routes, rni_routeid, connection, True)  # Get the RNI df.
+        rni_g = df_rni.groupby(rni_key).agg(agg_func)
+        df_rni = rni_g.reset_index()
 
     if len(df_rni) == 0:  # If all of the requested route does not have RNI data then return None.
         return None
