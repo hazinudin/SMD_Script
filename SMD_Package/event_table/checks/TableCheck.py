@@ -1726,28 +1726,6 @@ class EventValidation(object):
         :return:
         """
 
-        def surf_df(surf_col):
-            """
-            This function create a surface group DataFrame for PCI usage.
-            :param surf_col: The surface column in the output DataFrame.
-            :return:
-            """
-            df_surf = pd.DataFrame(range(1, 22), columns=['code'])
-            df_surf[surf_col] = pd.Series(None)
-
-            # Define the surface group
-            surf_dict = {
-                "unpaved": range(1, 3),
-                "asphalt": range(3, 21),
-                "rigid": range(21, 22)
-            }
-
-            for surf in surf_dict:
-                group = surf_dict[surf]
-                df_surf.loc[df_surf['code'].isin(group), [surf_col]] = surf
-
-            return df_surf.set_index('code')
-
         def col_allnull(row_series, mask):
             """
             This function will determine whether a row contain only Null value.
@@ -1762,7 +1740,7 @@ class EventValidation(object):
 
         df = self.copy_valid_df()  # Create a valid DataFrame copy
         surf_col = '_surface'
-        df_surf = surf_df(surf_col)  # DataFrame containing surface group
+        df_surf = self.surftype_df(surf_col)  # DataFrame containing surface group
         rni_surf_type = self.config.table_fields['rni']['surface_type']
 
         col_list = df.columns.tolist()
@@ -2235,6 +2213,29 @@ class EventValidation(object):
         elif not dropna:
             df = self.df_string
             return df.copy(deep=True)
+
+    @staticmethod
+    def surftype_df(surface_column):
+        """
+        This function create a surface group DataFrame for PCI usage.
+        :param surface_column: The surface column in the output DataFrame.
+        :return:
+        """
+        df_surf = pd.DataFrame(range(1, 22), columns=['code'])
+        df_surf[surface_column] = pd.Series(None)
+
+        # Define the surface group
+        surf_dict = {
+            "unpaved": range(1, 3),
+            "asphalt": range(3, 21),
+            "rigid": range(21, 22)
+        }
+
+        for surf in surf_dict:
+            group = surf_dict[surf]
+            df_surf.loc[df_surf['code'].isin(group), [surface_column]] = surf
+
+        return df_surf.set_index('code')
 
     @staticmethod
     def expand_segment(input_df, segment_len=0.1, from_m_col='FROM_STA', to_m_col='TO_STA',
