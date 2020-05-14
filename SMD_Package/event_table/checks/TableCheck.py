@@ -1860,6 +1860,56 @@ class EventValidation(object):
 
         return self
 
+    def surf_thickness_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+                             survey_dir_col='SURVEY_DIREC', thickness_col='SURF_THICKNESS', **kwargs):
+        """
+        This class method compare the surface thickness value from the input table with the valid range which will be
+        determined based on the segment's surface type in the RNI data.
+        :param routes: The route selection.
+        :param routeid_col: The route id column.
+        :param from_m_col:  The from measure column.
+        :param to_m_col: The to measure column.
+        :param survey_dir_col: The survey direction column.
+        :param thickness_col: The surface thickness column of the input table.
+        :return:
+        """
+        rni_surface_type = self.config.table_fields['rni']['surface_type']
+
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        surf_df = self.surftype_df('_surface')  # The surface type DataFrame.
+
+        self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)  # Expand the segment to 100meter segment.
+
+        merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection,
+                              rni_surface_type, agg_func={rni_surface_type: lambda x: x.value_counts().index[0]})
+
+        grouped = merged.groupby([routeid_col, from_m_col, to_m_col, survey_dir_col]).\
+            agg({rni_surface_type: lambda x: x.value_counts().index[0],
+                 thickness_col: lambda x: x.value_counts().index[0]}).reset_index()
+
+        grouped_surf = grouped.join(surf_df, on=rni_surface_type, how='inner')
+
+        asphalt_error = ((grouped_surf['_surface'] == 'asphlat') &
+                         ((grouped_surf[thickness_col] < 700) | (grouped_surf[thickness_col] > 3500)))
+        rigid_error = ((grouped_surf['_surface'] == 'rigid') &
+                       ((grouped_surf[thickness_col] < 150) | (grouped_surf[thickness_col] > 320)))
+
+        error_rows = grouped_surf.loc[asphalt_error | rigid_error]
+
+        for index, row in error_rows.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            direction = row[survey_dir_col]
+            surface = row['_surface']
+            surface_thickness = row[thickness_col]
+
+            msg = 'Rute {0} pada segmen {1}-{2} di arah survey {3} memiliki nilai {4} yang berada diluar rentang untuk tipe perkerasan {5}, yaitu {6}.'.\
+                format(route, from_m, to_m, direction, thickness_col, surface, surface_thickness)
+            self.insert_route_message(route, 'ToBeReviewed', msg)
+
+        return self
+
     def compare_kemantapan(self, grading_col, comp_fc, comp_from_col, comp_to_col, comp_route_col, comp_lane_code,
                            comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='LANE_CODE',
                            from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage = True, **kwargs):

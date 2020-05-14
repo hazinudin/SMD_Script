@@ -363,6 +363,7 @@ class DeflectionCheck(TableCheckService):
             self.check.range_domain_check(lane_code='SURVEY_DIREC', **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, segment_len=0.5, lane_code='SURVEY_DIREC', **self.kwargs)
             self.check.median_direction_check(routes=valid_routes, **self.kwargs)
+            self.check.surf_thickness_check(**self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT', lane_code=None,
