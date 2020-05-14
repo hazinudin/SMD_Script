@@ -74,16 +74,35 @@ if type(Routes) is list:  # If the inputted routes is a list
 
 # Determine the output table based on the specified data type
 adjust = Adjust(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode)
-if str(DataType) == "IRI":  # If the data is IRI/Roughness
-    data_config = load_config_data('RoughnessCheck/roughness_config_2020.json')
+if str(DataType) == "RNI":  # If the data is IRI/Roughness
+    data_config = load_config_data('RNICheck/rni_config_2020.json')
     OutputGDBTable = "SMD.RNI_TEST_"+str(DataYear)
-    ColumnDetails = data_config['column_details']
+
+elif str(DataType) == "IRI":  # If the data is RNI
+    data_config = load_config_data('RoughnessCheck/roughness_config_2020.json')
+    OutputGDBTable = "SMD.ROUGHNESS_TEST_"+str(DataSemester)+"_"+str(DataYear)
     adjust.trim_to_reference(fit_to='RNI')
 
-elif str(DataType) == "RNI":  # If the data is RNI
-    data_config = load_config_data('RNICheck/rni_config_2020.json')
-    OutputGDBTable = "SMD.ROUGHNESS_TEST_"+str(DataSemester)+"_"+str(DataYear)
-    ColumnDetails = data_config['column_details']
+elif str(DataType) == "PCI":  # If the data is RNI
+    data_config = load_config_data('PCICheck/pci_config_2020.json')
+    OutputGDBTable = "SMD.PCI_TEST_"+str(DataYear)
+
+elif str(DataType) == "RTC":  # If the data is RNI
+    data_config = load_config_data('RTCCheck/rtc_config_2020.json')
+    OutputGDBTable = "SMD.RTC_TEST_"+str(DataYear)
+
+elif str(DataType) == "FWD":  # If the data is RNI
+    data_config = load_config_data('FWDCheck/fwd_config_2020.json')
+    OutputGDBTable = "SMD.FWD_TEST_"+str(DataYear)
+
+elif str(DataType) == "LWD":  # If the data is RNI
+    data_config = load_config_data('LWDCheck/lwd_config_2020.json')
+    OutputGDBTable = "SMD.LWD_TEST_"+str(DataYear)
+
+elif str(DataType) == "BB":  # If the data is RNI
+    data_config = load_config_data('BBCheck/bb_config_2020.json')
+    OutputGDBTable = "SMD.BB_TEST_"+str(DataYear)
+
 
 else:  # If other than that, the process will be terminated with an error message.
     message = 'Data type {0} is not supported'.format(DataType)
@@ -91,5 +110,6 @@ else:  # If other than that, the process will be terminated with an error messag
     sys.exit(0)
 
 # Start writing the input table to GDB
+ColumnDetails = data_config['column_details']
 gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails)
 SetParameterAsText(1, output_message("Succeeded", ""))
