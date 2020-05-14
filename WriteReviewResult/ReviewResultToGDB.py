@@ -75,12 +75,12 @@ if type(Routes) is list:  # If the inputted routes is a list
 # Determine the output table based on the specified data type
 adjust = Adjust(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode)
 if str(DataType) == "IRI":  # If the data is IRI/Roughness
-    data_config = load_config_data('RoughnessCheck/roughness_config.json')
+    data_config = load_config_data('RoughnessCheck/roughness_config_2020.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
     adjust.trim_to_reference(fit_to='RNI')
 elif str(DataType) == "RNI":  # If the data is RNI
-    data_config = load_config_data('RNICheck/rni_config.json')
+    data_config = load_config_data('RNICheck/rni_config_2020.json')
     OutputGDBTable = data_config['output_table']  # The GDB table which store all the valid table row
     ColumnDetails = data_config['column_details']  # The GDB table which store all the valid table row
     adjust.trim_to_reference(fit_to='LRS')
