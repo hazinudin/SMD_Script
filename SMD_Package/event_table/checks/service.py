@@ -365,7 +365,7 @@ class DeflectionCheck(TableCheckService):
             self.check.median_direction_check(routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
-                self.check.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT',
+                self.check.coordinate_check(routes=valid_routes, segment_data=False, lat_col='DEFL_LAT', lane_code=None,
                                             long_col='DEFL_LONG', comparison='RNIline-LRS', **self.kwargs)
 
             if sorting:
