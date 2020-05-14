@@ -35,12 +35,12 @@ dbConnection = smd_config['smd_database']['instance']
 inputJSON = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'routes', 'data', 'year', 'semester'])
+InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'routes', 'data', 'year'])
 TablePath = InputDetails["file_name"]
 Routes = InputDetails["routes"]
 DataType = InputDetails["data"]
 DataYear = InputDetails["year"]
-DataSemester = InputDetails["semester"]
+DataSemester = InputDetails.get("semester")
 
 # The input Event Table Columns
 inputRouteID = 'LINKID'
