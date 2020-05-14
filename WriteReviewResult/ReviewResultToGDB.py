@@ -73,6 +73,7 @@ if type(Routes) is list:  # If the inputted routes is a list
         sys.exit(0)  # Stop the script
 
 # Determine the output table based on the specified data type
+# TODO: THESE OUTPUT TABLES ARE ONLY USED IN TESTING PHASE.
 adjust = Adjust(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode)
 if str(DataType) == "RNI":  # If the data is IRI/Roughness
     data_config = load_config_data('RNICheck/rni_config_2020.json')
