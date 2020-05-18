@@ -452,13 +452,51 @@ class EventValidation(object):
                     for index, row in error_row.iterrows():
                         msg_status = row[status_col]
 
-                        if from_m_col is None or to_m_col is None:
-                            result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.".\
-                                format(row[routeid_col], column, lower_bound, upper_bound, index+2)
-                        else:
-                            result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
-                                format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
-                                       row[to_m_col], row[lane_code], row[column])
+                        if (msg_status == 'error') or ((msg_status == 'ToBeReviewed') and (review is True)):
+                            if from_m_col is None or to_m_col is None:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.".\
+                                    format(row[routeid_col], column, lower_bound, upper_bound, index+2)
+                            else:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                    format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
+                                           row[to_m_col], row[lane_code], row[column])
+
+                        elif (msg_status == 'ToBeReviewed') and review == 'upper':
+                            if from_m_col is None or to_m_col is None:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}>{3}), pada baris {4}.".\
+                                    format(row[routeid_col], column, lower_bound, upper_bound, index+2)
+                            else:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}>{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                    format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
+                                           row[to_m_col], row[lane_code], row[column])
+
+                        elif (msg_status == 'ToBeReviewed') and review == 'lower':
+                            if from_m_col is None or to_m_col is None:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2}), pada baris {4}.".\
+                                    format(row[routeid_col], column, lower_bound, upper_bound, index+2)
+                            else:
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                    format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
+                                           row[to_m_col], row[lane_code], row[column])
+
+                        elif (msg_status == 'ToBeReviewed') and type(review) == dict:
+                            if direction == 'outward':
+                                if from_m_col is None or to_m_col is None:
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2} atau {1}>{3}), pada baris {4}.". \
+                                        format(row[routeid_col], column, rev_lower, rev_upper, index + 2)
+                                else:
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2} atau {1}>{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                        format(row[routeid_col], column, rev_lower, rev_upper, row[from_m_col],
+                                               row[to_m_col], row[lane_code], row[column])
+
+                            if direction == 'inward':
+                                if from_m_col is None or to_m_col is None:
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.". \
+                                        format(row[routeid_col], column, rev_lower, rev_upper, index + 2)
+                                else:
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                        format(row[routeid_col], column, rev_lower, rev_upper, row[from_m_col],
+                                               row[to_m_col], row[lane_code], row[column])
 
                         # Insert the error message depend on the message status (as an Error or Review)
                         self.insert_route_message(row[routeid_col], msg_status, result)
