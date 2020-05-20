@@ -12,7 +12,7 @@ class TableCheckService(object):
     """
     This class provide class method for multiple data type check.
     """
-    def __init__(self, input_json, config_path, output_table, output_index=2, smd_dir='E:/SMD_Script',
+    def __init__(self, input_json, config_path, output_table, output_index=2, smd_dir=None,
                  table_suffix=None, semester_data=False, year_sem_check=True, **kwargs):
         """
         Class initialization.
@@ -26,7 +26,12 @@ class TableCheckService(object):
         """
         import os
         import sys
-        os.chdir(smd_dir)  # Change the directory to SMD root directory
+
+        if smd_dir is None:
+            os.chdir(SMDConfigs().smd_dir)
+        else:
+            os.chdir(smd_dir)  # Change the directory to SMD root directory
+
         smd_config = SMDConfigs()  # Load the SMD config
         data_config = Configs(config_path)  # Load the data config
 
