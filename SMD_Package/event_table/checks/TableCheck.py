@@ -709,6 +709,10 @@ class EventValidation(object):
                 lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
                 comparison = lrs_route_len
 
+            else:
+                raise ValueError("{0} is not a correct M-Value comparison parameter (LRS or RNI only)".
+                                 format(compare_to))
+
             # If the comparison value is not available.
             if comparison is None:
                 pass
