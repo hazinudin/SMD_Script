@@ -16,8 +16,8 @@ class SMDConfigs(object):
         for keys, value in config_dict.items():  # Assign dictionary keys to a class attribute
             setattr(self, keys, value)
 
-    @property
-    def smd_dir(self):
+    @staticmethod
+    def smd_dir():
         """
         This class property return the SMD Package directory
         :return: SMD folder path
@@ -25,7 +25,7 @@ class SMDConfigs(object):
         module_folder = os.path.dirname(__file__)
         smd_folder = os.path.dirname(module_folder.replace('\\', '/'))
 
-        return smd_folder
+        return str(smd_folder)
 
 
 class Configs(object):

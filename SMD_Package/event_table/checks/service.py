@@ -28,7 +28,7 @@ class TableCheckService(object):
         import sys
 
         if smd_dir is None:
-            os.chdir(SMDConfigs().smd_dir)
+            os.chdir(SMDConfigs().smd_dir())
         else:
             os.chdir(smd_dir)  # Change the directory to SMD root directory
 
