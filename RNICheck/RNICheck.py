@@ -6,4 +6,4 @@ inputJSON = GetParameterAsText(0)
 forceWrite = GetParameterAsText(1)
 
 RNICheck(forceWrite, input_json=inputJSON, config_path='RNICheck/rni_config_2020.json', output_table='SMD.RNI_TEST',
-         semester_data=False, smd_dir='E:/SMD_Script')
+         semester_data=False)
