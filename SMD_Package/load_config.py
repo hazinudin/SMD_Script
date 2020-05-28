@@ -19,13 +19,14 @@ class SMDConfigs(object):
     @property
     def smd_dir(self):
         """
-        This class property return the SMD Pacakge directory
+        This class property return the SMD Package directory
         :return: SMD folder path
         """
         module_folder = os.path.dirname(__file__)
-        smd_folder = os.path.dirname(module_folder)
+        smd_folder = os.path.dirname(module_folder.replace('\\', '/'))
 
         return smd_folder
+
 
 class Configs(object):
     """
