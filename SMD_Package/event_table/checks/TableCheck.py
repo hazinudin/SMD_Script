@@ -704,7 +704,7 @@ class EventValidation(object):
                     rni_max_m = rni_df.at[rni_df[rni_to_m].argmax(), rni_to_m]  # The Route RNI maximum measurement
                     comparison = float(rni_max_m)/float(100/self.rni_mfactor)
 
-            if compare_to == 'LRS':
+            elif compare_to == 'LRS':
                 # Get the LRS Network route length
                 lrs_route_len = self.route_geometry(route, self.lrs_network, self.lrs_routeid).lastPoint.M
                 comparison = lrs_route_len
