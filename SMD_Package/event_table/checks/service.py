@@ -28,7 +28,7 @@ class TableCheckService(object):
         import sys
 
         if smd_dir is None:
-            os.chdir(SMDConfigs().smd_dir())
+            os.chdir(SMDConfigs.smd_dir())
         else:
             os.chdir(smd_dir)  # Change the directory to SMD root directory
 
@@ -225,6 +225,7 @@ class RoughnessCheck(TableCheckService):
             self.check.survey_year_check(self.data_year, **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, **self.kwargs)
             self.check.measurement_check(routes=valid_routes, compare_to='RNI', **self.kwargs)
+            self.check.lane_direction_check(routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
@@ -263,6 +264,7 @@ class RNICheck(TableCheckService):
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(["L_INN_SHWIDTH", "R_INN_SHWIDTH"], routes=valid_routes,
                                               **self.kwargs)
+            self.check.rni_compare_surftype(**self.kwargs)
 
             for col in [["INN_SHTYPE", "INN_SHWIDTH", "OUT_SHTYPE", "OUT_SHWIDTH"],
                         "TERRAIN_TYPE",
