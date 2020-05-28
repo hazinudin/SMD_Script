@@ -7,7 +7,7 @@ class SMDConfigs(object):
         """
         This class will load all the first level keys as class attributes.
         """
-        smd_folder = self.smd_dir
+        smd_folder = self.smd_dir()
         file_path = os.path.join(smd_folder, config_file)
 
         with open(file_path) as config_f:  # Open the config file in the root directory
