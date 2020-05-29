@@ -5,5 +5,4 @@ from SMD_Package.event_table.checks.service import RTCCheck
 inputJSON = GetParameterAsText(0)
 forceWrite = GetParameterAsText(1)
 
-RTCCheck(forceWrite, input_json=inputJSON, config_path="RTCCheck/rtc_config.json", output_table="SMD.RTC_TEST",
-         smd_dir="E:/SMD_Script")
+RTCCheck(forceWrite, input_json=inputJSON, config_path="RTCCheck/rtc_config.json", output_table="SMD.RTC_TEST")
