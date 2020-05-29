@@ -457,7 +457,7 @@ class EventValidation(object):
                                 result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.".\
                                     format(row[routeid_col], column, lower_bound, upper_bound, index+2)
                             else:
-                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} lane {6} yaitu {7}". \
                                     format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
                                            row[to_m_col], row[lane_code], row[column])
 
@@ -475,7 +475,7 @@ class EventValidation(object):
                                 result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2}), pada baris {4}.".\
                                     format(row[routeid_col], column, lower_bound, upper_bound, index+2)
                             else:
-                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2}), pada segmen {4}-{5} lane {6} yaitu {7}". \
                                     format(row[routeid_col], column, lower_bound, upper_bound, row[from_m_col],
                                            row[to_m_col], row[lane_code], row[column])
 
@@ -485,7 +485,7 @@ class EventValidation(object):
                                     result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2} atau {1}>{3}), pada baris {4}.". \
                                         format(row[routeid_col], column, rev_lower, rev_upper, index + 2)
                                 else:
-                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2} atau {1}>{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({1}<{2} atau {1}>{3}), pada segmen {4}-{5} lane {6} yaitu {7}". \
                                         format(row[routeid_col], column, rev_lower, rev_upper, row[from_m_col],
                                                row[to_m_col], row[lane_code], row[column])
 
@@ -494,7 +494,7 @@ class EventValidation(object):
                                     result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada baris {4}.". \
                                         format(row[routeid_col], column, rev_lower, rev_upper, index + 2)
                                 else:
-                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} {6} yaitu {7}". \
+                                    result = "Rute {0} memiliki nilai {1} yang berada di luar rentang ({2}<{1}<{3}), pada segmen {4}-{5} lane {6} yaitu {7}". \
                                         format(row[routeid_col], column, rev_lower, rev_upper, row[from_m_col],
                                                row[to_m_col], row[lane_code], row[column])
 
@@ -1491,7 +1491,7 @@ class EventValidation(object):
 
             merged['status'] = pd.Series(np.nan)
             merged.loc[(merged['ref_cat'] == 'paved') & (merged['input_cat'] == 'unpaved'), ['status']] = 'error'
-            merged.loc[(merged['ref_cat'] == 'unpaved') & (merged['input_cat'] == 'paved'), ['status']] = 'ToBeReviewed'
+            # merged.loc[(merged['ref_cat'] == 'unpaved') & (merged['input_cat'] == 'paved'), ['status']] = 'ToBeReviewed'
 
             for index, row in merged.loc[merged['status'].notnull()].iterrows():
                 from_m = row[from_m_col]
@@ -2250,6 +2250,7 @@ class EventValidation(object):
             if not correct_type_value:
                 msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai tipe yang tidak konsisten yaitu {4}.".\
                     format(route, from_m, to_m, side, type_value)
+                self.insert_route_message(route, 'error', msg)
 
         return self
 
