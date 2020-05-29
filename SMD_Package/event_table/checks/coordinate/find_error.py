@@ -202,8 +202,9 @@ class FindCoordinateError(object):
 
             elif end_type == 'end' or same_method:
                 if (dist_to_end > rads+threshold) or (ref_dist > threshold):
-                    msg = "Koordinat {6} pada rute {0} di lane {1} berjarak lebih dari {2}m dari titik koordinat {6} data referensi (Jarak ke {6} = {3}) atau memiliki jarak lebih dari {2}m dari geometri referensi (Jarak ke referensi = {4}, referensi = {5})".\
-                        format(self.route, lane, threshold, dist_to_end, ref_dist, self.comparison, end_msg)
+                    msg = "Koordinat {6} pada rute {0} di lane {1} berjarak lebih dari {7}m dari titik koordinat {6} data referensi (Jarak koordinat {6} terhadap titik {6} referensi = {3} dan jarak ke geometri referensi = {4}. Referensi yang digunakan adalah {5})".\
+                        format(self.route, lane, threshold, dist_to_end, ref_dist, self.comparison, end_msg,
+                               rads+threshold)
                     self.error_msg.append(msg)
 
         return self  # Return all error message
