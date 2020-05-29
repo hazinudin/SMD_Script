@@ -31,7 +31,7 @@
     "L_LAND_USE":{"dtype":"integer", "domain":[1, 2, 3, 4]},
     "R_LAND_USE":{"dtype":"integer", "domain":[1, 2, 3, 4]},
     "GRADE":{"dtype":"double", "allow_null":true},
-    "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":2019, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
+    "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":2020, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
     "SURVEY_DATE":{"dtype":"date"},
     "TO_STA_LONG":{"dtype":"double", "range":{"upper":141, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}},
     "TO_STA_LAT":{"dtype":"double", "range":{"upper":-11, "lower":6, "eq_lower":true, "eq_upper":true, "review":false}},
