@@ -11,17 +11,17 @@
     "password":"SMD123M"
   },
   "table_names":{
-    "lrs_network":"ELRS.Road_Network_2020",
+    "lrs_network":"ELRS.National_Network2018",
     "balai_table":"ELRS.map_balai_prov",
     "balai_route_table":"ELRS.map_balai_route",
     "rni": "SMD.RNI_2019_RERUN_2"
   },
   "table_fields":{
     "lrs_network":{
-      "route_id":"LINKID",
-      "route_name":"LINK_NAME",
-      "prov_code":"BM_PROV_ID",
-      "lintas":"ROAD_FUNCTION",
+      "route_id":"ROUTEID",
+      "route_name":"ROUTE_NAME",
+      "prov_code":"NOPROP",
+      "lintas":"NAME_LINTAS",
       "from_date":"FROM_DATE",
       "to_date":"TO_DATE"
     },
