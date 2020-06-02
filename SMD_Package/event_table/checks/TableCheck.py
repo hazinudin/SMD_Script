@@ -692,6 +692,9 @@ class EventValidation(object):
             max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
             max_to_meas = float(df_groupped.at[max_to_ind, to_m_col]) / 100  # The largest To Measure value
 
+            min_from_ind = df_groupped[from_m_col].idxmin()  # The index of segment with smallest From Measure
+            min_from_meas = float(df_groupped.at[min_from_ind, from_m_col]) /100  # The smallest From Measure value
+
             # Comparison based on the 'compare_to' parameter
             if compare_to == 'RNI':
                 # Get the RNI Max Measurement
@@ -728,15 +731,16 @@ class EventValidation(object):
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
+            if not np.isclose(min_from_meas, 0):
+                error_message = 'Data survey pada rute {0} tidak dimulai dari 0.'.format(route)
+                self.error_list.append(error_message)
+                self.insert_route_message(route, 'error', error_message)
+
             for index, row in df_groupped.iterrows():
 
                 if index == 0:  # Initialize the from_m and to_m value with the first row of a route
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
-                    if from_m != 0:
-                        error_message = 'Data survey pada rute {0} tidak dimulai dari 0.'.format(route)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
                 else:
                     # Make sure the from measure is smaller than to measure, and
                     # the next row from measure is the same as previous row to measure (no gaps).
