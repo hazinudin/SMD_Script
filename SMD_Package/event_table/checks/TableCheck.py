@@ -2081,6 +2081,7 @@ class EventValidation(object):
             """
             d = dict()
             side = series['side'].values[0]
+            dir_count = series['DIR_COUNT'].max()  # Just take the maximum value of a segment.
 
             if side == 'L':
                 other_side = 'R'
@@ -2088,29 +2089,64 @@ class EventValidation(object):
                 other_side = 'L'
 
             # In the production version, the side should be a prefix not suffix.
-            check_col_side = side + "_" + column
+            check_side_col = side + "_" + column
             other_side_col = other_side + "_" + column
 
-            if empty_as_null:
-                d['all_empty'] = np.all(series[check_col_side].isnull())  # If the value is all Null
-                empty_value = np.nan
+            if dir_count > 1:
+                d['single_dir'] = False
+
+                if empty_as_null:
+                    d['all_empty'] = np.all(series[check_side_col].isnull())  # If the value is all Null
+                    empty_value = np.nan
+                else:
+                    d['all_empty'] = np.all(series[check_side_col] == 0)
+                    empty_value = 0
+
+                # Check if there is more than 1 value
+                # Null is not counted in
+                value_count = series[check_side_col].nunique(True)
+                d['check_value_count'] = value_count
+                d['inconsistent'] = value_count > 1
+                d['column'] = check_side_col
+
+                if wipe:
+                    self.df_valid.loc[series.index, [other_side_col]] = empty_value
+                if fill and (value_count == 1):
+                    self.df_valid.loc[series.index, [check_side_col]] = series[check_side_col].values[0]
+
             else:
-                d['all_empty'] = np.all(series[check_col_side] == 0)
-                empty_value = 0
+                d['single_dir'] = True
+                d['column'] = check_side_col
 
-            # Check if there is more than 1 value
-            # Null is not counted in
-            value_count = series[check_col_side].nunique(True)
-            d['check_value_count'] = value_count
-            d['inconsistent'] = value_count > 1
-            d['column'] = check_col_side
+                if empty_as_null:
+                    check_side_null = np.all(series[check_side_col].isnull())  # If the value in the check col is Null
+                    other_side_null = np.all(series[other_side_col].isnull())  # If the value in the other side col is Null
+                else:
+                    check_side_null = np.all(series[check_side_col] == 0)  # If the value in the check col is Null
+                    other_side_null = np.all(series[other_side_col] == 0)  # If the value in the other side col is Null
 
-            if wipe:
-                self.df_valid.loc[series.index, [other_side_col]] = empty_value
-            if fill and (value_count == 1):
-                self.df_valid.loc[series.index, [check_col_side]] = series[check_col_side].values[0]
+                check_side_inconsistent = series[check_side_col].nunique(True) > 1
+                other_side_inconsistent = series[other_side_col].nunique(True) > 1
 
-            return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column'])
+                if check_side_null:
+                    d['all_empty'] = check_side_col
+                if other_side_null:
+                    d['all_empty'] = other_side_col
+                if check_side_null and other_side_null:
+                    d['all_empty'] = [check_side_col, other_side_col]
+
+                if check_side_inconsistent:
+                    d['incosistent'] = check_side_col
+                if other_side_inconsistent:
+                    d['inconsistent'] = other_side_col
+                if check_side_inconsistent and other_side_inconsistent:
+                    d['inconsistent'] = [check_side_col, other_side_col]
+
+                if fill and not(check_side_inconsistent and other_side_inconsistent):
+                    self.df_valid.loc[series.index, [check_side_col]] = series[check_side_col].values[0]
+                    self.df_valid.loc[series.index, [other_side_col]] = series[other_side_col].values[0]
+
+            return pd.Series(d, index=['all_empty', 'check_value_count', 'inconsistent', 'column', 'single_dir'])
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
 
@@ -2124,12 +2160,17 @@ class EventValidation(object):
             columns = [columns]
 
         for column in columns:
+            segment_group = df.groupby([routeid_col, from_m_col, to_m_col])[side_column].\
+                agg({"DIR_COUNT": lambda x: x.nunique()})
+            dir_count_df = segment_group.reset_index()
+
+            df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col])  # Add direction count for every segment.
             side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
             side_group.reset_index(inplace=True)  # Reset the group by index
 
             # Start check for any error
-            all_empty = side_group['all_empty']
-            inconsistent = side_group['inconsistent']
+            all_empty = ~side_group['all_empty'].isnull()
+            inconsistent = ~side_group['inconsistent'].isnull()
             error_rows = side_group.loc[all_empty | inconsistent]
 
             for index, row in error_rows.iterrows():
@@ -2140,16 +2181,40 @@ class EventValidation(object):
                 empty = row['all_empty']
                 val_count_error = row['inconsistent']
                 error_col = row['column']
+                single_dir = row['single_dir']
 
-                if empty:
-                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\
-                        format(route, from_m, to_m, side, error_col)
-                    self.insert_route_message(route, 'error', msg)
+                if not single_dir:
+                    if empty:
+                        msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}.".\
+                            format(route, from_m, to_m, side, error_col)
+                        self.insert_route_message(route, 'error', msg)
 
-                if val_count_error:
-                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
-                        format(route, from_m, to_m, side, error_col)
-                    self.insert_route_message(route, 'error', msg)
+                    if val_count_error:
+                        msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
+                            format(route, from_m, to_m, side, error_col)
+                        self.insert_route_message(route, 'error', msg)
+                else:
+                    if empty:
+                        if type(empty) == list:
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R tidak memiliki nilai {3}.".\
+                                format(route, from_m, to_m, empty)
+                            self.insert_route_message(route, 'error', msg)
+                        else:
+                            side = str(empty).split('_')[0]
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki nilai {4}".\
+                                format(route, from_m, to_m, side, empty)
+                            self.insert_route_message(route, 'error', msg)
+
+                    if val_count_error:
+                        if type(val_count_error) == list:
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R mamiliki nilai {3} yang tidak konsisten ditiap sisi.".\
+                                format(route, from_m, to_m, empty)
+                            self.insert_route_message(route, 'error', msg)
+                        else:
+                            side = str(val_count_error).split('_')[0]
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak knosisten di setiap jalur.".\
+                                format(route, from_m, to_m, side, val_count_error)
+                            self.insert_route_message(route, 'error', msg)
 
         return self
 
