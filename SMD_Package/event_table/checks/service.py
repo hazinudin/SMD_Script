@@ -267,7 +267,7 @@ class RNICheck(TableCheckService):
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(["L_INN_SHWIDTH", "R_INN_SHWIDTH"], routes=valid_routes,
                                               **self.kwargs)
-            self.check.rni_compare_surftype(**self.kwargs)
+            self.check.rni_compare_surftype(routes=valid_routes, **self.kwargs)
 
             for col in [["INN_SHTYPE", "INN_SHWIDTH", "OUT_SHTYPE", "OUT_SHWIDTH"],
                         "TERRAIN_TYPE",
