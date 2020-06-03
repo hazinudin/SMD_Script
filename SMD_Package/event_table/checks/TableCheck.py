@@ -695,7 +695,7 @@ class EventValidation(object):
             max_to_meas = float(df_groupped.at[max_to_ind, to_m_col]) / 100  # The largest To Measure value
 
             min_from_ind = df_groupped[from_m_col].idxmin()  # The index of segment with smallest From Measure
-            min_from_meas = float(df_groupped.at[min_from_ind, from_m_col]) /100  # The smallest From Measure value
+            min_from_meas = float(df_groupped.at[min_from_ind, from_m_col]) / 100  # The smallest From Measure value
 
             # Comparison based on the 'compare_to' parameter
             if compare_to == 'RNI':
@@ -738,6 +738,8 @@ class EventValidation(object):
                 self.error_list.append(error_message)
                 self.insert_route_message(route, 'error', error_message)
 
+            lane_group = df_route.groupby(by=[lane_code])
+
             for index, row in df_groupped.iterrows():
 
                 if index == 0:  # Initialize the from_m and to_m value with the first row of a route
@@ -752,6 +754,7 @@ class EventValidation(object):
                         from_m = row[from_m_col]
                         to_m = row[to_m_col]
 
+                    # TODO: All check below this comment should not be operated as groupby
                     elif row[from_m_col] > row[to_m_col]:
                         # Create an error message
                         error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
@@ -2157,15 +2160,16 @@ class EventValidation(object):
         side_column = 'side'
         df[side_column] = df[[lane_code]].apply(lambda x: x[0][0], axis=1)  # Adding the side column L or R
 
+        segment_group = df.groupby([routeid_col, from_m_col, to_m_col])[side_column]. \
+            agg({"DIR_COUNT": lambda x: x.nunique()})
+        dir_count_df = segment_group.reset_index()
+
+        df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col])  # Add direction count for every segment.
+
         if type(columns) != list:  # Force columns variable as list type.
             columns = [columns]
 
         for column in columns:
-            segment_group = df.groupby([routeid_col, from_m_col, to_m_col])[side_column].\
-                agg({"DIR_COUNT": lambda x: x.nunique()})
-            dir_count_df = segment_group.reset_index()
-
-            df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col])  # Add direction count for every segment.
             side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
             side_group.reset_index(inplace=True)  # Reset the group by index
 
