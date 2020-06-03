@@ -548,10 +548,11 @@ class EventValidation(object):
 
         return self
 
-    def segment_duplicate_check(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
+    def segment_duplicate_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
                                 lane_code='LANE_CODE', drop=True, **kwargs):
         """
         This function checks for any duplicate segment determined by the keys defined in the parameter.
+        :param routes: Route selection.
         :param routeid_col: The Route ID column
         :param from_m_col: The From Measure column
         :param to_m_col: The To Measure column
@@ -561,7 +562,8 @@ class EventValidation(object):
         """
         keys = [routeid_col, from_m_col, to_m_col, lane_code]
 
-        duplicate_rows = self.df_valid[self.df_valid.duplicated(keys, keep='first')]
+        df_route = self.selected_route_df(self.df_valid, routes, routeid_col)
+        duplicate_rows = df_route[df_route.duplicated(keys, keep='first')]
         duplicate_index = duplicate_rows.index
 
         for index, row in duplicate_rows.iterrows():
