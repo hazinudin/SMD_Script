@@ -75,7 +75,7 @@ class GetRoutes(object):
 
                 # If code exist Balai-Route Mapping Table.
                 if in_route_map:
-                    routes = _df.loc[_df[balai_code] == codes, lrs_routeid].tolist()
+                    routes = _df.loc[_df[balai_route_code] == codes, balai_route_routeid].tolist()
 
             if query_type == 'no_prov':
                 codes = prov_code[balai_prov]
