@@ -740,50 +740,43 @@ class EventValidation(object):
 
             lane_group = df_route.groupby(by=[lane_code])
 
-            for index, row in df_groupped.iterrows():
+            for name, group_df in lane_group:
+                group_df['to_from_diff'] = group_df.diff()
+                g_sorted = group_df.sort_values(by=from_m_col).reset_index()
+                g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
+                g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
 
-                if index == 0:  # Initialize the from_m and to_m value with the first row of a route
+                g_sorted.loc[g_sorted['TO-FROM_GAP'] < 0, ['MIDDLE_GAP']] = True
+                g_sorted.loc[g_sorted['TO-FROM_GAP'] > 0, ['OVERLAP']] = True
+                g_sorted.loc[g_sorted[from_m_col] > g_sorted[to_m_col], ['FROM>TO']] = True  # From M > To M
+
+                error_rows = g_sorted.loc[g_sorted['MIDDLE_GAP'] |
+                                          g_sorted['OVERLAP'] |
+                                          g_sorted['FROM>TO']]
+
+                for index, row in error_rows.iterrows():
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
-                else:
-                    # Make sure the from measure is smaller than to measure, and
-                    # the next row from measure is the same as previous row to measure (no gaps).
-                    if (row[from_m_col] < row[to_m_col]) & (np.isclose(to_m, row[from_m_col], atol=0.01)):
-                        # This means OK
-                        # Rewrite the To Measure and From Measure variable
-                        from_m = row[from_m_col]
-                        to_m = row[to_m_col]
+                    next_from_m = row['SHIFTED_FROM_M']
+                    next_to_m = g_sorted.at[index+1, to_m_col]
 
-                    # TODO: All check below this comment should not be operated as groupby
-                    elif row[from_m_col] > row[to_m_col]:
-                        # Create an error message
+                    if row['MIDDLE_GAP'] is True:
+                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'. \
+                            format(route, to_m, next_from_m)
+                        self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
+
+                    if row['OVERLAP'] is True:
+                        error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'. \
+                            format(next_from_m, next_to_m, row[from_m_col], row[to_m_col], route)
+                        self.error_list.append(error_message)
+                        self.insert_route_message(route, 'error', error_message)
+
+                    if row['FROM>TO'] is True:
                         error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
                             format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
-                        # Rewrite the To Measure and From Measure variable
-                        to_m = row[from_m_col]
-                        from_m = row[to_m_col]
-
-                    elif not np.isclose(to_m, row[from_m_col], atol=0.01):
-                        if to_m < row[from_m_col]:
-                            # Create an error message
-                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'.\
-                                format(route, to_m, row[from_m_col])
-                            self.error_list.append(error_message)
-                            self.insert_route_message(route, 'error', error_message)
-                            # Rewrite the To Measure and From Measure variable
-
-                        if to_m > row[from_m_col]:
-                            # Create an error message
-                            error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'.\
-                                format(from_m, to_m, row[from_m_col], row[to_m_col], route)
-                            self.error_list.append(error_message)
-                            self.insert_route_message(route, 'error', error_message)
-
-                        # Rewrite the To Measure and From Measure variable
-                        from_m = row[from_m_col]
-                        to_m = row[to_m_col]
 
         return self
 
