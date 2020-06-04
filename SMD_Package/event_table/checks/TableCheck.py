@@ -757,24 +757,25 @@ class EventValidation(object):
                 for index, row in error_rows.iterrows():
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
+                    lane = row[lane_code]
                     next_from_m = row['SHIFTED_FROM_M']
                     next_to_m = g_sorted.at[index+1, to_m_col]
 
                     if row['MIDDLE_GAP'] is True:
-                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'. \
-                            format(route, to_m, next_from_m)
+                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane (3}. (Terdapat gap di tengah ruas)'. \
+                            format(route, to_m, next_from_m, lane)
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
                     if row['OVERLAP'] is True:
-                        error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}'. \
-                            format(next_from_m, next_to_m, row[from_m_col], row[to_m_col], route)
+                        error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4} di jalur {5}'. \
+                            format(next_from_m, next_to_m, from_m, to_m, route, lane)
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
                     if row['FROM>TO'] is True:
-                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4}.'.\
-                            format(row[from_m_col], row[to_m_col], route, from_m_col, to_m_col)
+                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane {5}.'.\
+                            format(to_m, from_m, route, from_m_col, to_m_col, lane)
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
