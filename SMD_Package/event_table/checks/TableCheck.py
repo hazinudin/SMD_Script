@@ -745,9 +745,9 @@ class EventValidation(object):
                 g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
                 g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
 
-                g_sorted.loc[g_sorted['TO-FROM_GAP'] < 0, ['MIDDLE_GAP']] = True
-                g_sorted.loc[g_sorted['TO-FROM_GAP'] > 0, ['OVERLAP']] = True
-                g_sorted.loc[g_sorted[from_m_col] > g_sorted[to_m_col], ['FROM>TO']] = True  # From M > To M
+                g_sorted.loc[g_sorted['TO-FROM_GAP'] < 0, 'MIDDLE_GAP'] = True
+                g_sorted.loc[g_sorted['TO-FROM_GAP'] > 0, 'OVERLAP'] = True
+                g_sorted.loc[g_sorted[from_m_col] > g_sorted[to_m_col], 'FROM>TO'] = True  # From M > To M
 
                 error_rows = g_sorted.loc[g_sorted['MIDDLE_GAP'] |
                                           g_sorted['OVERLAP'] |
