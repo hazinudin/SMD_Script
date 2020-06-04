@@ -741,7 +741,6 @@ class EventValidation(object):
             lane_group = df_route.groupby(by=[lane_code])
 
             for name, group_df in lane_group:
-                group_df['to_from_diff'] = group_df.diff()
                 g_sorted = group_df.sort_values(by=from_m_col).reset_index()
                 g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
                 g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
