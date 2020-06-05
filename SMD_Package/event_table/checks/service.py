@@ -270,7 +270,6 @@ class RNICheck(TableCheckService):
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(["L_INN_SHWIDTH", "R_INN_SHWIDTH"], routes=valid_routes,
                                               **self.kwargs)
-            self.check.rni_compare_surftype(routes=valid_routes, **self.kwargs)
 
             for col in [["INN_SHTYPE", "INN_SHWIDTH"],
                         ["OUT_SHTYPE", "OUT_SHWIDTH"],
@@ -287,6 +286,7 @@ class RNICheck(TableCheckService):
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
+                self.check.rni_compare_surftype(routes=valid_routes, **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:
