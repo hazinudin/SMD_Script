@@ -53,7 +53,7 @@ class TableCheckService(object):
         route_req = input_details['routes']
 
         if input_details.get('segment_len') is not None:
-            data_config.kwargs['segment_len'] = input_details.get('segment_len')
+            data_config.kwargs['segment_len'] = float(input_details.get('segment_len'))/1000  # Convert to KM
 
         lrs_network = smd_config.table_names['lrs_network']
         lrs_routeid = smd_config.table_fields['lrs_network']['route_id']
