@@ -2235,9 +2235,19 @@ class EventValidation(object):
         def group_function(g_df):
             d = dict()
             side = g_df['side'].values[0]
+            dir_count = g_df['DIR_COUNT'].max()
+            single_dir = dir_count == 1
 
-            # In the production version, the side should be a prefix not suffix.
-            check_col_side = [side + "_" + column for column in columns]
+            if dir_count == 1:
+                if side == 'L':
+                    other_side = 'R'
+                else:
+                    other_side = 'L'
+                check_col_side = [[side + "_" + column for column in columns] +
+                                  [other_side + "_" + column for column in columns]]
+            else:
+                # In the production version, the side should be a prefix not suffix.
+                check_col_side = [side + "_" + column for column in columns]
 
             # Find the type columns
             if type_as_suffix:  # "TYPE" as column suffix
@@ -2282,9 +2292,10 @@ class EventValidation(object):
             d['columns'] = check_col_side
             d['type_value'] = type_value
             d['type_value_results'] = np.all(type_value_results)  # True, if all is correct.
+            d['single_dir'] = single_dir
 
             return pd.Series(d, index=['correct_pattern', 'columns',
-                                       'type_value', 'type_value_results'])  # Returned row
+                                       'type_value', 'type_value_results', 'single_dir'])  # Returned row
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
 
@@ -2297,6 +2308,11 @@ class EventValidation(object):
         if type(columns) != list:  # The input columns should be list, otherwise function will not be proceeded.
             return self
 
+        segment_group = df.groupby([routeid_col, from_m_col, to_m_col])[side_column]. \
+            agg({"DIR_COUNT": lambda x: x.nunique()})
+        dir_count_df = segment_group.reset_index()
+
+        df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col])  # Add direction count for every segment.
         side_group = df.groupby([routeid_col, from_m_col, to_m_col, side_column]).apply(group_function)
         side_group.reset_index(inplace=True)
         error_rows = side_group.loc[(~side_group['correct_pattern']) | (~side_group['type_value_results'])]
@@ -2310,16 +2326,20 @@ class EventValidation(object):
             correct_pattern = row['correct_pattern']
             correct_type_value = row['type_value_results']
             type_value = row['type_value']
+            single_dir = row['single_dir']
 
-            if not correct_pattern:
-                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki pola pengisian kolom {4} yang tidak konsisten.".\
-                    format(route, from_m, to_m, side, columns)
-                self.insert_route_message(route, 'error', msg)
+            if not single_dir:
+                if not correct_pattern:
+                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki pola pengisian kolom {4} yang tidak konsisten.".\
+                        format(route, from_m, to_m, side, columns)
+                    self.insert_route_message(route, 'error', msg)
 
-            if not correct_type_value:
-                msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai tipe yang tidak konsisten yaitu {4}.".\
-                    format(route, from_m, to_m, side, type_value)
-                self.insert_route_message(route, 'error', msg)
+                if not correct_type_value:
+                    msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai tipe yang tidak konsisten yaitu {4}.".\
+                        format(route, from_m, to_m, side, type_value)
+                    self.insert_route_message(route, 'error', msg)
+            else:
+                pass
 
         return self
 
