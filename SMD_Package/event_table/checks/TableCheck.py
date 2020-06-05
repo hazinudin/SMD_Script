@@ -2243,8 +2243,8 @@ class EventValidation(object):
                     other_side = 'R'
                 else:
                     other_side = 'L'
-                check_col_side = [[side + "_" + column for column in columns] +
-                                  [other_side + "_" + column for column in columns]]
+                check_col_side = [side + "_" + column for column in columns]
+                check_col_side = check_col_side + [other_side + "_" + column for column in columns]
             else:
                 # In the production version, the side should be a prefix not suffix.
                 check_col_side = [side + "_" + column for column in columns]
