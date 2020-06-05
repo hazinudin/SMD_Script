@@ -2272,8 +2272,8 @@ class EventValidation(object):
 
             # The filling pattern check
             if len(g_df) > 1:
-                g_df[check_col_side] = g_df[check_col_side].apply(lambda x: x.isnull(), axis=1)
-                all_result = [g_df[check_col_side[0]].equals(g_df[col]) for col in check_col_side]
+                null_mask = g_df[check_col_side].apply(lambda x: x.isnull(), axis=1)
+                all_result = [null_mask[check_col_side[0]].equals(null_mask[col]) for col in check_col_side]
                 result = np.all(all_result)  # If all is True.
             else:
                 result = True
