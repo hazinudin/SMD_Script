@@ -2192,7 +2192,7 @@ class EventValidation(object):
                             format(route, from_m, to_m, side, error_col)
                         self.insert_route_message(route, 'error', msg)
                 else:
-                    if empty:
+                    if empty is not np.nan:
                         if type(empty) == list:
                             msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R tidak memiliki nilai {3}.".\
                                 format(route, from_m, to_m, empty)
@@ -2203,7 +2203,7 @@ class EventValidation(object):
                                 format(route, from_m, to_m, side, empty)
                             self.insert_route_message(route, 'error', msg)
 
-                    if val_count_error:
+                    if val_count_error is not np.nan:
                         if type(val_count_error) == list:
                             msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R mamiliki nilai {3} yang tidak konsisten ditiap sisi.".\
                                 format(route, from_m, to_m, empty)
