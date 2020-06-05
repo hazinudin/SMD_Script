@@ -2205,12 +2205,12 @@ class EventValidation(object):
 
                     if val_count_error is not np.nan:
                         if type(val_count_error) == list:
-                            msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R mamiliki nilai {3} yang tidak konsisten ditiap sisi.".\
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi L dan R memiliki nilai {3} yang tidak konsisten ditiap sisi.".\
                                 format(route, from_m, to_m, empty)
                             self.insert_route_message(route, 'error', msg)
                         else:
                             side = str(val_count_error).split('_')[0]
-                            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak knosisten di setiap jalur.".\
+                            msg = "Rute {0} pada segmen {1}-{2} di sisi {3} memiliki nilai {4} yang tidak konsisten di setiap jalur.".\
                                 format(route, from_m, to_m, side, val_count_error)
                             self.insert_route_message(route, 'error', msg)
 

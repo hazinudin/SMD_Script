@@ -269,7 +269,8 @@ class RNICheck(TableCheckService):
                                               **self.kwargs)
             self.check.rni_compare_surftype(routes=valid_routes, **self.kwargs)
 
-            for col in [["INN_SHTYPE", "INN_SHWIDTH", "OUT_SHTYPE", "OUT_SHWIDTH"],
+            for col in [["INN_SHTYPE", "INN_SHWIDTH"],
+                        ["OUT_SHTYPE", "OUT_SHWIDTH"],
                         "TERRAIN_TYPE",
                         "LAND_USE"]:
                 self.check.side_pattern_check(col, empty_value_type=0, routes=valid_routes, **self.kwargs)
