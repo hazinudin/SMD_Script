@@ -52,6 +52,9 @@ class TableCheckService(object):
         kode_balai = input_details['balai']
         route_req = input_details['routes']
 
+        if input_details.get('segment_len') is not None:
+            data_config.kwargs['segment_len'] = input_details.get('segment_len')
+
         lrs_network = smd_config.table_names['lrs_network']
         lrs_routeid = smd_config.table_fields['lrs_network']['route_id']
         balai_table = smd_config.table_names['balai_table']
@@ -372,7 +375,7 @@ class DeflectionCheck(TableCheckService):
             valid_routes = self.check.valid_route
 
             self.check.range_domain_check(lane_code='SURVEY_DIREC', **self.kwargs)
-            self.check.segment_len_check(routes=valid_routes, segment_len=0.5, lane_code='SURVEY_DIREC', **self.kwargs)
+            self.check.segment_len_check(routes=valid_routes, lane_code='SURVEY_DIREC', **self.kwargs)
             self.check.median_direction_check(routes=valid_routes, **self.kwargs)
             self.check.surf_thickness_check(**self.kwargs)
 
