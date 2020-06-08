@@ -661,10 +661,21 @@ class EventValidation(object):
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False,
-                          tolerance=30, **kwargs):
+                          tolerance=30, end_only=False, **kwargs):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
+        :param routes: Route selection.
+        :param from_m_col: From Measurement column.
+        :param to_m_col: To Measurment column.
+        :param routeid_col: Route ID column.
+        :param lane_code: Lane code column.
+        :param compare_to: Comparison used for total survey data length.
+        :param ignore_end_gap: If True then any gap located at the end of inputted data is ignored.
+        :param tolerance: Tolerance used for detecting error (in Meters).
+        :param end_only: If True then the function only checks for error located at the end of inputted data (Data
+        measurement should start at 0 and the final measurement are within the comparison max value tolerance).
+        :param kwargs:
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -738,45 +749,47 @@ class EventValidation(object):
                 self.error_list.append(error_message)
                 self.insert_route_message(route, 'error', error_message)
 
-            lane_group = df_route.groupby(by=[lane_code])
+            if not end_only:  # If end_only is False then checks for all error at the middle of inputted data.
+                lane_group = df_route.groupby(by=[lane_code])
 
-            for name, group_df in lane_group:
-                g_sorted = group_df.sort_values(by=from_m_col).reset_index()
-                g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
-                g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
+                for name, group_df in lane_group:
+                    g_sorted = group_df.sort_values(by=from_m_col).reset_index()
+                    g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
+                    g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
 
-                g_sorted.loc[g_sorted['TO-FROM_GAP'] < 0, 'MIDDLE_GAP'] = True
-                g_sorted.loc[g_sorted['TO-FROM_GAP'] > 0, 'OVERLAP'] = True
-                g_sorted.loc[g_sorted[from_m_col] > g_sorted[to_m_col], 'FROM>TO'] = True  # From M > To M
+                    g_sorted.loc[g_sorted['TO-FROM_GAP'] < 0, 'MIDDLE_GAP'] = True
+                    g_sorted.loc[g_sorted['TO-FROM_GAP'] > 0, 'OVERLAP'] = True
+                    g_sorted.loc[g_sorted[from_m_col] > g_sorted[to_m_col], 'FROM>TO'] = True  # From M > To M
 
-                error_rows = g_sorted.loc[g_sorted['MIDDLE_GAP'] |
-                                          g_sorted['OVERLAP'] |
-                                          g_sorted['FROM>TO']]
+                    error_rows = g_sorted.loc[g_sorted['MIDDLE_GAP'] |
+                                              g_sorted['OVERLAP'] |
+                                              g_sorted['FROM>TO']]
 
-                for index, row in error_rows.iterrows():
-                    from_m = row[from_m_col]
-                    to_m = row[to_m_col]
-                    lane = row[lane_code]
-                    next_from_m = row['SHIFTED_FROM_M']
-                    next_to_m = g_sorted.at[index+1, to_m_col]
+                    # TODO: To Be Tested!
+                    for index, row in error_rows.iterrows():
+                        from_m = row[from_m_col]
+                        to_m = row[to_m_col]
+                        lane = row[lane_code]
+                        next_from_m = row['SHIFTED_FROM_M']
+                        next_to_m = g_sorted.at[index+1, to_m_col]
 
-                    if row['MIDDLE_GAP'] is True:
-                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane (3}. (Terdapat gap di tengah ruas)'. \
-                            format(route, to_m, next_from_m, lane)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
+                        if row['MIDDLE_GAP'] is True:
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane (3}. (Terdapat gap di tengah ruas)'. \
+                                format(route, to_m, next_from_m, lane)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
 
-                    if row['OVERLAP'] is True:
-                        error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4} di jalur {5}'. \
-                            format(next_from_m, next_to_m, from_m, to_m, route, lane)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
+                        if row['OVERLAP'] is True:
+                            error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4} di jalur {5}'. \
+                                format(next_from_m, next_to_m, from_m, to_m, route, lane)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
 
-                    if row['FROM>TO'] is True:
-                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane {5}.'.\
-                            format(to_m, from_m, route, from_m_col, to_m_col, lane)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
+                        if row['FROM>TO'] is True:
+                            error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane {5}.'.\
+                                format(to_m, from_m, route, from_m_col, to_m_col, lane)
+                            self.error_list.append(error_message)
+                            self.insert_route_message(route, 'error', error_message)
 
         return self
 
