@@ -320,8 +320,12 @@ class FindCoordinateError(object):
         :param tolerance: The error tolerance in meters.
         :return:
         """
-        lane_grouped = self.df.groupby(self.lane_code_col)
-        groups = lane_grouped.groups
+        if self.lane_code_col is not None:
+            grouped = self.df.groupby(self.lane_code_col)
+        else:
+            grouped = self.df.groupby(self.routeid)
+
+        groups = grouped.groups
 
         for group in groups:
             indexes = groups[group]  # Group index
@@ -336,12 +340,17 @@ class FindCoordinateError(object):
                 route = row[self.routeid]
                 from_m = row[self.from_m_col]
                 to_m = row[self.to_m_col]
-                lane = row[self.lane_code_col]
                 length = row[segment_len_col]
                 m_diff = row['_diff']
 
-                msg = "Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai panjang segmen ({4}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({5}m).".\
-                    format(route, from_m, to_m, lane, length, m_diff)
-                self.error_msg.append(msg)
+                if self.lane_code_col is not None:
+                    lane = row[self.lane_code_col]
+                    msg = "Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai panjang segmen ({4}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({5}m).".\
+                        format(route, from_m, to_m, lane, length, m_diff)
+                    self.error_msg.append(msg)
+                else:
+                    msg = "Rute {0} pada segmen {1}-{2} memiliki nilai panjang segmen ({3}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({4}m}.".\
+                        format(route, from_m, to_m, length, m_diff)
+                    self.error_msg.append(msg)
 
         return self
