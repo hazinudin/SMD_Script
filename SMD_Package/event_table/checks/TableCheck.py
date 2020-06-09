@@ -692,11 +692,15 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes)
 
         # Iterate over valid row in the input table
-        for route in self.route_lane_tuple(df, routeid_col, lane_code, route_only=True):
+        for route in df[routeid_col].tolist():
             # Create a route DataFrame
             df_route = df.loc[df[routeid_col] == route, [routeid_col, from_m_col, to_m_col, lane_code]]
-            df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
-                reset_index()  # Group the route df
+
+            if lane_code is not None:
+                df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
+                    reset_index()  # Group the route df
+            else:
+                df_groupped = df_route
 
             # Sort the DataFrame based on the RouteId and FromMeasure
             df_groupped.sort_values(by=[routeid_col, from_m_col, to_m_col], inplace=True)
@@ -1002,9 +1006,15 @@ class EventValidation(object):
                 coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
                 coordinate_error.find_end_error(route_geom, 'start')
                 coordinate_error.find_end_error(route_geom, 'end')
-                coordinate_error.find_lane_error(rni_df=rni_df)
-                coordinate_error.close_to_zero('lrsDistance')
-                coordinate_error.close_to_zero('previousYear')
+
+                if lane_code is not None:
+                    coordinate_error.find_lane_error(rni_df=rni_df)
+
+                coordinate_error.close_to_zero('rniDistance')
+
+                if previous_year_table is not None:
+                    coordinate_error.close_to_zero('previousYear')
+
                 coordinate_error.find_non_monotonic('measureOnLine')
                 coordinate_error.find_segment_len_error('measureOnLine')
 
@@ -1012,9 +1022,15 @@ class EventValidation(object):
                 coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window, threshold=threshold)
                 coordinate_error.find_end_error(rni_line, 'start', 'rniDistance')
                 coordinate_error.find_end_error(rni_line, 'end', 'rniDistance')
-                coordinate_error.find_lane_error(rni_df=rni_df)
+
+                if lane_code is not None:
+                    coordinate_error.find_lane_error(rni_df=rni_df)
+
                 coordinate_error.close_to_zero('rniDistance')
-                coordinate_error.close_to_zero('previousYear')
+
+                if previous_year_table is not None:
+                    coordinate_error.close_to_zero('previousYear')
+
                 coordinate_error.find_non_monotonic('measureOnLine')
                 coordinate_error.find_segment_len_error('measureOnLine')
 
