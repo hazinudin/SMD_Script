@@ -122,9 +122,7 @@ class TableCheckService(object):
         :param trim_to_reference: The reference used for trimming measurement value. Default is None
         :return:
         """
-        df_msg = self.return_all_message(return_df=True)
-        verified_status = ['verified', 'VerifiedWithWarning']
-        passed_routes = df_msg.loc[df_msg['status'].isin(verified_status), 'linkid'].unique().tolist()
+        passed_routes = self.passed_routes()
 
         if len(passed_routes) != 0:
             rows = self.check.selected_route_df(self.check.df_valid, passed_routes)
@@ -205,6 +203,13 @@ class TableCheckService(object):
         SetParameterAsText(self.output_index, output_message("Succeeded", errors))
 
         return self
+
+    def passed_routes(self):
+        df_msg = self.return_all_message(return_df=True)
+        verified_status = ['verified', 'VerifiedWithWarning']
+        passed_routes = df_msg.loc[df_msg['status'].isin(verified_status), 'linkid'].unique().tolist()
+
+        return passed_routes
 
 
 class RoughnessCheck(TableCheckService):
