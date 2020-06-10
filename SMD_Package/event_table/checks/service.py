@@ -3,7 +3,7 @@ from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_wr
     read_input_excel
 from SMD_Package.event_table.measurement.adjustment import Adjust
 from SMD_Package.event_table.deflection.deflection import Deflection
-from arcpy import SetParameterAsText, env
+from arcpy import SetParameterAsText, env, da
 import pandas as pd
 import numpy as np
 
@@ -138,6 +138,36 @@ class TableCheckService(object):
                 rows = adjust.df
 
             gdb_table_writer(env.workspace, rows, self.output_table, self.column_details)
+
+        return self
+
+    def delete_non_rni(self, routeid_col='LINKID', **kwargs):
+        """
+        This class method delete passed routes data from non-RNI data specified in the kwargs.
+        :param routeid_col: The Route ID column of the non-RNI data.
+        :return:
+        """
+        passed_routes = self.passed_routes()
+
+        other_tables = [
+            kwargs.get('roughness_table'),
+            kwargs.get('pci_table'),
+            kwargs.get('rtc_table'),
+            kwargs.get('fwd_table'),
+            kwargs.get('lwd_table'),
+            kwargs.get('bb_table')
+                       ]
+
+        for table in other_tables:
+            if table is None:
+                pass
+            else:
+                str_routes = str(passed_routes).replace('[', '(').replace(']', ')')
+                sql_statement = "{0} IN {1}".format(routeid_col, str_routes)
+
+                with da.UpdateCursor(table, routeid_col, where_clause=sql_statement) as del_cursor:
+                    for _ in del_cursor:
+                        del_cursor.deleteRow()
 
         return self
 
@@ -347,7 +377,7 @@ class RTCCheck(TableCheckService):
     """
     Class used for RTC table check service.
     """
-    def __init__(self, force_write,**kwargs):
+    def __init__(self, force_write, **kwargs):
         super(RTCCheck, self).__init__(**kwargs)
 
         if self.initial_check_passed:
