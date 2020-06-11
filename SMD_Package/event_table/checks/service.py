@@ -141,13 +141,13 @@ class TableCheckService(object):
 
         return self
 
-    def delete_non_rni(self, routeid_col='LINKID', **kwargs):
+    def delete_non_rni(self, **kwargs):
         """
         This class method delete passed routes data from non-RNI data specified in the kwargs.
-        :param routeid_col: The Route ID column of the non-RNI data.
         :return:
         """
         passed_routes = self.passed_routes()
+        routeid_col = self.kwargs.get('routeid_col')
 
         other_tables = [
             kwargs.get('roughness_table'),
