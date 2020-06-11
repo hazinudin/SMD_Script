@@ -328,6 +328,7 @@ class RNICheck(TableCheckService):
                 self.check.rni_compare_surftype(routes=self.check.no_error_route, **self.kwargs)
 
             self.write_to_table()  # Write passed routes to GDB
+            self.delete_non_rni(**kwargs)
             self.return_all_message()
 
 
