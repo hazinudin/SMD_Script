@@ -1,4 +1,4 @@
-from SMD_Package import SMDConfigs, GetRoutes
+from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df
 from arcpy import env
 import json
 
@@ -28,43 +28,45 @@ class KemantapanService(object):
 
         request_j = json.loads(input_json)
 
-        route_request = request_j['routes']
-        self.data_year = request_j['year']
-        self.data_semester = request_j.get('semester')
-        self.grading_column = request_j.get['grading_col']
-        self.table_name = request_j.get['table_name']
-        self.routeid_col = request_j.get['routeid_col']
-        self.from_m_col = request_j.get['from_m_col']
-        self.to_m_col = request_j.get['to_m_col']
-        self.lane_code = request_j.get['lane_code_col']
-        self.output_table = request_j.get['output_table']
+        with open(os.path.dirname(__file__)+'\\'+'kemantapan_config.json') as config_f:
+            config = json.load(config_f)
 
-        if route_request == 'ALL':
+        self.routes = request_j['routes']
+        self.year = request_j['year']
+        self.semester = request_j.get('semester')
+        self.table_name = None
+        self.grading_column = None
+        self.route_id_col = None
+        self.from_m_col = None
+        self.to_m_col = None
+        self.lane_code_col = None
+
+        if self.semester is None:
+            self.__dict__.update(config[str(data_type)][str(self.year)])
+        else:
+            self.__dict__.update(config[str(data_type)][str(self.year)+'_'+str(self.semester)])
+
+        self.__dict__.update(request_j)  # Setting the class attribute based on the input JSON.
+
+        if self.routes == 'ALL':
             lrs_network = smd_config.table_names['lrs_network']
             balai_table = smd_config.table_names['balai_table']
             balai_route_table = smd_config.table_names['balai_route_table']
             get_route = GetRoutes("balai", "ALL", lrs_network, balai_table, balai_route_table)
             self.route_selection = get_route.route_list()
-        elif type(route_request) == unicode:
-            self.route_selection = [route_request]
-        elif type(route_request) == list:
+        elif type(self.routes) == unicode:
+            self.route_selection = [self.routes]
+        elif type(self.routes) == list:
             pass
+        elif self.routes is None:
+            raise ("No Route parameter in the input JSON.")
         else:
-            raise ("Route selection is neither list or string")
+            raise ("Route selection is neither list or string.")
 
-        if self.grading_column is None:
-            if data_type == 'ROUGHNESS':  # If grading column is not defined in input JSON.
-                self.grading_column = 'IRI'
-            elif data_type == 'PCI':
-                self.grading_column = 'PCI'
-            else:
-                raise ('Invalid data type request data type = {0}'.format(data_type))
-
-        if self.table_name is None:
-            if data_type == 'ROUGHNESS':  # If table name is not defined in input JSON.
-                self.table_name = 'SMD.{0}_{1}_{2}'.format(data_type, self.data_semester, self.data_year)
-            elif data_type =='PCI':
-                self.table_name = 'SMD.{0}_{1}'.format(data_type, self.data_year)
+        if lane_based:
+            self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(data_type)
+        else:
+            self.output_table = 'SMD.KEMANTAPAN_{0}'.format(data_type)
 
         self.lane_based = lane_based
 
