@@ -67,3 +67,18 @@ class KemantapanService(object):
                 self.table_name = 'SMD.{0}_{1}'.format(data_type, self.data_year)
 
         self.lane_based = lane_based
+
+    def route_dataframe(self, route):
+        """
+        Get route DataFrame.
+        :param route: Requested route (must be string).
+        :return:
+        """
+
+        if (type(route) != str) or (type(route) != unicode):
+            raise ("Route request should be in string")
+        else:
+            df = event_fc_to_df(self.table_name, [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code,
+                                                  self.grading_column], route, self.routeid_col, env.workspace, True)
+
+        return df
