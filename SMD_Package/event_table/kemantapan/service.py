@@ -1,19 +1,19 @@
-from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df
+from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan
 from arcpy import env
 import json
+import pandas as pd
 
 
 class KemantapanService(object):
     """
     This class provide class method for multiple Kemantapan data type calculation.
     """
-    def __init__(self, input_json, data_type, lane_based):
+    def __init__(self, input_json):
         """
         Class initialization.
-        :param input_json: The input JSON. Contain 'routes' and 'year', optional parameter 'semester', 'table_name',
-         'routeid_col', 'from_m_col', 'to_m_col', 'lane_code_col', 'output_table' and 'grading_col'.
-        :param data_type: The data type (ROUGHNESS or PCI).
-        :param lane_based: If True then the output calculation will be in lane based format.
+        :param input_json: The input JSON. Contain 'routes', 'data_type', 'lane_based' and 'year',
+        optional parameter 'semester', 'table_name', 'routeid_col', 'from_m_col', 'to_m_col', 'lane_code_col',
+         'output_table' and 'grading_col'.
         """
         import os
 
@@ -36,10 +36,12 @@ class KemantapanService(object):
         self.semester = request_j.get('semester')
         self.table_name = None
         self.grading_column = None
-        self.route_id_col = None
+        self.routeid_col = None
         self.from_m_col = None
         self.to_m_col = None
         self.lane_code_col = None
+        self.output_suffix = None
+        self.to_km_factor = None
 
         if self.semester is None:
             self.__dict__.update(config[str(data_type)][str(self.year)])
@@ -68,7 +70,22 @@ class KemantapanService(object):
         else:
             self.output_table = 'SMD.KEMANTAPAN_{0}'.format(data_type)
 
-        self.lane_based = lane_based
+        self.summary = pd.DataFrame()  # For storing all summary result
+        for route in self.route_selection:
+            self.calculate_kemantapan(route)
+
+    def calculate_kemantapan(self, route):
+        """
+        Used for initiating kemantapan class and calculate the summary DataFrame.
+        :param route: The requested route
+        :return:
+        """
+        input_df = self.route_dataframe(route)
+        kemantapan = Kemantapan(input_df, self.grading_column, self.routeid_col, self.from_m_col, self.to_m_col,
+                                self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor)
+        if kemantapan.all_match:
+            summary_table = kemantapan.summary().reset_index()
+            self.summary = self.summary.append(summary_table)
 
     def route_dataframe(self, route):
         """
