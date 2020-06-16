@@ -31,12 +31,12 @@ class KemantapanService(object):
         with open(os.path.dirname(__file__)+'\\'+'kemantapan_config.json') as config_f:
             config = json.load(config_f)
 
-        self.routes = request_j['routes']
+        self.routes = request_j['routes']  # Mandatory JSON parameter.
         self.year = request_j['year']
         self.data_type = request_j['data_type']
         self.lane_based = request_j['lane_based']
 
-        self.semester = request_j.get('semester')
+        self.semester = request_j.get('semester')  # Optional parameter.
         self.table_name = None
         self.grading_column = None
         self.routeid_col = None
