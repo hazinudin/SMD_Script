@@ -80,6 +80,8 @@ class KemantapanService(object):
         for route in self.route_selection:
             self.calculate_kemantapan(route)
 
+        self.add_year_semester_col()
+
     def calculate_kemantapan(self, route):
         """
         Used for initiating kemantapan class and calculate the summary DataFrame.
@@ -92,6 +94,8 @@ class KemantapanService(object):
         if kemantapan.all_match:
             summary_table = kemantapan.summary().reset_index()
             self.summary = self.summary.append(summary_table)
+
+        return self
 
     def route_dataframe(self, route):
         """
@@ -107,3 +111,13 @@ class KemantapanService(object):
                                                   self.grading_column], route, self.routeid_col, env.workspace, True)
 
         return df
+
+    def add_year_semester_col(self):
+        semester_col = 'SEMESTER'
+        year_col = 'YEAR'
+        if self.semester is not None:
+            self.summary[semester_col] = pd.Series(self.semester, index=self.summary.index)
+
+        self.summary[year_col] = pd.Series(self.year, index=self.summary.index)
+
+        return self
