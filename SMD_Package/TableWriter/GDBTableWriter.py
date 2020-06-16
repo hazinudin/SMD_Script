@@ -5,7 +5,7 @@ env.overwriteOutput = True
 
 
 def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=False, input_routeid='LINKID',
-                     target_routeid='LINKID', write_date=True):
+                     target_routeid='LINKID', write_date=True, replace_key=None):
     """
     This function writes input DataFrame as geodatabase event table
     :param workspace: The workspace for target database table
@@ -39,12 +39,33 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
     for route in input_routes:  # Iterate for every available route in the input
         df_route = dataframe.loc[dataframe[input_routeid] == route]  # The route DataFrame
 
+        if replace_key is None:
+            replace_clause = "{0}='{1}'".format(target_routeid, route)
+        else:
+            if type(replace_key) != list:
+                raise TypeError
+            else:
+                replace_clause = ''
+                for key in replace_key:
+                    value = df_route[key].tolist()[0]
+                    key_type = cols_dtype[key]['dtype']
+
+                    if key_type != 'string':
+                        statement = "({0} = {1})".format(key, value)
+                    else:
+                        statement = "({0} = '{1}')".format(key, str(value))
+
+                    if replace_clause == '':
+                        replace_clause = statement
+                    else:
+                        replace_clause = replace_clause + ' AND ' + statement
+
         if write_date:
             table_column = cols_dtype.keys()+[date_column]
         else:
             table_column = cols_dtype.keys()
 
-        with da.UpdateCursor(table_name, target_routeid, where_clause="{0}='{1}'".format(target_routeid, route))\
+        with da.UpdateCursor(table_name, target_routeid, where_clause=replace_clause)\
                 as del_cursor:
             for _ in del_cursor:
                 del_cursor.deleteRow()  # If the route already exist in the table then delete the whole route row
