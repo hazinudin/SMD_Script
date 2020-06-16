@@ -23,7 +23,8 @@ class KemantapanService(object):
             os.chdir(SMDConfigs.smd_dir())  # Change directory to SMD root dir.
 
         smd_config = SMDConfigs()
-        db_connection = smd_config.smd_database['instance']
+        self.smd_config = smd_config
+        db_connection = self.smd_config.smd_database['instance']
         env.workspace = db_connection
 
         request_j = json.loads(input_json)
@@ -81,6 +82,7 @@ class KemantapanService(object):
             self.calculate_kemantapan(route)
 
         self.add_year_semester_col()
+        self.add_satker_id()
 
     def calculate_kemantapan(self, route):
         """
@@ -121,3 +123,19 @@ class KemantapanService(object):
         self.summary[year_col] = pd.Series(self.year, index=self.summary.index)
 
         return self
+
+    def add_satker_id(self):
+        satker_route_table = self.smd_config.table_names['satker_route_table']
+
+        satker_route_fields = self.smd_config.table_fields['satker_route_table']
+        satker_routeid = satker_route_fields['route_id']
+        satker_id = satker_route_fields['satker_id']
+        from_date = satker_route_fields['from_date']
+        to_date = satker_route_fields['to_date']
+
+        satker_df = event_fc_to_df(satker_route_table, [satker_routeid, satker_id], 'ALL', satker_routeid,
+                                   env.workspace, True)
+        self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=satker_routeid)
+
+        return self
+
