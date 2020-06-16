@@ -479,7 +479,7 @@ class Kemantapan(object):
 
     @staticmethod
     def group_details():
-        module_folder = os.path.dirname(__file__)
+        module_folder = os.path.dirname(os.path.dirname(__file__))
         surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
         with open(surftype_json_file) as group_json:
             group_details = json.load(group_json)  # Load the surface type group JSON
