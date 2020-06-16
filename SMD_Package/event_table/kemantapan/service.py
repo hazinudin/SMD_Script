@@ -33,6 +33,9 @@ class KemantapanService(object):
 
         self.routes = request_j['routes']
         self.year = request_j['year']
+        self.data_type = request_j['data_type']
+        self.lane_based = request_j['lane_based']
+
         self.semester = request_j.get('semester')
         self.table_name = None
         self.grading_column = None
@@ -44,9 +47,9 @@ class KemantapanService(object):
         self.to_km_factor = None
 
         if self.semester is None:
-            self.__dict__.update(config[str(data_type)][str(self.year)])
+            self.__dict__.update(config[str(self.data_type)][str(self.year)])
         else:
-            self.__dict__.update(config[str(data_type)][str(self.year)+'_'+str(self.semester)])
+            self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
 
         self.__dict__.update(request_j)  # Setting the class attribute based on the input JSON.
 
@@ -59,16 +62,19 @@ class KemantapanService(object):
         elif type(self.routes) == unicode:
             self.route_selection = [self.routes]
         elif type(self.routes) == list:
-            pass
+            self.route_selection = self.routes
         elif self.routes is None:
             raise ("No Route parameter in the input JSON.")
         else:
             raise ("Route selection is neither list or string.")
 
-        if lane_based:
-            self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(data_type)
+        if self.lane_based:
+            self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.data_type)
         else:
-            self.output_table = 'SMD.KEMANTAPAN_{0}'.format(data_type)
+            self.output_table = 'SMD.KEMANTAPAN_{0}'.format(self.data_type)
+
+        if self.output_suffix is not None:
+            self.output_table = self.output_table + '_' + self.output_suffix
 
         self.summary = pd.DataFrame()  # For storing all summary result
         for route in self.route_selection:
@@ -94,10 +100,10 @@ class KemantapanService(object):
         :return:
         """
 
-        if (type(route) != str) or (type(route) != unicode):
-            raise ("Route request should be in string")
+        if (type(route) != str) and (type(route) != unicode):
+            raise ("Route request should be in string.")
         else:
-            df = event_fc_to_df(self.table_name, [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code,
+            df = event_fc_to_df(self.table_name, [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
                                                   self.grading_column], route, self.routeid_col, env.workspace, True)
 
         return df
