@@ -14,7 +14,9 @@
     "lrs_network":"ELRS.National_Network2018",
     "balai_table":"ELRS.map_balai_prov",
     "balai_route_table":"ELRS.map_balai_route",
-    "rni": "SMD.RNI_2019_RERUN_2"
+    "rni": "SMD.RNI_2019_RERUN_2",
+    "satker_route_table":"ELRS.map_satker_route",
+    "satker_ppk_table":"ELRS.map_satker_ppk"
   },
   "table_fields":{
     "lrs_network":{
@@ -45,6 +47,20 @@
     "balai_route_table":{
       "balai_code":"BALAI_CODE",
       "route_id":"LINKID",
+      "from_date":"START_DATE",
+      "to_date":"END_DATE"
+    },
+    "satker_route_table":{
+      "route_id":"LINKID",
+      "satker_id":"SATKER_ID",
+      "from_date":"START_DATE",
+      "to_date":"END_DATE"
+    },
+    "satker_ppk_table":{
+      "satker_id":"SATKER_ID",
+      "ppk_id":"PPK_ID",
+      "ppk_name":"PPK_NAME",
+      "satker_ppk_id":"SATKER_PPK_ID",
       "from_date":"START_DATE",
       "to_date":"END_DATE"
     }
