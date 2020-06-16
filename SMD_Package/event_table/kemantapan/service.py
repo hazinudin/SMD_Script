@@ -1,4 +1,4 @@
-from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan
+from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer
 from arcpy import env
 import json
 import pandas as pd
@@ -25,6 +25,14 @@ class KemantapanService(object):
         smd_config = SMDConfigs()
         self.smd_config = smd_config
         db_connection = self.smd_config.smd_database['instance']
+
+        self.satker_route_table = self.smd_config.table_names['satker_route_table']
+        satker_route_fields = self.smd_config.table_fields['satker_route_table']
+        self.satker_routeid = satker_route_fields['route_id']
+        self.satker_id = satker_route_fields['satker_id']
+        self.satker_route_from_date = satker_route_fields['from_date']
+        self.satker_route_to_date = satker_route_fields['to_date']
+
         env.workspace = db_connection
 
         request_j = json.loads(input_json)
@@ -46,13 +54,13 @@ class KemantapanService(object):
         self.lane_code_col = None
         self.output_suffix = None
         self.to_km_factor = None
+        self.semester_col = 'SEMESTER'
+        self.year_col = 'YEAR'
 
         if self.semester is None:
             self.__dict__.update(config[str(self.data_type)][str(self.year)])
         else:
             self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
-
-        self.__dict__.update(request_j)  # Setting the class attribute based on the input JSON.
 
         if self.routes == 'ALL':
             lrs_network = smd_config.table_names['lrs_network']
@@ -74,6 +82,8 @@ class KemantapanService(object):
         else:
             self.output_table = 'SMD.KEMANTAPAN_{0}'.format(self.data_type)
 
+        self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
+
         if self.output_suffix is not None:
             self.output_table = self.output_table + '_' + self.output_suffix
 
@@ -83,6 +93,7 @@ class KemantapanService(object):
 
         self.add_year_semester_col()
         self.add_satker_id()
+        self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, route):
         """
@@ -115,27 +126,41 @@ class KemantapanService(object):
         return df
 
     def add_year_semester_col(self):
-        semester_col = 'SEMESTER'
-        year_col = 'YEAR'
         if self.semester is not None:
-            self.summary[semester_col] = pd.Series(self.semester, index=self.summary.index)
+            self.summary[self.semester_col] = pd.Series(self.semester, index=self.summary.index)
 
-        self.summary[year_col] = pd.Series(self.year, index=self.summary.index)
+        self.summary[self.year_col] = pd.Series(self.year, index=self.summary.index)
 
         return self
 
     def add_satker_id(self):
-        satker_route_table = self.smd_config.table_names['satker_route_table']
-
-        satker_route_fields = self.smd_config.table_fields['satker_route_table']
-        satker_routeid = satker_route_fields['route_id']
-        satker_id = satker_route_fields['satker_id']
-        from_date = satker_route_fields['from_date']
-        to_date = satker_route_fields['to_date']
-
-        satker_df = event_fc_to_df(satker_route_table, [satker_routeid, satker_id], 'ALL', satker_routeid,
-                                   env.workspace, True)
-        self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=satker_routeid)
+        satker_df = event_fc_to_df(self.satker_route_table, [self.satker_routeid, self.satker_id], 'ALL',
+                                   self.satker_routeid, env.workspace, True)
+        self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
 
         return self
+
+    def write_summary_to_gdb(self):
+        col_details = dict()
+
+        for col_name in self.summary.dtypes.to_dict():
+            col_details[col_name] = dict()
+            col_dtype = self.summary.dtypes[col_name]
+
+            # Translate to GDB data type.
+            if col_dtype == 'object':
+                gdb_dtype = 'string'
+            if col_dtype == 'float64':
+                gdb_dtype = 'double'
+            if col_dtype == 'int64':
+                gdb_dtype = 'short'
+
+            col_details[col_name]['dtype'] = gdb_dtype
+
+        if self.semester is not None:
+            gdb_table_writer(env.workspace, self.summary, self.output_table, col_details,
+                             replace_key=[self.routeid_col, self.year_col, self.semester_col])
+        else:
+            gdb_table_writer(env.workspace, self.summary, self.output_table, col_details,
+                             replace_key=[self.routeid_col, self.year_col])
 
