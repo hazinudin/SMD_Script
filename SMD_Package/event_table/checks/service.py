@@ -420,7 +420,7 @@ class DeflectionCheck(TableCheckService):
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, segment_data=True, lat_col='DEFL_LAT', lane_code=None,
                                             long_col='DEFL_LONG', comparison='RNIline-LRS', window=2, **self.kwargs)
-                self.check.measurement_check(routes=valid_routes, end_only=True, lane_code=None, **self.kwargs)
+                self.check.measurement_check(routes=valid_routes, lane_code=None, **self.kwargs)
 
             if sorting:
                 deflection = Deflection(self.check.df_valid, 'FORCE', 'FWD', 'FWD_D1', 'FWD_D2', 'ASPHALT_TEMP',
