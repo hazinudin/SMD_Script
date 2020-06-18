@@ -4,7 +4,8 @@ import numpy as np
 
 
 def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
-                   include_all=False, orderby=None):
+                   include_all=False, orderby=None, add_date_query=False, from_date='FROMDATE', to_date='TODATE',
+                   **kwargs):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
@@ -17,6 +18,9 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
     :param include_all: If True then the method will return all features including features with null geometry, if False
     then the method will only return features with geometry.
     :param orderby: The column used for sorting the feature in the DataFrame.
+    :param add_date_query: If True then date query statement will be added.
+    :param from_date: The From Date column.
+    :param to_date: The To Date column.
     :return df = this function will return a Pandas DataFrame.
     """
     env.workspace = sde_connection  # The workspace for accessing the SDE Feature Class
@@ -38,6 +42,11 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
         where_clause += "AND (SHAPE.LEN IS NOT NULL)"
     elif not include_all and (route_selection == 'ALL'):
         where_clause = 'SHAPE.LEN IS NOT NULL'
+
+    if add_date_query:  # If True, then add the date query statement.
+        date_query = "AND ({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)".\
+            format(from_date, to_date)
+        where_clause += date_query
 
     # Create the sql_clause for DataAccess module
     if orderby is None:
