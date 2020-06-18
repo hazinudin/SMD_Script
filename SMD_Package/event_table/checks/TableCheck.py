@@ -661,7 +661,7 @@ class EventValidation(object):
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False,
-                          tolerance=30, end_only=False, **kwargs):
+                          ignore_exceed_ref=False, start_at_zero=True, tolerance=30, end_only=False, **kwargs):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -672,6 +672,7 @@ class EventValidation(object):
         :param lane_code: Lane code column.
         :param compare_to: Comparison used for total survey data length.
         :param ignore_end_gap: If True then any gap located at the end of inputted data is ignored.
+        :param ignore_exceed_ref: If False then the input data max To Measure should not exceed the reference.
         :param tolerance: Tolerance used for detecting error (in Meters).
         :param end_only: If True then the function only checks for error located at the end of inputted data (Data
         measurement should start at 0 and the final measurement are within the comparison max value tolerance).
@@ -738,17 +739,23 @@ class EventValidation(object):
                 pass
             else:
                 less_than_reference = max_to_meas < comparison
+                more_than_reference = max_to_meas > comparison
                 close_to_reference = np.isclose(max_to_meas, comparison, atol=tolerance)
 
                 # If the largest To Measure value is less than the selected comparison then there is a gap at the end
-                if less_than_reference and (not close_to_reference) and (not ignore_end_gap):
+                if less_than_reference and (not ignore_end_gap):
                     # Create an error message
                     error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
                         format(route, max_to_meas, comparison)
                     self.error_list.append(error_message)
                     self.insert_route_message(route, 'error', error_message)
 
-            if not np.isclose(min_from_meas, 0):
+                if more_than_reference and (not ignore_exceed_ref):
+                    error_message = 'Rute {0} memiliki panjang yang melebihi data referensi yaitu {1} Km.'.\
+                        format(route, max_to_meas)
+                    self.insert_route_message(route, 'error', error_message)
+
+            if not np.isclose(min_from_meas, 0) and (start_at_zero):
                 error_message = 'Data survey pada rute {0} tidak dimulai dari 0.'.format(route)
                 self.error_list.append(error_message)
                 self.insert_route_message(route, 'error', error_message)
