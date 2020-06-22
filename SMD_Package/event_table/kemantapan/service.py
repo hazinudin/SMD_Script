@@ -34,6 +34,15 @@ class KemantapanService(object):
         self.satker_route_from_date = satker_route_fields['from_date']
         self.satker_route_to_date = satker_route_fields['to_date']
 
+        self.balai_table = smd_config.table_names['balai_table']
+        self.balai_route_table = smd_config.table_names['balai_route_table']
+        balai_table_fields = self.smd_config.table_fields['balai_table']
+        balai_route_fields = self.smd_config.table_fields['balai_route_table']
+        self.balai_prov_balai_id = balai_table_fields['balai_code']
+        self.balai_prov_prov_id = balai_table_fields['prov_code']
+        self.balai_route_balai_id = balai_route_fields['balai_code']
+        self.balai_route_route_id = balai_route_fields['route_id']
+
         env.workspace = db_connection
 
         request_j = json.loads(input_json)
@@ -67,9 +76,7 @@ class KemantapanService(object):
 
         if self.routes == 'ALL':
             lrs_network = smd_config.table_names['lrs_network']
-            balai_table = smd_config.table_names['balai_table']
-            balai_route_table = smd_config.table_names['balai_route_table']
-            get_route = GetRoutes("balai", "ALL", lrs_network, balai_table, balai_route_table)
+            get_route = GetRoutes("balai", "ALL", lrs_network, self.balai_table, self.balai_route_table)
             self.route_selection = get_route.route_list()
         elif type(self.routes) == unicode:
             self.route_selection = [self.routes]
@@ -97,6 +104,8 @@ class KemantapanService(object):
         self.add_year_semester_col()
         self.add_satker_ppk_id()
         self.add_prov_id()
+        self.add_balai_id()
+
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, route):
@@ -147,6 +156,30 @@ class KemantapanService(object):
 
     def add_prov_id(self):
         self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
+
+        return self
+
+    def add_balai_id(self):
+        input_provs = self.summary[self.prov_column].tolist()
+        input_routes = self.route_selection
+
+        balai_prov_df = event_fc_to_df(self.balai_table, [self.balai_prov_balai_id, self.balai_prov_prov_id],
+                                       input_provs, self.balai_prov_prov_id, env.workspace, True)
+        balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id],
+                                        input_routes, self.balai_route_route_id, env.workspace, True)
+
+        self.summary = self.summary.merge(balai_prov_df, left_on=self.prov_column, right_on=self.balai_prov_prov_id)
+        self.summary.set_index(self.routeid_col, inplace=True)
+
+        if not balai_route_df.empty:
+            balai_route_df.rename(columns={self.balai_route_balai_id: self.balai_prov_balai_id}, inplace=True)
+            balai_route_df.set_index(self.balai_route_route_id, inplace=True)
+
+            self.summary.update(balai_route_df)
+
+        self.summary[self.balai_prov_balai_id] = self.summary[self.balai_prov_balai_id].astype(int)
+        self.summary.drop_duplicates(inplace=True)
+        self.summary.reset_index(inplace=True)
 
         return self
 
