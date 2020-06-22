@@ -57,6 +57,8 @@ class KemantapanService(object):
         self.to_km_factor = None
         self.semester_col = 'SEMESTER'
         self.year_col = 'YEAR'
+        self.prov_column = 'BM_PROV_ID'
+        self.balai_column = 'BALAI_ID'
 
         if self.semester is None:
             self.__dict__.update(config[str(self.data_type)][str(self.year)])
@@ -94,6 +96,7 @@ class KemantapanService(object):
 
         self.add_year_semester_col()
         self.add_satker_ppk_id()
+        self.add_prov()
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, route):
@@ -139,6 +142,11 @@ class KemantapanService(object):
                                    [self.satker_routeid, self.satker_ppk_id, self.satker_id], 'ALL',
                                    self.satker_routeid, env.workspace, True)
         self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
+
+        return self
+
+    def add_prov(self):
+        self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
 
         return self
 
