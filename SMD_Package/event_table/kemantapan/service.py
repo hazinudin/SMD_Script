@@ -96,7 +96,7 @@ class KemantapanService(object):
 
         self.add_year_semester_col()
         self.add_satker_ppk_id()
-        self.add_prov()
+        self.add_prov_id()
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, route):
@@ -145,7 +145,7 @@ class KemantapanService(object):
 
         return self
 
-    def add_prov(self):
+    def add_prov_id(self):
         self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
 
         return self
