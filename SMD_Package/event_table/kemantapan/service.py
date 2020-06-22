@@ -26,10 +26,10 @@ class KemantapanService(object):
         self.smd_config = smd_config
         db_connection = self.smd_config.smd_database['instance']
 
-        self.satker_route_table = self.smd_config.table_names['satker_route_table']
-        satker_route_fields = self.smd_config.table_fields['satker_route_table']
+        self.satker_ppk_route_table = self.smd_config.table_names['ppk_route_table']
+        satker_route_fields = self.smd_config.table_fields['ppk_route_table']
         self.satker_routeid = satker_route_fields['route_id']
-        self.satker_id = satker_route_fields['satker_id']
+        self.satker_ppk_id = satker_route_fields['satker_ppk_id']
         self.satker_route_from_date = satker_route_fields['from_date']
         self.satker_route_to_date = satker_route_fields['to_date']
 
@@ -92,7 +92,7 @@ class KemantapanService(object):
             self.calculate_kemantapan(route)
 
         self.add_year_semester_col()
-        self.add_satker_id()
+        self.add_satker_ppk_id()
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, route):
@@ -133,8 +133,8 @@ class KemantapanService(object):
 
         return self
 
-    def add_satker_id(self):
-        satker_df = event_fc_to_df(self.satker_route_table, [self.satker_routeid, self.satker_id], 'ALL',
+    def add_satker_ppk_id(self):
+        satker_df = event_fc_to_df(self.satker_ppk_route_table, [self.satker_routeid, self.satker_ppk_id], 'ALL',
                                    self.satker_routeid, env.workspace, True)
         self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
 
