@@ -54,6 +54,7 @@ class KemantapanService(object):
         self.year = request_j['year']
         self.data_type = request_j['data_type']
         self.lane_based = request_j['lane_based']
+        self.method = request_j['method']
 
         self.semester = request_j.get('semester')  # Optional parameter.
         self.table_name = None
