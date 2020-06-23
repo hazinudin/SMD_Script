@@ -2,19 +2,22 @@
   "tanah":
   {
     "group":[1,2],
-    "range":[10,12,16],
+    "iri_range":[10,12,16],
+    "pci_range":[85,70,55],
     "category":"up"
   },
   "penmac":
   {
     "group":[3,6,7],
-    "range":[8,10,12],
+    "iri_range":[8,10,12],
+    "pci_range":[85,70,55],
     "category":"p"
   },
   "asphal":
   {
     "group":[4,5,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
-    "range":[4,8,12],
+    "iri_range":[4,8,12],
+    "pci_range":[85,70,55],
     "category":"p"
   }
 
