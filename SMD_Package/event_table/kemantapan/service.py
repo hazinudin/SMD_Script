@@ -117,7 +117,8 @@ class KemantapanService(object):
         """
         input_df = self.route_dataframe(route)
         kemantapan = Kemantapan(input_df, self.grading_column, self.routeid_col, self.from_m_col, self.to_m_col,
-                                self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor)
+                                self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor,
+                                agg_method=self.method)
         if kemantapan.all_match:
             summary_table = kemantapan.summary().reset_index()
             self.summary = self.summary.append(summary_table)
