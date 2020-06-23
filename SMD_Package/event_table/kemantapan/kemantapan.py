@@ -9,7 +9,7 @@ import os
 
 class Kemantapan(object):
     def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='ROUGHNESS',
-                 lane_based=False, rni_mfactor=1, to_km_factor=0.01):
+                 lane_based=False, rni_mfactor=1, to_km_factor=0.01, agg_method='mean'):
         """
         Initialize the Kemantapan class for grading kemantapan value
         :param df_event: The DataFrame for the input table.
@@ -21,6 +21,8 @@ class Kemantapan(object):
         effect the amount of grading level.
         :param lane_based: Determine whether the Kemantapan will be calculated as lane based or calculated based on the
         segment interval.
+        :param agg_method: 'mean' or 'max'. This parameter determine the aggregation method used for summarizing event
+        data.
         """
         # Convert the measurement value of the event dataframe to DM
         df_event[from_m_col] = df_event[from_m_col].astype(float)*to_km_factor*100
@@ -65,7 +67,8 @@ class Kemantapan(object):
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
                                        rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
-                                       match_only=False, lane_code=lane_code, rni_lane_code=rni_lane_code)
+                                       match_only=False, lane_code=lane_code, rni_lane_code=rni_lane_code,
+                                       agg_method=agg_method)
         self.merged_df = merge_df
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
         self.graded_df = self.grading(self.match_only, surftype_col, grading_col, self.group_details, kemantapan_type)
@@ -342,7 +345,8 @@ class Kemantapan(object):
 
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
-                       rni_to_col, surftype_col, lane_based, match_only=True, lane_code=None, rni_lane_code=None):
+                       rni_to_col, surftype_col, lane_based, match_only=True, lane_code=None, rni_lane_code=None,
+                       agg_method='mean'):
         """
         This static method used for joining the input event table and the RNI table
         :param df_rni: The RNI DataFrame.
@@ -355,9 +359,11 @@ class Kemantapan(object):
         :param rni_from_col: The column in RNI Table which stores the From Measure.
         :param rni_to_col: The column in RNI Table which stores the To Measure.
         :param surftype_col: The column in RNI Table which stores the surface type data.
+        :param lane_based: If true then event DataFrame will be grouped before joined to RNI DataFrame.
         :param match_only: If True then this method only returns the 'both' merge result.
         :param lane_code: The Input DataFrame lane code column.
         :param rni_lane_code: The RNI Table lane code column.
+        :param agg_method: Method used for grouping.
         :return: A DataFrame from the merge result between the RNI and input event table.
         """
         if not lane_based:  # Do the table join with linkid, from, and to as join key.
@@ -366,7 +372,12 @@ class Kemantapan(object):
             df_rni[surftype_col] = pd.Series(df_rni[surftype_col].astype(int))  # Convert the surftype to integer type
 
             # GroupBy the input event DataFrame to make summarize the value used for grading from all lane.
-            input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
+            if agg_method == 'mean':
+                input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
+            elif agg_method == 'max':
+                input_groupped = df_event.groupby(by=input_group_col)[grading_col].max().reset_index()
+            else:
+                raise ValueError("'{0}' is not a valid agg_method.".format(agg_method))
 
             # GroupBy the RNI Table to get the summary of surface type from all lane in a segment.
             # Get the first surface type in single RNI segment group
