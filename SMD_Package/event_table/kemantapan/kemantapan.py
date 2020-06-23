@@ -64,6 +64,7 @@ class Kemantapan(object):
         self.group_details_df = self.group_details_df()
         self.lane_based = lane_based
         self.lane_code = lane_code
+        self.graded_df = None
 
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
@@ -72,7 +73,7 @@ class Kemantapan(object):
                                        agg_method=agg_method)
         self.merged_df = merge_df
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
-        self.graded_df = self.grading(self.match_only, surftype_col, grading_col, self.group_details, kemantapan_type)
+        self.grading(surftype_col, grading_col)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
         self.no_match_event = len(merge_df.loc[merge_df['_merge'] == 'left_only'])
 
@@ -404,69 +405,107 @@ class Kemantapan(object):
             df_match = df_merge.loc[df_merge['_merge'] == 'both']  # DataFrame for only match segment interval
             return df_match if match_only else df_merge
 
-    @staticmethod
-    def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade',
-                grading_level='_grade_level', surftype_group='_surf_type', surftype_cat='_surf_group'):
-        """
-        This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan", "rusak_berat")
-        based on the segment surface type group and value in the grading column.
-        :param df_merge: The merge result of event DataFrame and the RNI DataFrame.
-        :param surftype_col: The surface type column in the merge result.
-        :param grading_col: The value used in the grading process.
-        :param group_details: The surface type group details (grading value and surface type (paved or unpaved)).
-        :param kemantapan_type: The kemantapan type tha will be calculated
-        :param grading_result: The new column used to store the grading result.
-        :param grading_level: The new column used to store the grade leve in integer.
-        :param surftype_group: The new column used to store the surface group (asphalt, penmac, rigid)
-        :param surftype_cat: The new column used to store the surface category (paved or unpaved)
-        :return: The df_merge with new column which store the grading result.
-        """
-        # Iterate over all row in the df_merge
-        for index, row in df_merge.iterrows():
-            group_not_found = True
+    # @staticmethod
+    # def grading(df_merge, surftype_col, grading_col, group_details, kemantapan_type, grading_result='_grade',
+    #             grading_level='_grade_level', surftype_group='_surf_type', surftype_cat='_surf_group'):
+    #     """
+    #     This static method will grade every segment in the df_merge to ("baik", "sedang", "rusak_ringan",
+    #     "rusak_berat")
+    #     based on the segment surface type group and value in the grading column.
+    #     :param df_merge: The merge result of event DataFrame and the RNI DataFrame.
+    #     :param surftype_col: The surface type column in the merge result.
+    #     :param grading_col: The value used in the grading process.
+    #     :param group_details: The surface type group details (grading value and surface type (paved or unpaved)).
+    #     :param kemantapan_type: The kemantapan type tha will be calculated
+    #     :param grading_result: The new column used to store the grading result.
+    #     :param grading_level: The new column used to store the grade leve in integer.
+    #     :param surftype_group: The new column used to store the surface group (asphalt, penmac, rigid)
+    #     :param surftype_cat: The new column used to store the surface category (paved or unpaved)
+    #     :return: The df_merge with new column which store the grading result.
+    #     """
+    #     # Iterate over all row in the df_merge
+    #     for index, row in df_merge.iterrows():
+    #         group_not_found = True
+    #
+    #         while group_not_found:  # Iterate until a group is found
+    #
+    #             for group in group_details:
+    #                 if row[surftype_col] in group_details[group]['group']:  # If the group was found
+    #                     group_not_found = False  # group not found is False
+    #                     surface_group = str(group)  # surface group
+    #                     paved_group = group_details[group]['category']
+    #                     range = np.array(group_details[group]['iri_range'])  # group's range in np.array
+    #
+    #         lower_bound = np.amin(range)  # The lower bound
+    #         upper_bound = np.amax(range)  # The upper bound
+    #         mid = range[1]  # The mid value
+    #
+    #         df_merge.loc[index, surftype_group] = surface_group  # Write the surface group name in '_surf_group'
+    #         df_merge.loc[index, surftype_cat] = paved_group
+    #
+    #         if kemantapan_type == 'ROUGHNESS':  # If the kemantapan type is ROUGHNESS
+    #
+    #             # Start the grading process
+    #             if row[grading_col] <= lower_bound:
+    #                 grade = 'good'
+    #                 level = 1
+    #             if (row[grading_col] > lower_bound) & (row[grading_col] <= mid):
+    #                 grade = 'fair'
+    #                 level = 2
+    #             if (row[grading_col] > mid) & (row[grading_col] <= upper_bound):
+    #                 grade = 'poor'
+    #                 level = 3
+    #             if row[grading_col] > upper_bound:
+    #                 grade = 'bad'
+    #                 level = 4
+    #
+    #             df_merge.loc[index, grading_result] = grade
+    #             df_merge.loc[index, grading_level] = level
+    #
+    #         elif kemantapan_type == 'PCI':  # If the kemantapan type is PCI
+    #             continue
+    #
+    #         else:
+    #             continue
+    #
+    #     return df_merge
 
-            while group_not_found:  # Iterate until a group is found
+    def grading(self, surftype_col, grading_col, grading_result='_grade', grading_level='_grade_level',
+                    surftype_group='_surf_type', surftype_cat='_surf_group'):
 
-                for group in group_details:
-                    if row[surftype_col] in group_details[group]['group']:  # If the group was found
-                        group_not_found = False  # group not found is False
-                        surface_group = str(group)  # surface group
-                        paved_group = group_details[group]['category']
-                        range = np.array(group_details[group]['range'])  # group's range in np.array
+        group_details_df = self.group_details_df
+        group_details_df.rename(columns={'index': surftype_group, 'category': surftype_cat}, inplace=True)
 
-            lower_bound = np.amin(range)  # The lower bound
-            upper_bound = np.amax(range)  # The upper bound
-            mid = range[1]  # The mid value
+        self.graded_df = self.merged_df.merge(group_details_df, left_on=surftype_col, right_on='group')
 
-            df_merge.loc[index, surftype_group] = surface_group  # Write the surface group name in '_surf_group'
-            df_merge.loc[index, surftype_cat] = paved_group
+        self.graded_df[grading_result] = pd.Series(index=self.graded_df.index)
+        self.graded_df[grading_level] = pd.Series(index=self.graded_df.index)
 
-            if kemantapan_type == 'ROUGHNESS':  # If the kemantapan type is ROUGHNESS
+        if self.type == 'ROUGHNESS':
+            self.graded_df.loc[self.graded_df[grading_col] <= self.graded_df['lower'],
+                               [grading_result, grading_level]] = ['good', 1]
+            self.graded_df.loc[(self.graded_df[grading_col] <= self.graded_df['mid']) &
+                               (self.graded_df[grading_col] > self.graded_df['lower']),
+                               [grading_result, grading_level]] = ['fair', 2]
+            self.graded_df.loc[(self.graded_df[grading_col] <= self.graded_df['upper']) &
+                               (self.graded_df[grading_col] > self.graded_df['mid']),
+                               [grading_result, grading_level]] = ['poor', 3]
+            self.graded_df.loc[self.graded_df[grading_col] >= self.graded_df['upper'],
+                               [grading_result, grading_level]] = ['bad', 4]
 
-                # Start the grading process
-                if row[grading_col] <= lower_bound:
-                    grade = 'good'
-                    level = 1
-                if (row[grading_col] > lower_bound) & (row[grading_col] <= mid):
-                    grade = 'fair'
-                    level = 2
-                if (row[grading_col] > mid) & (row[grading_col] <= upper_bound):
-                    grade = 'poor'
-                    level = 3
-                if row[grading_col] > upper_bound:
-                    grade = 'bad'
-                    level = 4
+        elif self.type == 'PCI':
+            self.graded_df.loc[self.graded_df[grading_col] >= self.graded_df['lower'],
+                               [grading_result, grading_level]] = ['good', 1]
+            self.graded_df.loc[(self.graded_df[grading_col] >= self.graded_df['mid']) &
+                               (self.graded_df[grading_col] < self.graded_df['lower']),
+                               [grading_result, grading_level]] = ['fair', 2]
+            self.graded_df.loc[(self.graded_df[grading_col] >= self.graded_df['upper']) &
+                               (self.graded_df[grading_col] < self.graded_df['mid']),
+                               [grading_result, grading_level]] = ['poor', 3]
+            self.graded_df.loc[self.graded_df[grading_col] <= self.graded_df['upper'],
+                               [grading_result, grading_level]] = ['bad', 4]
 
-                df_merge.loc[index, grading_result] = grade
-                df_merge.loc[index, grading_level] = level
-
-            elif kemantapan_type == 'PCI':  # If the kemantapan type is PCI
-                continue
-
-            else:
-                continue
-
-        return df_merge
+        return self
 
     @staticmethod
     def kemantapan_percentage(df_graded, route_col, from_m_col, to_m_col, to_km_factor, grade_result_col='_grade',
