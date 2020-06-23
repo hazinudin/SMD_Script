@@ -61,6 +61,7 @@ class Kemantapan(object):
         self.route_col = route_col
 
         self.group_details = self.group_details()
+        self.group_details_df = self.group_details_df()
         self.lane_based = lane_based
         self.lane_code = lane_code
 
@@ -496,6 +497,26 @@ class Kemantapan(object):
             group_details = json.load(group_json)  # Load the surface type group JSON
 
         return group_details
+
+    def group_details_df(self):
+        group_df = pd.DataFrame(self.group_details).transpose()
+        stack = group_df.apply(lambda x: pd.Series(x['group']), axis=1).stack().reset_index(level=1, drop=True)
+        stack.name = 'group'
+        group_df = group_df.drop('group', axis=1).join(stack)
+
+        if self.type == 'ROUGHNESS':
+            group_df['lower'] = group_df.apply(lambda x: x['iri_range'][0], axis=1)
+            group_df['mid'] = group_df.apply(lambda x: x['iri_range'][1], axis=1)
+            group_df['upper'] = group_df.apply(lambda x: x['iri_range'][2], axis=1)
+
+        elif self.type == 'PCI':
+            group_df['lower'] = group_df.apply(lambda x: x['pci_range'][0], axis=1)
+            group_df['mid'] = group_df.apply(lambda x: x['pci_range'][1], axis=1)
+            group_df['upper'] = group_df.apply(lambda x: x['pci_range'][2], axis=1)
+
+        group_df['group'] = group_df['group'].astype(int)
+
+        return group_df.reset_index()
 
 
 
