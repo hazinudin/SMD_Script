@@ -1,5 +1,5 @@
 {
-  "ROUGHNESS":{
+  "IRI":{
     "2019_2":{
       "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
       "grading_column":"IRI",
@@ -19,7 +19,71 @@
       "to_km_factor":1
     }
   },
-  "PCI":{
+
+  "IRI_POK":{
+    "2019_2":{
+      "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
+      "grading_column":"IRI_POK",
+      "routeid_col":"LINKID",
+      "from_m_col":"STA_FROM",
+      "to_m_col":"STA_TO",
+      "lane_code_col":"LANE_CODE",
+      "to_km_factor":1
+    },
+    "2020_1":{
+      "table_name":"SMD.ROUGHNESS_1_2020",
+      "grading_column":"IRI_POK",
+      "route_id_col":"LINKID",
+      "from_m_col":"FROM_STA",
+      "to_m_col":"TO_STA",
+      "lane_code_col":"LANE_CODE",
+      "to_km_factor":1
+    }
+  },
+
+  "PCI": {
+    "2019": {
+      "table_name": "",
+      "grading_column": "",
+      "routeid_col": "",
+      "from_m_col": "",
+      "to_m_col": "",
+      "lane_code": "",
+      "to_km_factor": 1
+    },
+    "2020": {
+      "table_name": "",
+      "grading_column": "",
+      "routeid_col": "",
+      "from_m_col": "",
+      "to_m_col": "",
+      "lane_code": "",
+      "to_km_factor": 1
+    }
+  },
+
+  "PCI_POK": {
+    "2019": {
+      "table_name": "",
+      "grading_column": "",
+      "routeid_col": "",
+      "from_m_col": "",
+      "to_m_col": "",
+      "lane_code": "",
+      "to_km_factor": 1
+    },
+    "2020": {
+      "table_name": "",
+      "grading_column": "",
+      "routeid_col": "",
+      "from_m_col": "",
+      "to_m_col": "",
+      "lane_code": "",
+      "to_km_factor": 1
+    }
+  },
+
+  "AADT":{
     "2019":{
       "table_name":"",
       "grading_column":"",
