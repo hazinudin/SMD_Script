@@ -2,7 +2,7 @@
   "IRI":{
     "2019_2":{
       "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
-      "grading_column":"IRI",
+      "grading_col":"IRI",
       "routeid_col":"LINKID",
       "from_m_col":"STA_FROM",
       "to_m_col":"STA_TO",
@@ -11,7 +11,7 @@
     },
     "2020_1":{
       "table_name":"SMD.ROUGHNESS_1_2020",
-      "grading_column":"IRI",
+      "grading_col":"IRI",
       "route_id_col":"LINKID",
       "from_m_col":"FROM_STA",
       "to_m_col":"TO_STA",
@@ -23,7 +23,7 @@
   "IRI_POK":{
     "2019_2":{
       "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
-      "grading_column":"IRI_POK",
+      "grading_col":"IRI_POK",
       "routeid_col":"LINKID",
       "from_m_col":"STA_FROM",
       "to_m_col":"STA_TO",
@@ -32,7 +32,7 @@
     },
     "2020_1":{
       "table_name":"SMD.ROUGHNESS_1_2020",
-      "grading_column":"IRI_POK",
+      "grading_col":"IRI_POK",
       "route_id_col":"LINKID",
       "from_m_col":"FROM_STA",
       "to_m_col":"TO_STA",
@@ -44,7 +44,7 @@
   "PCI": {
     "2019": {
       "table_name": "",
-      "grading_column": "",
+      "grading_col": "",
       "routeid_col": "",
       "from_m_col": "",
       "to_m_col": "",
@@ -53,7 +53,7 @@
     },
     "2020": {
       "table_name": "",
-      "grading_column": "",
+      "grading_col": "",
       "routeid_col": "",
       "from_m_col": "",
       "to_m_col": "",
@@ -65,7 +65,7 @@
   "PCI_POK": {
     "2019": {
       "table_name": "",
-      "grading_column": "",
+      "grading_col": "",
       "routeid_col": "",
       "from_m_col": "",
       "to_m_col": "",
@@ -74,7 +74,7 @@
     },
     "2020": {
       "table_name": "",
-      "grading_column": "",
+      "grading_col": "",
       "routeid_col": "",
       "from_m_col": "",
       "to_m_col": "",

@@ -75,11 +75,12 @@ class KemantapanService(object):
 
         self.semester = request_j.get('semester')  # Optional parameter.
         self.table_name = None
-        self.grading_column = None
+        self.grading_col = None
         self.routeid_col = None
         self.from_m_col = None
         self.to_m_col = None
         self.lane_code_col = None
+        self.date_col = None
         self.output_suffix = None
         self.to_km_factor = None
         self.semester_col = 'SEMESTER'
@@ -88,7 +89,6 @@ class KemantapanService(object):
         self.balai_column = 'BALAI_ID'
 
         # For AADT only
-        self.date_col = None
         self.hour_col = None
         self.minute_col = None
         self.survey_direc_col = None
@@ -122,7 +122,7 @@ class KemantapanService(object):
         for route in self.route_selection:
             if self.data_type != 'AADT':
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
-                                     self.grading_column]
+                                     self.grading_col]
                 input_df = self.route_dataframe(route)
                 self.calculate_kemantapan(input_df)
             else:
@@ -146,7 +146,7 @@ class KemantapanService(object):
         if input_df.empty:
             return self
 
-        kemantapan = Kemantapan(input_df, self.grading_column, self.routeid_col, self.from_m_col, self.to_m_col,
+        kemantapan = Kemantapan(input_df, self.grading_col, self.routeid_col, self.from_m_col, self.to_m_col,
                                 self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor,
                                 agg_method=self.method)
         if kemantapan.all_match:
