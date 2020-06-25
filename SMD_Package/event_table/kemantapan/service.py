@@ -164,7 +164,8 @@ class KemantapanService(object):
         if input_df.empty:
             return self
 
-        aadt = AADT(input_df)
+        aadt = AADT(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
+                    self.veh_col_prefix)
         self.summary = aadt.daily_aadt()
 
         return self
