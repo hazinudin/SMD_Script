@@ -85,22 +85,22 @@
 
   "AADT":{
     "2019":{
-      "table_name":"",
-      "grading_column":"",
-      "routeid_col":"",
-      "from_m_col":"",
-      "to_m_col":"",
-      "lane_code":"",
-      "to_km_factor":1
+      "table_name":"SMD.RTC_2019",
+      "date_col":"SURVEY_DATE",
+      "routeid_col":"LINKID",
+      "hour_col":"SURVEY_HOURS",
+      "minute_col":"SURVEY_MINUTE",
+      "survey_direc_col":"SURVEY_DIREC",
+      "veh_col_prefix":"NUM_VEH"
     },
     "2020":{
-      "table_name":"",
-      "grading_column":"",
-      "routeid_col":"",
-      "from_m_col":"",
-      "to_m_col":"",
-      "lane_code":"",
-      "to_km_factor":1
+      "table_name":"SMD.RTC_2020",
+      "date_col":"SURVEY_DATE",
+      "routeid_col":"LINKID",
+      "hour_col":"SURVEY_HOURS",
+      "minute_col":"SURVEY_MINUTE",
+      "survey_direc_col":"SURVEY_DIREC",
+      "veh_col_prefix":"NUM_VEH"
     }
   }
 }
