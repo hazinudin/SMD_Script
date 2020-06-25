@@ -1,4 +1,5 @@
 from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer
+from SMD_Package.event_table.traffic.aadt import AADT
 from arcpy import env
 import json
 import pandas as pd
@@ -107,8 +108,13 @@ class KemantapanService(object):
             self.output_table = self.output_table + '_' + self.output_suffix
 
         self.summary = pd.DataFrame()  # For storing all summary result
-        for route in self.route_selection:
-            self.calculate_kemantapan(route)
+
+        if self.data_type != 'AADT':
+            for route in self.route_selection:
+                self.calculate_kemantapan(route)
+        else:
+            for route in self.route_selection:
+                self.calculate_aadt(route)
 
         self.add_year_semester_col()
         self.add_satker_ppk_id()
@@ -130,6 +136,18 @@ class KemantapanService(object):
         if kemantapan.all_match:
             summary_table = kemantapan.summary().reset_index()
             self.summary = self.summary.append(summary_table)
+
+        return self
+
+    def calculate_aadt(self, route):
+        """
+        Used for initiating AADT class and calculate the daily AADT.
+        :param route: The requested route.
+        :return:
+        """
+        input_df = self.route_dataframe(route)
+        aadt = AADT(input_df)
+        self.summary = aadt.daily_aadt()
 
         return self
 
