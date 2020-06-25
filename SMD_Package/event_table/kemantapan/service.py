@@ -50,11 +50,19 @@ class KemantapanService(object):
         with open(os.path.dirname(__file__)+'\\'+'kemantapan_config.json') as config_f:
             config = json.load(config_f)
 
-        self.routes = request_j['routes']  # Mandatory JSON parameter.
-        self.year = request_j['year']
-        self.data_type = request_j['data_type']
-        self.lane_based = request_j['lane_based']
-        self.method = request_j['method']
+        try:
+            self.routes = request_j['routes']  # Mandatory JSON parameter.
+            self.year = request_j['year']
+            self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
+
+            if self.data_type != 'AADT':
+                self.lane_based = request_j['lane_based']
+                self.method = request_j['method']  # 'mean', 'max', 'lane_based'
+            else:
+                self.lane_based = None
+                self.method = None
+        except KeyError:
+            raise  # Maybe add an error message in here.
 
         self.semester = request_j.get('semester')  # Optional parameter.
         self.table_name = None
