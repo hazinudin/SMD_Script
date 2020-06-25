@@ -59,6 +59,12 @@ class KemantapanService(object):
             if self.data_type != 'AADT':
                 self.lane_based = request_j['lane_based']
                 self.method = request_j['method']  # 'mean', 'max', 'lane_based'
+
+                if self.lane_based:
+                    self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.data_type)
+                else:
+                    self.output_table = 'SMD.KEMANTAPAN_{0}'.format(self.data_type)
+
             else:
                 self.lane_based = None
                 self.method = None
