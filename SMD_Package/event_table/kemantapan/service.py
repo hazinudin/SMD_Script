@@ -68,6 +68,8 @@ class KemantapanService(object):
             else:
                 self.lane_based = None
                 self.method = None
+                self.output_table = 'SMD.AADT_{0}'.format(self.year)
+
         except KeyError:
             raise  # Maybe add an error message in here.
 
@@ -84,6 +86,13 @@ class KemantapanService(object):
         self.year_col = 'YEAR'
         self.prov_column = 'BM_PROV_ID'
         self.balai_column = 'BALAI_ID'
+
+        # For AADT only
+        self.date_col = None
+        self.hour_col = None
+        self.minute_col = None
+        self.survey_direc_col = None
+        self.veh_col_prefix = None
 
         if self.semester is None:
             self.__dict__.update(config[str(self.data_type)][str(self.year)])
@@ -103,11 +112,6 @@ class KemantapanService(object):
         else:
             raise ("Route selection is neither list or string.")
 
-        if self.lane_based:
-            self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.data_type)
-        else:
-            self.output_table = 'SMD.KEMANTAPAN_{0}'.format(self.data_type)
-
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
 
         if self.output_suffix is not None:
@@ -115,12 +119,16 @@ class KemantapanService(object):
 
         self.summary = pd.DataFrame()  # For storing all summary result
 
-        if self.data_type != 'AADT':
-            for route in self.route_selection:
-                self.calculate_kemantapan(route)
-        else:
-            for route in self.route_selection:
-                self.calculate_aadt(route)
+        for route in self.route_selection:
+            if self.data_type != 'AADT':
+                self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
+                                     self.grading_column]
+                input_df = self.route_dataframe(route)
+                self.calculate_kemantapan(input_df)
+            else:
+                self.data_columns = '*'
+                input_df = self.route_dataframe(route)
+                self.calculate_aadt(input_df)
 
         self.add_year_semester_col()
         self.add_satker_ppk_id()
@@ -129,13 +137,15 @@ class KemantapanService(object):
 
         self.write_summary_to_gdb()
 
-    def calculate_kemantapan(self, route):
+    def calculate_kemantapan(self, input_df):
         """
         Used for initiating kemantapan class and calculate the summary DataFrame.
-        :param route: The requested route
+        :param input_df: Input DataFrame.
         :return:
         """
-        input_df = self.route_dataframe(route)
+        if input_df.empty:
+            return self
+
         kemantapan = Kemantapan(input_df, self.grading_column, self.routeid_col, self.from_m_col, self.to_m_col,
                                 self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor,
                                 agg_method=self.method)
@@ -145,13 +155,15 @@ class KemantapanService(object):
 
         return self
 
-    def calculate_aadt(self, route):
+    def calculate_aadt(self, input_df):
         """
         Used for initiating AADT class and calculate the daily AADT.
-        :param route: The requested route.
+        :param input_df: Input DataFrame.
         :return:
         """
-        input_df = self.route_dataframe(route)
+        if input_df.empty:
+            return self
+
         aadt = AADT(input_df)
         self.summary = aadt.daily_aadt()
 
@@ -167,8 +179,7 @@ class KemantapanService(object):
         if (type(route) != str) and (type(route) != unicode):
             raise ("Route request should be in string.")
         else:
-            df = event_fc_to_df(self.table_name, [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
-                                                  self.grading_column], route, self.routeid_col, env.workspace, True)
+            df = event_fc_to_df(self.table_name, self.data_columns, route, self.routeid_col, env.workspace, True)
 
         return df
 
