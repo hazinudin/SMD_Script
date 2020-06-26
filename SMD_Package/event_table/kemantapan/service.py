@@ -118,17 +118,24 @@ class KemantapanService(object):
             self.output_table = self.output_table + '_' + self.output_suffix
 
         self.summary = pd.DataFrame()  # For storing all summary result
+        self.route_date = None
 
         for route in self.route_selection:
             if self.data_type != 'AADT':
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
-                                     self.grading_col]
+                                     self.grading_col, self.date_col]
                 input_df = self.route_dataframe(route)
                 self.calculate_kemantapan(input_df)
             else:
                 self.data_columns = '*'
                 input_df = self.route_dataframe(route)
                 self.calculate_aadt(input_df)
+
+            if self.route_date is None:
+                self.route_date = input_df.groupby(self.routeid_col)[self.date_col].max()
+            else:
+                next_route = input_df.groupby(self.routeid_col)[self.date_col].max()
+                self.route_date = self.route_date.append(next_route)
 
         self.add_year_semester_col()
         self.add_satker_ppk_id()
@@ -194,8 +201,18 @@ class KemantapanService(object):
 
     def add_satker_ppk_id(self):
         satker_df = event_fc_to_df(self.satker_ppk_route_table,
-                                   [self.satker_routeid, self.satker_ppk_id, self.satker_id], 'ALL',
-                                   self.satker_routeid, env.workspace, True)
+                                   [self.satker_routeid, self.satker_ppk_id, self.satker_id,
+                                    self.satker_route_from_date, self.satker_route_to_date], self.route_selection,
+                                   self.satker_routeid, env.workspace, True, replace_null=False)
+        satker_df.set_index(self.satker_routeid, inplace=True)
+        satker_df = satker_df.join(self.route_date)
+
+        from_date_q = (satker_df[self.satker_route_from_date].isnull()) | \
+                      (satker_df[self.satker_route_from_date] <= satker_df[self.date_col])
+        to_date_q = (satker_df[self.satker_route_to_date].isnull()) | \
+                    (satker_df[self.satker_route_to_date] > satker_df[self.date_col])
+
+        satker_df = satker_df.loc[from_date_q & to_date_q, [self.satker_ppk_id]].reset_index()
         self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
 
         return self
