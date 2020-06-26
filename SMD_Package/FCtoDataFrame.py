@@ -5,7 +5,7 @@ import numpy as np
 
 def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
                    include_all=False, orderby=None, add_date_query=False, from_date='FROMDATE', to_date='TODATE',
-                   **kwargs):
+                   replace_null=True, **kwargs):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
@@ -21,6 +21,7 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
     :param add_date_query: If True then date query statement will be added.
     :param from_date: The From Date column.
     :param to_date: The To Date column.
+    :param replace_null: If True then all Null value will be replaced with -9999
     :return df = this function will return a Pandas DataFrame.
     """
     env.workspace = sde_connection  # The workspace for accessing the SDE Feature Class
@@ -74,9 +75,13 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
             if 'shape' in field.lower():
                 search_field.remove(field)
 
-    # Create the numpy array of the requested table or feature class from GeoDataBase
-    table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause,
-                                               sql_clause=sql_clause, null_value=-9999)
+    if replace_null:
+        # Create the numpy array of the requested table or feature class from GeoDataBase
+        table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause,
+                                                   sql_clause=sql_clause, null_value=-9999)
+    else:
+        table_search = da.FeatureClassToNumPyArray(gdb_table, search_field, where_clause=where_clause,
+                                                   sql_clause=sql_clause)
 
     # Creating DataFrame from the numpy array
     df = DataFrame(table_search)

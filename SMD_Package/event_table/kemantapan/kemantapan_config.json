@@ -7,6 +7,7 @@
       "from_m_col":"STA_FROM",
       "to_m_col":"STA_TO",
       "lane_code_col":"LANE_CODE",
+      "date_col":"SURVEY_DATE",
       "to_km_factor":1
     },
     "2020_1":{
@@ -16,6 +17,7 @@
       "from_m_col":"FROM_STA",
       "to_m_col":"TO_STA",
       "lane_code_col":"LANE_CODE",
+      "date_col":"SURVEY_DATE",
       "to_km_factor":1
     }
   },
@@ -28,6 +30,7 @@
       "from_m_col":"STA_FROM",
       "to_m_col":"STA_TO",
       "lane_code_col":"LANE_CODE",
+      "date_col":"SURVEY_DATE",
       "to_km_factor":1
     },
     "2020_1":{
@@ -37,6 +40,7 @@
       "from_m_col":"FROM_STA",
       "to_m_col":"TO_STA",
       "lane_code_col":"LANE_CODE",
+      "date_col":"SURVEY_DATE",
       "to_km_factor":1
     }
   },
