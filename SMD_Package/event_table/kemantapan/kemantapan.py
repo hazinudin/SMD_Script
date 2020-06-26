@@ -8,7 +8,7 @@ import os
 
 
 class Kemantapan(object):
-    def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='ROUGHNESS',
+    def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='IRI',
                  lane_based=False, rni_mfactor=1, to_km_factor=0.01, agg_method='mean'):
         """
         Initialize the Kemantapan class for grading kemantapan value
@@ -29,8 +29,8 @@ class Kemantapan(object):
         df_event[to_m_col] = df_event[to_m_col].astype(float)*to_km_factor*100
         df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(1).astype(int)
 
-        # make sure the kemantapan_type is between 'ROUGHNESS' and 'PCI'
-        if kemantapan_type not in ['ROUGHNESS', 'PCI']:
+        # make sure the kemantapan_type is between 'IRI and 'PCI'
+        if kemantapan_type not in ['IRI', 'PCI']:
             raise Exception('{0} is not a valid kemantapan type.'.format(kemantapan_type))  # Raise an exception
         else:
             self.type = kemantapan_type
@@ -103,7 +103,7 @@ class Kemantapan(object):
             pivot_grade_all = self.create_pivot(columns=['_grade'], lane_code=self.lane_code, lane_km=lane_km)
 
         # All the required grades and surfaces
-        if self.type == 'ROUGHNESS':
+        if self.type == 'IRI':
             required_grades = np.array(['good', 'fair', 'poor', 'bad'])
         elif self.type == 'PCI':
             required_grades = np.array(['good', 'satisfactory', 'fair', 'poor', 'very poor', 'serious', 'failed'])
@@ -443,7 +443,7 @@ class Kemantapan(object):
     #         df_merge.loc[index, surftype_group] = surface_group  # Write the surface group name in '_surf_group'
     #         df_merge.loc[index, surftype_cat] = paved_group
     #
-    #         if kemantapan_type == 'ROUGHNESS':  # If the kemantapan type is ROUGHNESS
+    #         if kemantapan_type == 'IRI:  # If the kemantapan type is ROUGHNESS
     #
     #             # Start the grading process
     #             if row[grading_col] <= lower_bound:
@@ -481,7 +481,7 @@ class Kemantapan(object):
         self.graded_df[grading_result] = pd.Series(index=self.graded_df.index)
         self.graded_df[grading_level] = pd.Series(index=self.graded_df.index)
 
-        if self.type == 'ROUGHNESS':
+        if self.type == 'IRI':
             self.graded_df.loc[self.graded_df[grading_col] <= self.graded_df['lower'],
                                [grading_result, grading_level]] = ['good', 1]
             self.graded_df.loc[(self.graded_df[grading_col] <= self.graded_df['mid']) &
@@ -543,7 +543,7 @@ class Kemantapan(object):
         stack.name = 'group'
         group_df = group_df.drop('group', axis=1).join(stack)
 
-        if self.type == 'ROUGHNESS':
+        if self.type == 'IRI':
             group_df['lower'] = group_df.apply(lambda x: x['iri_range'][0], axis=1)
             group_df['mid'] = group_df.apply(lambda x: x['iri_range'][1], axis=1)
             group_df['upper'] = group_df.apply(lambda x: x['iri_range'][2], axis=1)
