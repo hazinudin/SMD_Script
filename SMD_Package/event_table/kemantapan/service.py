@@ -41,8 +41,12 @@ class KemantapanService(object):
         balai_route_fields = self.smd_config.table_fields['balai_route_table']
         self.balai_prov_balai_id = balai_table_fields['balai_code']
         self.balai_prov_prov_id = balai_table_fields['prov_code']
+        self.balai_prov_from_date = balai_table_fields['from_date']
+        self.balai_prov_to_date = balai_table_fields['to_date']
         self.balai_route_balai_id = balai_route_fields['balai_code']
         self.balai_route_route_id = balai_route_fields['route_id']
+        self.balai_route_from_date = balai_route_fields['from_date']
+        self.balai_route_to_date = balai_route_fields['to_date']
 
         env.workspace = db_connection
 
