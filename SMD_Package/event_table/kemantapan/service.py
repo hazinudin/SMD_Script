@@ -135,10 +135,13 @@ class KemantapanService(object):
                 input_df = self.route_dataframe(route)
                 self.calculate_aadt(input_df)
 
+            self._add_prov_id(input_df, self.routeid_col, self.prov_column)
+
             if self.route_date is None:
-                self.route_date = input_df.groupby(self.routeid_col)[self.date_col].max()
+                self.route_date = input_df.groupby(self.routeid_col).\
+                    agg({self.date_col: 'max', self.prov_column: 'first'})
             else:
-                next_route = input_df.groupby(self.routeid_col)[self.date_col].max()
+                next_route = input_df.groupby(self.routeid_col).agg({self.date_col: 'max', self.prov_column: 'first'})
                 self.route_date = self.route_date.append(next_route)
 
         self.add_year_semester_col()
@@ -208,32 +211,59 @@ class KemantapanService(object):
                                    [self.satker_routeid, self.satker_ppk_id, self.satker_id,
                                     self.satker_route_from_date, self.satker_route_to_date], self.route_selection,
                                    self.satker_routeid, env.workspace, True, replace_null=False)
-        satker_df.set_index(self.satker_routeid, inplace=True)
-        satker_df = satker_df.join(self.route_date)
 
-        from_date_q = (satker_df[self.satker_route_from_date].isnull()) | \
-                      (satker_df[self.satker_route_from_date] <= satker_df[self.date_col])
-        to_date_q = (satker_df[self.satker_route_to_date].isnull()) | \
-                    (satker_df[self.satker_route_to_date] > satker_df[self.date_col])
+        satker_df = self.route_date_query(satker_df, self.satker_routeid, self.satker_route_from_date,
+                                          self.satker_route_to_date)[[self.satker_routeid, self.satker_ppk_id]]
 
-        satker_df = satker_df.loc[from_date_q & to_date_q, [self.satker_ppk_id]].reset_index()
         self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
 
         return self
 
+    def route_date_query(self, df, routeid_col, from_date_col, to_date_col, **kwargs):
+        if kwargs.get('merge_on') is None:
+            merge_on = self.routeid_col
+        else:
+            merge_on = kwargs.get('merge_on')
+
+        df_joined = df.merge(self.route_date.reset_index(), left_on=routeid_col, right_on=merge_on)
+
+        from_date_q = (df_joined[from_date_col].isnull()) | \
+                      (df_joined[from_date_col] <= df_joined[self.date_col])
+
+        to_date_q = (df_joined[to_date_col].isnull()) | \
+                    (df_joined[to_date_col] > df_joined[self.date_col])
+
+        return df.loc[from_date_q & to_date_q]
+
     def add_prov_id(self):
-        self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
+        self._add_prov_id(self.summary, self.routeid_col, self.prov_column)
+        # self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
 
         return self
+
+    @staticmethod
+    def _add_prov_id(df, routeid_col, prov_column):
+        df[prov_column] = df[routeid_col].apply(lambda x: str(x[:2]))
 
     def add_balai_id(self):
         input_provs = self.summary[self.prov_column].tolist()
         input_routes = self.route_selection
 
-        balai_prov_df = event_fc_to_df(self.balai_table, [self.balai_prov_balai_id, self.balai_prov_prov_id],
-                                       input_provs, self.balai_prov_prov_id, env.workspace, True)
-        balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id],
-                                        input_routes, self.balai_route_route_id, env.workspace, True)
+        # Get the Database table
+        balai_prov_df = event_fc_to_df(self.balai_table, [self.balai_prov_balai_id, self.balai_prov_prov_id,
+                                                          self.balai_prov_from_date, self.balai_prov_to_date],
+                                       input_provs, self.balai_prov_prov_id, env.workspace, True, replace_null=False)
+        balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id,
+                                                                 self.balai_route_from_date, self.balai_route_to_date],
+                                        input_routes, self.balai_route_route_id, env.workspace, True, replace_null=False)
+
+        # Query based on the route survey date value.
+        balai_prov_df = self.route_date_query(balai_prov_df, self.balai_prov_prov_id, self.balai_prov_from_date,
+                                              self.balai_prov_to_date, merge_on=self.prov_column)[
+            [self.balai_prov_prov_id, self.balai_prov_balai_id]]
+        balai_route_df = self.route_date_query(balai_route_df, self.balai_route_route_id, self.balai_route_from_date,
+                                               self.balai_route_to_date)[[self.balai_route_route_id,
+                                                                         self.balai_route_balai_id]]
 
         self.summary = self.summary.merge(balai_prov_df, left_on=self.prov_column, right_on=self.balai_prov_prov_id)
         self.summary.set_index(self.routeid_col, inplace=True)
