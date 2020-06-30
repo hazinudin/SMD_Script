@@ -37,7 +37,8 @@
       "lane_width":"LANE_WIDTH",
       "longitude":"STATO_LONG",
       "latitude":"STATO_LAT",
-      "median":"MED_WIDTH"
+      "median":"MED_WIDTH",
+      "road_type":"ROAD_TYPE"
     },
     "balai_table":{
       "prov_code":"BM_PROV_ID",
