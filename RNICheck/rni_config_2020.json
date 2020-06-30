@@ -47,6 +47,8 @@
     "lane_code":"LANE_CODE",
     "lat_col":"TO_STA_LAT",
     "long_col":"TO_STA_LONG",
+    "median_col":"MED_WIDTH",
+    "road_type_col":"ROAD_TYPE",
     "previous_data_mfactor":1
   },
     "compare_table":{
