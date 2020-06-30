@@ -1,5 +1,5 @@
 import json
-from arcpy import da
+from arcpy import da, env
 from pandas import DataFrame
 from SMD_Package.load_config import SMDConfigs
 
@@ -8,7 +8,7 @@ class GetRoutes(object):
     """
     This Object is used for RouteID query based on requesty type either Province Code or Balai Code.
     """
-    def __init__(self, query_type, query_value, lrs_network, balai_table, balai_route_table):
+    def __init__(self, query_type, query_value, lrs_network=None, balai_table=None, balai_route_table=None):
         """
         :param query_type: The query type, either 'no_prov' or 'balai'
         :param query_value: The query value.
@@ -17,15 +17,22 @@ class GetRoutes(object):
         :param balai_route_table: The Table which store the Balai-Route Mapping.
         """
         smd_configs = SMDConfigs()
+        env.workspace = smd_configs.smd_database['instance']
 
+        if lrs_network is None:
+            lrs_network = smd_configs.table_names['lrs_network']
         lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
         lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
         lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
         lrs_lintas = smd_configs.table_fields['lrs_network']['lintas']
 
+        if balai_table is None:
+            balai_table = smd_configs.table_names['balai_table']
         balai_prov = smd_configs.table_fields['balai_table']['prov_code']
         balai_code = smd_configs.table_fields['balai_table']['balai_code']
 
+        if balai_route_table is None:
+            balai_route_table = smd_configs.table_names['balai_route_table']
         balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
         balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
 
