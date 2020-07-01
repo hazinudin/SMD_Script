@@ -32,11 +32,6 @@ lrsNetwork = config['table_names']['lrs_network']
 balaiTable = config['table_names']['balai_table']
 balaiRouteTable = config['table_names']['balai_route_table']
 
-lrs_RID = 'ROUTEID'
-lrs_provcode = 'NOPROP'
-balaiTableBalaiCode = 'NOMOR_BALAI'
-balaiTableProvCode = 'NO_PROV'
-
 env.workspace = config['smd_database']['instance']
 
 # Check for input value validity
@@ -57,19 +52,12 @@ for table in [balaiTable, lrsNetwork]:
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)
 
-# Check if all request code are valid
-if queryType == 'no_prov':
-    code_field = balaiTableProvCode
-if queryType == 'balai':
-    code_field = balaiTableBalaiCode
-
-code_check_result = verify_balai(queryValue, balaiTable, code_field, env.workspace, return_false=True)
-if len(code_check_result) != 0:  # If there is an error
-    message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
-    SetParameterAsText(1, output_message("Failed", message))
-    sys.exit(0)
+# code_check_result = verify_balai(queryValue, balaiTable, code_field, env.workspace, return_false=True)
+# if len(code_check_result) != 0:  # If there is an error
+#     message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
+#     SetParameterAsText(1, output_message("Failed", message))
+#     sys.exit(0)
 
 # Creating the route query request object
-route_query = GetRoutes(queryType, queryValue, lrsNetwork, balaiTable, balaiRouteTable, lrs_routeid=lrs_RID,
-                        lrs_prov_code=lrs_provcode, balai_code=balaiTableBalaiCode, balai_prov=balaiTableProvCode)
+route_query = GetRoutes(queryType, queryValue)
 SetParameterAsText(1, route_query.create_json_output(detailed=True))
