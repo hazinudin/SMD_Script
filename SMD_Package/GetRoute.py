@@ -21,20 +21,20 @@ class GetRoutes(object):
 
         if lrs_network is None:
             lrs_network = smd_configs.table_names['lrs_network']
-        lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
-        lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
-        lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
-        lrs_lintas = smd_configs.table_fields['lrs_network']['lintas']
+            lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
+            lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
+            lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
+            lrs_lintas = smd_configs.table_fields['lrs_network']['lintas']
 
         if balai_table is None:
             balai_table = smd_configs.table_names['balai_table']
-        balai_prov = smd_configs.table_fields['balai_table']['prov_code']
-        balai_code = smd_configs.table_fields['balai_table']['balai_code']
+            balai_prov = smd_configs.table_fields['balai_table']['prov_code']
+            balai_code = smd_configs.table_fields['balai_table']['balai_code']
 
         if balai_route_table is None:
             balai_route_table = smd_configs.table_names['balai_route_table']
-        balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
-        balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
+            balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
+            balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
 
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
@@ -68,7 +68,7 @@ class GetRoutes(object):
         _df = DataFrame(_arr)
 
         # Create a list [{"kode_prov":prov_code, "kode_balai":balai_code}, ...]
-        prov_balai_dict = _df.to_dict(orient='records')
+        prov_balai_dict = _df.astype(str).to_dict(orient='records')
 
         # Start iterating over the requested province
         for prov_code in prov_balai_dict:
