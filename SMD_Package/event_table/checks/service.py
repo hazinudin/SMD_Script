@@ -66,7 +66,7 @@ class TableCheckService(object):
 
         env.workspace = db_connection  # Setting up the workspace for arcpy
         input_df = read_input_excel(table_path, parameter_index=output_index)
-        route_list = GetRoutes("balai", kode_balai, lrs_network, balai_table, balai_route_table).route_list()
+        route_list = GetRoutes("balai", kode_balai).route_list()
         code_check_result = verify_balai(kode_balai, env.workspace)
 
         if len(code_check_result) != 0:  # Check if the balai code is a valid balai code.

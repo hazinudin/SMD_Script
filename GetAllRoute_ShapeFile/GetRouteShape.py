@@ -50,16 +50,6 @@ config = SMDConfigs()
 
 # The LRS Network Table Details
 lrsNetwork = config.table_names['lrs_network']
-lrsNetwork_RouteID = config.table_fields['lrs_network']['route_id']
-lrsNetwork_RouteName = config.table_fields['lrs_network']['route_name']
-
-# The Balai Table
-balaiTable = config.table_names['balai_table']
-balaiProvCol = config.table_fields['balai_table']['prov_code']
-balaiBalaiCol = config.table_fields['balai_table']['balai_code']
-
-# The Balai Route Table
-balaiRouteTable = config.table_names['balai_route_table']
 
 # The RNI Table Details
 rniTable = config.table_names['rni']
@@ -76,9 +66,9 @@ if input_details['type'] != 'routes':  # If the input type is not 'routes', then
 
     # Check the input request type
     if input_details['type'] == 'no_prov':
-        code_col = balaiProvCol
+        pass
     elif input_details['type'] == 'balai':
-        code_col = balaiBalaiCol
+        pass
     else:  # If the input request type is nor 'balai' or 'no_prov'
         SetParameterAsText(1, output_message("Failed", "Request type {0} is invalid.".format(input_details['type'])))
         sys.exit(0)
@@ -90,7 +80,7 @@ if input_details['type'] != 'routes':  # If the input type is not 'routes', then
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)  # Stop the script
 
-    getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"], lrsNetwork, balaiTable, balaiRouteTable)
+    getAllRouteResult = GetRoutes(input_details['type'], input_details["codes"])
     routeList = getAllRouteResult.route_list()  # The list containing the query result
 
 elif input_details['type'] == 'routes':  # If the input type is 'routes' then use the value from 'codes'

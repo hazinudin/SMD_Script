@@ -105,7 +105,7 @@ class KemantapanService(object):
 
         if self.routes == 'ALL':
             lrs_network = smd_config.table_names['lrs_network']
-            get_route = GetRoutes("balai", "ALL", lrs_network, self.balai_table, self.balai_route_table)
+            get_route = GetRoutes("balai", "ALL", lrs_network)
             self.route_selection = get_route.route_list()
         elif type(self.routes) == unicode:
             self.route_selection = [self.routes]
