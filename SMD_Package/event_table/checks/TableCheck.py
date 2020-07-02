@@ -761,7 +761,11 @@ class EventValidation(object):
                 self.insert_route_message(route, 'error', error_message)
 
             if not end_only:  # If end_only is False then checks for all error at the middle of inputted data.
-                lane_group = df_route.groupby(by=[lane_code])
+                if (kwargs.get('first_lane_only_gap') is None) and (not kwargs.get('first_lane_only_gap')):
+                    lane_group = df_route.groupby(by=[lane_code])
+                elif kwargs.get('first_lane_only_gap'):
+                    lane_group = df_route.loc[(df_route[lane_code] == 'L1') | (df_route[lane_code] == 'R1')].\
+                        groupby(by=[lane_code])
 
                 for name, group_df in lane_group:
                     g_sorted = group_df.sort_values(by=from_m_col).reset_index()
