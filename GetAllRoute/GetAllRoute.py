@@ -52,11 +52,11 @@ for table in [balaiTable, lrsNetwork]:
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)
 
-# code_check_result = verify_balai(queryValue, balaiTable, code_field, env.workspace, return_false=True)
-# if len(code_check_result) != 0:  # If there is an error
-#     message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
-#     SetParameterAsText(1, output_message("Failed", message))
-#     sys.exit(0)
+code_check_result = verify_balai(queryValue, env.workspace, return_false=True)
+if len(code_check_result) != 0:  # If there is an error
+    message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
+    SetParameterAsText(1, output_message("Failed", message))
+    sys.exit(0)
 
 # Creating the route query request object
 route_query = GetRoutes(queryType, queryValue)

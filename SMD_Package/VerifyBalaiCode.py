@@ -1,10 +1,15 @@
 from arcpy import da, env
 from pandas import DataFrame
 import numpy as np
+from SMD_Package import SMDConfigs
 
 
-def verify_balai(input_code, balai_table, balai_col, environment, return_false=True):
+def verify_balai(input_code, environment, return_false=True):
     env.workspace = environment  # Setting up the GDB environment
+    smd_config = SMDConfigs()
+
+    balai_table = smd_config.table_names['balai_table']
+    balai_col = smd_config.table_fields['balai_table']['balai_code']
 
     if type(input_code) != list:  # Check if they input value is in list type
         input = np.array([input_code])
