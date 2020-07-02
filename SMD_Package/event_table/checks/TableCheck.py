@@ -1048,6 +1048,57 @@ class EventValidation(object):
 
         return self
 
+    def lane_sequence_check(self, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
+                            to_m_col='STA_TO', lane_code='LANE_CODE', **kwargs):
+        """
+        This class method check for lane code sequence, every segment lane should start with L1/R1 and increment by one
+        eg. L1, L2, L3 not L1, L3, L4 or L2, L3, L4.
+        :param lane_code: The lane code column.
+        :return:
+        """
+        df = self.copy_valid_df()
+        df = self.selected_route_df(df, routes)
+
+        df['SIDE'] = df[lane_code].apply(lambda x: str(x[0]))
+        segment_g = df.groupby([routeid_col, from_m_col, to_m_col, 'SIDE'])[lane_code].unique().reset_index()
+
+        segment_g['FIRST_LANE_EXIST'] = segment_g[lane_code].\
+            apply(lambda x: np.any((np.array(x) == 'R1') | (np.array(x) == 'L1')))
+
+        segment_g['LANE_SEQ'] = segment_g[lane_code].\
+            apply(lambda x: np.sort([int(_[1:]) for _ in x]))
+
+        segment_g['CORRECT_SEQ'] = segment_g['LANE_SEQ'].\
+            apply(lambda x: np.all(np.abs(np.diff(x)) == 1))
+
+        error_rows = segment_g.loc[~(segment_g['FIRST_LANE_EXIST'] | segment_g['CORRECT_SEQ'])]
+
+        for index, row in error_rows.iterrows():
+            first_lane_exist = row['FIRST_LANE_EXIST']
+            correct_seq = row['CORRECT_SEQ']
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            side = row['SIDE']
+            lanes = row[lane_code]
+
+            if not first_lane_exist:
+                if side == 'L':
+                    first_lane = 'L1'
+                else:
+                    first_lane = 'R1'
+
+                error_msg = "Rute {0} pada segmen {1}-{2} di sisi {3} tidak memiliki lajur {4}.".\
+                    format(route, from_m, to_m, side, first_lane)
+                self.insert_route_message(route, 'error', error_msg)
+
+            if not correct_seq:
+                error_msg = 'Rute {0} pada segmen {1}-{2} di sisi {3} memiliki kode lajur yang tidak berurutan yaitu {4}.'.\
+                    format(route, from_m, to_m, side, lanes)
+                self.insert_route_message(route, 'error', error_msg)
+
+        return self
+
     def lane_code_check(self, routes='ALL', routeid_col='LINKID', lane_code='LANE_CODE', from_m_col='STA_FROM',
                         to_m_col='STA_TO', find_no_match=False, **kwargs):
         """

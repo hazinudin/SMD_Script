@@ -299,6 +299,7 @@ class RNICheck(TableCheckService):
             valid_routes = self.check.valid_route
 
             self.check.segment_duplicate_check(routes=valid_routes, **self.kwargs)
+            self.check.lane_sequence_check(routes=valid_routes, **self.kwargs)
             self.check.range_domain_check(routes=valid_routes, **self.kwargs)
             self.check.survey_year_check(self.data_year, **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, **self.kwargs)
@@ -358,6 +359,7 @@ class PCICheck(TableCheckService):
             self.check.pci_val_check(routes=valid_routes, asp_pref='VOL_AS', rg_pref='VOL_RG', **self.kwargs)
             self.check.pci_surftype_check(routes=valid_routes, **self.kwargs)
             self.check.lane_code_check(routes=valid_routes, **self.kwargs)
+            self.check.lane_direction_check(routes=valid_routes, **self.kwargs)
 
             # Iterate all asphalt condition and severity column
             for col in asphalt_cols:
