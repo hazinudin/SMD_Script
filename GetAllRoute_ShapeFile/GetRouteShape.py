@@ -84,7 +84,7 @@ if input_details['type'] != 'routes':  # If the input type is not 'routes', then
         sys.exit(0)
 
     # Check the input code validity
-    code_check = verify_balai(input_details['codes'], balaiTable, code_col, dbConnection)
+    code_check = verify_balai(input_details['codes'], dbConnection)
     if len(code_check) != 0:  # If there is an invalid code
         message = "Kode {0} {1} tidak valid.".format(input_details['type'], code_check)
         SetParameterAsText(1, output_message("Failed", message))
@@ -100,7 +100,7 @@ elif input_details['type'] == 'routes':  # If the input type is 'routes' then us
         routeList = input_details['codes']
 
     # Check the input code validity
-    code_check = verify_balai(routeList, lrsNetwork, lrsNetwork_RouteID, dbConnection)
+    code_check = verify_balai(routeList, dbConnection)
     if len(code_check) != 0:  # If there is an invalid code
         message = "Kode {0} {1} tidak valid.".format(input_details['type'], code_check)
         SetParameterAsText(1, output_message("Failed", message))
