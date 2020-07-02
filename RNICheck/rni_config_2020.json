@@ -49,7 +49,8 @@
     "long_col":"TO_STA_LONG",
     "median_col":"MED_WIDTH",
     "road_type_col":"ROAD_TYPE",
-    "previous_data_mfactor":1
+    "previous_data_mfactor":1,
+    "first_lane_only_gap":true
   },
     "compare_table":{
     "table_name":"SMD.RNI_2019_RERUN_2",
