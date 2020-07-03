@@ -86,7 +86,7 @@ class KemantapanService(object):
         self.to_m_col = None
         self.lane_code_col = None
         self.date_col = None
-        self.output_suffix = None
+        self.suffix = None
         self.to_km_factor = None
         self.semester_col = 'SEMESTER'
         self.year_col = 'YEAR'
