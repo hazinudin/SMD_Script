@@ -3,6 +3,7 @@ from SMD_Package.event_table.traffic.aadt import AADT
 from arcpy import env
 import json
 import pandas as pd
+import datetime
 
 
 class KemantapanService(object):
@@ -123,6 +124,8 @@ class KemantapanService(object):
 
         self.summary = pd.DataFrame()  # For storing all summary result
         self.route_date = None
+        self.failed_route = list()  # For storing route which cannot be calculated.
+        self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
 
         for route in self.route_selection:
             if self.data_type != 'AADT':
@@ -135,8 +138,10 @@ class KemantapanService(object):
                 input_df = self.route_dataframe(route)
                 self.calculate_aadt(input_df)
 
-            self._add_prov_id(input_df, self.routeid_col, self.prov_column)
+            self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
+            self.route_status.loc[len(self.route_status)+1] = [route, datetime.datetime.now(), 'Succeeded']
 
+            # Get the survey date for each requested routes.
             if self.route_date is None:
                 self.route_date = input_df.groupby(self.routeid_col).\
                     agg({self.date_col: 'max', self.prov_column: 'first'})
@@ -149,6 +154,8 @@ class KemantapanService(object):
         self.add_prov_id()
         self.add_balai_id()
 
+        self.update_route_status()
+        self.status_json = self.route_status.set_index(self.routeid_col).to_json(orient='index')
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, input_df):
@@ -163,9 +170,10 @@ class KemantapanService(object):
         kemantapan = Kemantapan(input_df, self.grading_col, self.routeid_col, self.from_m_col, self.to_m_col,
                                 self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor,
                                 agg_method=self.method)
-        if kemantapan.all_match:
-            summary_table = kemantapan.summary().reset_index()
-            self.summary = self.summary.append(summary_table)
+
+        summary_table = kemantapan.summary().reset_index()
+        self.summary = self.summary.append(summary_table)
+        self.failed_route = kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
 
         return self
 
@@ -277,6 +285,11 @@ class KemantapanService(object):
         self.summary[self.balai_prov_balai_id] = self.summary[self.balai_prov_balai_id].astype(int)
         self.summary.drop_duplicates(inplace=True)
         self.summary.reset_index(inplace=True)
+
+        return self
+
+    def update_route_status(self):
+        self.route_status.loc[self.route_status[self.routeid_col].isin(self.failed_route), ['status']] = 'Failed'
 
         return self
 
