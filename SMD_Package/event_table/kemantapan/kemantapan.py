@@ -75,9 +75,9 @@ class Kemantapan(object):
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
         self.grading(surftype_col, grading_col)
         self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
-        self.no_match_event = len(merge_df.loc[merge_df['_merge'] == 'left_only'])
+        self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', route_col].tolist()
 
-        if self.no_match_event != 0:
+        if len(self.no_match_route) != 0:
             self.all_match = False
         else:
             self.all_match = True
@@ -471,12 +471,15 @@ class Kemantapan(object):
     #     return df_merge
 
     def grading(self, surftype_col, grading_col, grading_result='_grade', grading_level='_grade_level',
-                    surftype_group='_surf_type', surftype_cat='_surf_group'):
+                    surftype_group='_surf_type', surftype_cat='_surf_group', match_only=True):
 
         group_details_df = self.group_details_df
         group_details_df.rename(columns={'index': surftype_group, 'category': surftype_cat}, inplace=True)
 
-        self.graded_df = self.merged_df.merge(group_details_df, left_on=surftype_col, right_on='group')
+        if match_only:  # Only grade route with 100% match with RNI.
+            self.graded_df = self.match_only.merge(group_details_df, left_on=surftype_col, right_on='group')
+        else:
+            self.graded_df = self.merged_df.merge(group_details_df, left_on=surftype_col, right_on='group')
 
         self.graded_df[grading_result] = pd.Series(index=self.graded_df.index)
         self.graded_df[grading_level] = pd.Series(index=self.graded_df.index)
