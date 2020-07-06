@@ -62,7 +62,7 @@ class KemantapanService(object):
             self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
             if self.data_type != 'AADT':
-                self.method = request_j['method']  # 'mean', 'max', 'lane_based'
+                self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
 
                 if self.method == 'lane_based':
                     self.lane_based = True
