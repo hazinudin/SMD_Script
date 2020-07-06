@@ -123,8 +123,8 @@ class KemantapanService(object):
 
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
 
-        if self.output_suffix is not None:
-            self.output_table = self.output_table + '_' + self.output_suffix
+        if self.suffix is not None:
+            self.output_table = self.output_table + '_' + self.suffix
 
         self.summary = pd.DataFrame()  # For storing all summary result
         self.route_date = None
