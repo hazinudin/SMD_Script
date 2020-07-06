@@ -102,11 +102,14 @@ class Kemantapan(object):
             pivot_mantap_all = self.create_pivot(columns=['_kemantapan'], lane_code=self.lane_code, lane_km=lane_km)
             pivot_grade_all = self.create_pivot(columns=['_grade'], lane_code=self.lane_code, lane_km=lane_km)
 
-        # All the required grades and surfaces
-        if self.type == 'IRI':
-            required_grades = np.array(['good', 'fair', 'poor', 'bad'])
-        elif self.type == 'PCI':
-            required_grades = np.array(['good', 'satisfactory', 'fair', 'poor', 'very poor', 'serious', 'failed'])
+        required_grades = np.array(['good', 'fair', 'poor', 'bad'])
+
+        # # All the required grades and surfaces
+        # if self.type == 'IRI':
+        #     required_grades = np.array(['good', 'fair', 'poor', 'bad'])
+        # elif self.type == 'PCI':
+        #     required_grades = np.array(['good', 'satisfactory', 'fair', 'poor', 'very poor', 'serious', 'failed'])
+
         required_mantap = np.array(['mantap', 'tdk_mantap'])
         required_surftype = ['p', 'up']
 
