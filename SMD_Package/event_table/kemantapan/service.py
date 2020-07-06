@@ -136,11 +136,11 @@ class KemantapanService(object):
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
                                      self.grading_col, self.date_col]
                 input_df = self.route_dataframe(route)
-                self.calculate_kemantapan(input_df)
+                self.calculate_kemantapan(input_df, route)
             else:
                 self.data_columns = '*'
                 input_df = self.route_dataframe(route)
-                self.calculate_aadt(input_df)
+                self.calculate_aadt(input_df, route)
 
             self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
             self.route_status.loc[len(self.route_status)+1] = [route, datetime.datetime.now(), 'Succeeded']
@@ -153,22 +153,25 @@ class KemantapanService(object):
                 next_route = input_df.groupby(self.routeid_col).agg({self.date_col: 'max', self.prov_column: 'first'})
                 self.route_date = self.route_date.append(next_route)
 
+        self.update_route_status()
+        self.success_route = self._success_route()
         self.add_year_semester_col()
         self.add_satker_ppk_id()
         self.add_prov_id()
         self.add_balai_id()
 
-        self.update_route_status()
         self.status_json = self.route_status.set_index(self.routeid_col).to_json(orient='index')
         self.write_summary_to_gdb()
 
-    def calculate_kemantapan(self, input_df):
+    def calculate_kemantapan(self, input_df, route):
         """
         Used for initiating kemantapan class and calculate the summary DataFrame.
         :param input_df: Input DataFrame.
+        :param route: Route being processed.
         :return:
         """
         if input_df.empty:
+            self.failed_route.append(route)
             return self
 
         kemantapan = Kemantapan(input_df, self.grading_col, self.routeid_col, self.from_m_col, self.to_m_col,
@@ -177,17 +180,19 @@ class KemantapanService(object):
 
         summary_table = kemantapan.summary().reset_index()
         self.summary = self.summary.append(summary_table)
-        self.failed_route = kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
+        self.failed_route += kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
 
         return self
 
-    def calculate_aadt(self, input_df):
+    def calculate_aadt(self, input_df, route):
         """
         Used for initiating AADT class and calculate the daily AADT.
         :param input_df: Input DataFrame.
+        :param route: Route being processed.
         :return:
         """
         if input_df.empty:
+            self.failed_route.append(route)
             return self
 
         aadt = AADT(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
@@ -221,7 +226,7 @@ class KemantapanService(object):
     def add_satker_ppk_id(self):
         satker_df = event_fc_to_df(self.satker_ppk_route_table,
                                    [self.satker_routeid, self.satker_ppk_id, self.satker_id,
-                                    self.satker_route_from_date, self.satker_route_to_date], self.route_selection,
+                                    self.satker_route_from_date, self.satker_route_to_date], self.success_route,
                                    self.satker_routeid, env.workspace, True, replace_null=False)
 
         satker_df = self.route_date_query(satker_df, self.satker_routeid, self.satker_route_from_date,
@@ -259,7 +264,7 @@ class KemantapanService(object):
 
     def add_balai_id(self):
         input_provs = self.summary[self.prov_column].tolist()
-        input_routes = self.route_selection
+        input_routes = self.success_route
 
         # Get the Database table
         balai_prov_df = event_fc_to_df(self.balai_table, [self.balai_prov_balai_id, self.balai_prov_prov_id,
@@ -297,6 +302,9 @@ class KemantapanService(object):
 
         return self
 
+    def _success_route(self):
+        return self.route_status.loc[self.route_status['status'] == 'Succeeded', self.routeid_col].tolist()
+
     def write_summary_to_gdb(self):
         col_details = dict()
 
@@ -307,10 +315,12 @@ class KemantapanService(object):
             # Translate to GDB data type.
             if col_dtype == 'object':
                 gdb_dtype = 'string'
-            if col_dtype == 'float64':
+            elif col_dtype == 'float64':
                 gdb_dtype = 'double'
-            if col_dtype == 'int64':
+            elif col_dtype in ['int64', 'int32']:
                 gdb_dtype = 'short'
+            else:
+                pass
 
             col_details[col_name]['dtype'] = gdb_dtype
 
