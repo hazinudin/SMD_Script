@@ -62,13 +62,17 @@ class KemantapanService(object):
             self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
             if self.data_type != 'AADT':
-                self.lane_based = request_j['lane_based']
                 self.method = request_j['method']  # 'mean', 'max', 'lane_based'
+
+                if self.method == 'lane_based':
+                    self.lane_based = True
+                else:
+                    self.lane_based = False
 
                 if self.lane_based:
                     self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.data_type)
                 else:
-                    self.output_table = 'SMD.KEMANTAPAN_{0}'.format(self.data_type)
+                    self.output_table = 'SMD.KEMANTAPAN_{0}_{1}'.format(str.upper(self.method), self.data_type)
 
             else:
                 self.lane_based = None
