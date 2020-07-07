@@ -143,7 +143,7 @@ class KemantapanService(object):
                 self.calculate_aadt(input_df, route)
 
             self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
-            self.route_status.loc[len(self.route_status)+1] = [route,
+            self.route_status.loc[len(self.route_status)+1] = [str(route),
                                                                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                                'Succeeded']
 
