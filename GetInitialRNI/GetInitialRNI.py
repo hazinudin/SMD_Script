@@ -54,6 +54,23 @@ else:
     SetParameterAsText(1, "Data tahun {0} tidak tersedia.".format(data_year))
     sys.exit(0)
 
+if __name__ == '__main__':
+    start = time.time()
+    rni_df = event_fc_to_df(rni_table, [routeid_col, lane_code,
+                                        from_m, to_m, road_type, medwidth],
+                            route_req, routeid_col, db_connection, is_table=True)
+    end = time.time()
+
+    if rni_df.empty:
+        SetParameterAsText(1, "Data yang diminta tidak tersedia.")
+        sys.exit(0)
+
+    rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/100, axis=1)
+    output_j = rni_df.to_dict(orient='records')
+    SetParameterAsText(1, output_j)
+    print len(rni_df)
+    print (end-start)
+
 # if __name__ == '__main__':
 #     # Process the request
 #     start = time.time()
@@ -73,21 +90,3 @@ else:
 #
 #     end = time.time()
 #     print (end-start)
-
-
-if __name__ == '__main__':
-    start = time.time()
-    rni_df = event_fc_to_df(rni_table, [routeid_col, lane_code,
-                                        from_m, to_m, road_type, medwidth],
-                            route_req, routeid_col, db_connection, is_table=True)
-    end = time.time()
-
-    if rni_df.empty:
-        SetParameterAsText(1, "Data yang diminta tidak tersedia.")
-        sys.exit(0)
-
-    rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/100, axis=1)
-    output_j = rni_df.to_json(orient='records', default_handler=str)
-    SetParameterAsText(1, output_j)
-    print len(rni_df)
-    print (end-start)
