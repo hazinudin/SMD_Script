@@ -66,6 +66,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/100, axis=1)
+    rni_df[routeid_col] = rni_df[routeid_col].astype(str)
     output_j = rni_df.to_dict(orient='records')
     SetParameterAsText(1, output_j)
     print len(rni_df)
