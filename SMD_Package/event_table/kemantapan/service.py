@@ -159,13 +159,15 @@ class KemantapanService(object):
 
         self.update_route_status()
         self.success_route = self._success_route()
-        self.add_year_semester_col()
-        self.add_satker_ppk_id()
-        self.add_prov_id()
-        self.add_balai_id()
+
+        if len(self.success_route) > 0:
+            self.add_year_semester_col()
+            self.add_satker_ppk_id()
+            self.add_prov_id()
+            self.add_balai_id()
+            self.write_summary_to_gdb()
 
         self.status_json = self.route_status.set_index(self.routeid_col).to_dict(orient='index')
-        self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, input_df, route):
         """
@@ -183,7 +185,10 @@ class KemantapanService(object):
                                 agg_method=self.method)
 
         summary_table = kemantapan.summary().reset_index()
-        self.summary = self.summary.append(summary_table)
+
+        if kemantapan.all_match:
+            self.summary = self.summary.append(summary_table)
+
         self.failed_route += kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
 
         return self
