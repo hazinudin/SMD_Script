@@ -2,12 +2,12 @@
 Ths script accept return RNI details from a specified route in requested by the user.
 """
 from arcpy import GetParameterAsText, SetParameterAsText
-import json
+# import json
 import os
 import sys
 from SMD_Package import input_json_check, event_fc_to_df, SMDConfigs, GetRoutes, Configs
-import multiprocessing as mp
-from pandas import concat
+# import multiprocessing as mp
+# from pandas import concat
 import time
 
 if SMDConfigs.smd_dir() == '':
