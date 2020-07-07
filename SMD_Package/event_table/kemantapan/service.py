@@ -162,7 +162,7 @@ class KemantapanService(object):
         self.add_prov_id()
         self.add_balai_id()
 
-        self.status_json = self.route_status.set_index(self.routeid_col).to_json(orient='index', default_handler=str)
+        self.status_json = self.route_status.set_index(self.routeid_col).to_dict(orient='index')
         self.write_summary_to_gdb()
 
     def calculate_kemantapan(self, input_df, route):
