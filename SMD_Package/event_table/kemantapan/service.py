@@ -1,4 +1,4 @@
-from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer
+from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
 from SMD_Package.event_table.traffic.aadt import AADT
 from arcpy import env
 import json
@@ -51,7 +51,7 @@ class KemantapanService(object):
 
         env.workspace = db_connection
 
-        request_j = json.loads(input_json)
+        request_j = input_json_check(input_json, 1, True, ['routes', 'year', 'data_type'])
 
         with open(os.path.dirname(__file__)+'\\'+'kemantapan_config.json') as config_f:
             config = json.load(config_f)
@@ -62,6 +62,8 @@ class KemantapanService(object):
             self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
             if self.data_type != 'AADT':
+                request_j = input_json_check(input_json, 1, True, ['routes', 'year',
+                                                                   'data_type', 'method'])
                 self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
 
                 if self.method == 'lane_based':
