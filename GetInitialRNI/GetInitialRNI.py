@@ -56,6 +56,10 @@ else:
 
 if __name__ == '__main__':
     start = time.time()
+    if len(route_req) == 0:
+        SetParameterAsText(1, "Kode provinsi {0} tidak memiliki rute.".format(prov_req))
+        sys.exit(0)
+
     rni_df = event_fc_to_df(rni_table, [routeid_col, lane_code,
                                         from_m, to_m, road_type, medwidth],
                             route_req, routeid_col, db_connection, is_table=True)
