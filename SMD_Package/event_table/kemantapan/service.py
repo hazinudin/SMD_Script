@@ -61,7 +61,7 @@ class KemantapanService(object):
             self.year = request_j['year']
             self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
-            if self.data_type != 'AADT':
+            if self.data_type != 'AADT':  # If the requested summary is not AADT.
                 request_j = input_json_check(input_json, 1, True, ['routes', 'year',
                                                                    'data_type', 'method'])
                 self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
