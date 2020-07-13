@@ -693,7 +693,7 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes)
 
         # Iterate over valid row in the input table
-        for route in df[routeid_col].tolist():
+        for route in df[routeid_col].unique().tolist():
             # Create a route DataFrame
             df_route = df.loc[df[routeid_col] == route, [routeid_col, from_m_col, to_m_col, lane_code]]
 
