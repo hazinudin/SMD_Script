@@ -1570,6 +1570,7 @@ class EventValidation(object):
 
         for route in route_list:
             df_route = self.selected_route_df(df, route)  # The input selected route DataFrame
+            df_route = df_route[[routeid_col, from_m_col, to_m_col, surftype_col, lane_code]]
             merged = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
                                   surftype_col, 'outer')
             merged.dropna(inplace=True)
@@ -1584,7 +1585,7 @@ class EventValidation(object):
                                                surftype_group='ref_group', surftype_cat='ref_cat')
 
             merged['status'] = pd.Series(np.nan)
-            merged.loc[(merged['ref_cat'] == 'paved') & (merged['input_cat'] == 'unpaved'), ['status']] = 'error'
+            merged.loc[(merged['ref_cat'] == 'p') & (merged['input_cat'] == 'up'), ['status']] = 'error'
             # merged.loc[(merged['ref_cat'] == 'unpaved') & (merged['input_cat'] == 'paved'), ['status']] = 'ToBeReviewed'
 
             for index, row in merged.loc[merged['status'].notnull()].iterrows():
