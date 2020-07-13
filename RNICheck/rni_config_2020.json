@@ -49,6 +49,7 @@
     "long_col":"TO_STA_LONG",
     "median_col":"MED_WIDTH",
     "road_type_col":"ROAD_TYPE",
+    "length_col":"SEGMENT_LENGTH",
     "previous_data_mfactor":1,
     "first_lane_only_gap":true
   },

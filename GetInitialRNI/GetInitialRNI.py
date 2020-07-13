@@ -49,6 +49,7 @@ elif data_year == 2020:
     medwidth = rni_config.kwargs['median_col']
     road_type = rni_config.kwargs['road_type_col']
     lane_code = rni_config.kwargs['lane_code']
+    segment_len = rni_config.kwargs['length_col']
 
 else:
     SetParameterAsText(1, "Data tahun {0} tidak tersedia.".format(data_year))
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     rni_df = event_fc_to_df(rni_table, [routeid_col, lane_code,
-                                        from_m, to_m, road_type, medwidth],
+                                        from_m, to_m, road_type, medwidth, segment_len],
                             route_req, routeid_col, db_connection, is_table=True)
     end = time.time()
 
