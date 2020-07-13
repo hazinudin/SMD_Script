@@ -1578,10 +1578,10 @@ class EventValidation(object):
             ref_surftype = surftype_col + '_y'
 
             # Add surface group and category column
-            merged = Kemantapan.grading(merged, input_surftype, None, Kemantapan.group_details(), None,
-                                        surftype_group='input_group', surftype_cat='input_cat')
-            merged = Kemantapan.grading(merged, ref_surftype, None, Kemantapan.group_details(), None,
-                                        surftype_group='ref_group', surftype_cat='ref_cat')
+            merged = Kemantapan.static_grading(merged, input_surftype, None, Kemantapan.group_details(), None,
+                                               surftype_group='input_group', surftype_cat='input_cat')
+            merged = Kemantapan.static_grading(merged, ref_surftype, None, Kemantapan.group_details(), None,
+                                               surftype_group='ref_group', surftype_cat='ref_cat')
 
             merged['status'] = pd.Series(np.nan)
             merged.loc[(merged['ref_cat'] == 'paved') & (merged['input_cat'] == 'unpaved'), ['status']] = 'error'

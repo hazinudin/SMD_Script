@@ -3,7 +3,7 @@ from SMD_Package import EventValidation, output_message, GetRoutes, gdb_table_wr
     read_input_excel
 from SMD_Package.event_table.measurement.adjustment import Adjust
 from SMD_Package.event_table.deflection.deflection import Deflection
-from arcpy import SetParameterAsText, env, da
+from arcpy import SetParameterAsText, env, da, Exists
 import pandas as pd
 import numpy as np
 
@@ -160,7 +160,9 @@ class TableCheckService(object):
 
         for table in other_tables:
             if table is None:
-                pass
+                continue
+            elif not Exists(table):
+                continue
             else:
                 str_routes = str(passed_routes).replace('[', '(').replace(']', ')')
                 sql_statement = "{0} IN {1}".format(routeid_col, str_routes)
