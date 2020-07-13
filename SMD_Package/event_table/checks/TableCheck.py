@@ -789,7 +789,7 @@ class EventValidation(object):
                         next_to_m = g_sorted.at[index+1, to_m_col]
 
                         if row['MIDDLE_GAP'] is True:
-                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane (3}. (Terdapat gap di tengah ruas)'. \
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane {3}. (Terdapat gap di tengah ruas)'. \
                                 format(route, to_m, next_from_m, lane)
                             self.error_list.append(error_message)
                             self.insert_route_message(route, 'error', error_message)
