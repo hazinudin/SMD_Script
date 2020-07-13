@@ -59,9 +59,9 @@ class KemantapanService(object):
         try:
             self.routes = request_j['routes']  # Mandatory JSON parameter.
             self.year = request_j['year']
-            self.data_type = request_j['data_type']  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
+            self.data_type = str(request_j['data_type'])  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
-            if self.data_type != 'AADT':  # If the requested summary is not AADT.
+            if self.data_type not in ['AADT', 'FWD', 'LWD', 'BB']:  # If the requested summary is other than PCI/IRI.
                 request_j = input_json_check(input_json, 1, True, ['routes', 'year',
                                                                    'data_type', 'method'])
                 self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
@@ -76,10 +76,10 @@ class KemantapanService(object):
                 else:
                     self.output_table = 'SMD.KEMANTAPAN_{0}_{1}'.format(str.upper(self.method), self.data_type)
 
-            else:
+            else:  # Includes AADT, LWD, FWD and BB.
                 self.lane_based = None
                 self.method = None
-                self.output_table = 'SMD.AADT_{0}'.format(self.year)
+                self.output_table = 'SMD.{0}_{1}'.format(self.data_type, self.year)
 
         except KeyError:
             raise  # Maybe add an error message in here.
@@ -104,6 +104,12 @@ class KemantapanService(object):
         self.minute_col = None
         self.survey_direc_col = None
         self.veh_col_prefix = None
+
+        # For Deflection only
+        self.force_col = None
+        self.d0_col = None
+        self.d200_col = None
+        self.asp_temp = None
 
         if self.semester is None:
             self.__dict__.update(config[str(self.data_type)][str(self.year)])
@@ -134,15 +140,22 @@ class KemantapanService(object):
         self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
 
         for route in self.route_selection:
-            if self.data_type != 'AADT':
+            if self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']:  # For IRI or PCI
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
                                      self.grading_col, self.date_col]
                 input_df = self.route_dataframe(route)
                 self.calculate_kemantapan(input_df, route)
-            else:
+
+            elif self.data_type == 'AADT':  # For AADT
                 self.data_columns = '*'
                 input_df = self.route_dataframe(route)
                 self.calculate_aadt(input_df, route)
+
+            else:  # For deflection data (LWD, FWD, BB)
+                self.data_columns = '*'
+                input_df = self.route_dataframe(route)
+                self.calculate_defl(input_df, route)
+                pass  # Insert the calculation class method for Deflection data.
 
             self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
             self.route_status.loc[len(self.route_status)+1] = [str(route),
@@ -209,6 +222,19 @@ class KemantapanService(object):
         self.summary = aadt.daily_aadt()
 
         return self
+
+    def calculate_defl(self, input_df, route):
+        """
+        Used for initiating Deflection class and calculate Deflection summary.
+        :param input_df: Input DataFrame.
+        :param route: Route being processed.
+        :return:
+        """
+        if input_df.empty:
+            self.failed_route.append(route)
+            return self
+
+        return self  # TODO: Initialize deflection class from here.
 
     def route_dataframe(self, route):
         """
