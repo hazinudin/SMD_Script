@@ -69,7 +69,8 @@ if __name__ == '__main__':
         SetParameterAsText(1, "Data yang diminta tidak tersedia.")
         sys.exit(0)
 
-    rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/100, axis=1)
+    m_conversion = 1  # Used for converting M-Value.
+    rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/m_conversion, axis=1)
     rni_df[[routeid_col, lane_code]] = rni_df[[routeid_col, lane_code]].astype(str)
     output_j = rni_df.to_dict(orient='records')
     SetParameterAsText(1, output_j)
