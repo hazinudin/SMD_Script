@@ -1,4 +1,4 @@
-from SMD_Package.event_table import RNISummary
+from SMD_Package.event_table.rni import RNISummary
 from SMD_Package import input_json_check
 from arcpy import GetParameterAsText
 
