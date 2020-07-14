@@ -1,4 +1,4 @@
-from SMD_Package import SMDConfigs, Configs, event_fc_to_df
+from SMD_Package import SMDConfigs, Configs, event_fc_to_df, gdb_table_writer
 from arcpy import env
 import os
 import pandas as pd
@@ -31,6 +31,9 @@ class RNISummary(object):
         self.routes = list()
         self.output_table = "SMD.REKAP_LEBAR_RNI"
         self.width_range = [4.5, 6, 7, 8, 14]
+        self.width_col_pref = "WIDTH_CAT_"
+        self.road_type_list = range(1, 26)  # From 1 to 25
+        self.road_type_col_pref = "ROAD_TYPE_"
 
         self.__dict__.update(kwargs)  # Update all class attribute.
 
@@ -50,11 +53,13 @@ class RNISummary(object):
         lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
         width_cat_col = 'width_cat'
         lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
+        output_table = 'SMD.REKAP_LEBAR_RNI'
 
         first_range = self.width_range[0]
         last_range = self.width_range[len(self.width_range)-1]
-        lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = 'WIDTH_CAT_1'
-        lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = 'WIDTH_CAT_{0}'.format(len(self.width_range))
+        lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = '{0}1'.format(self.width_col_pref)
+        lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = '{0}{1}'.\
+            format(self.width_col_pref, len(self.width_range))
 
         for w_range in self.width_range:
             range_ind = self.width_range.index(w_range)
@@ -64,12 +69,17 @@ class RNISummary(object):
                 prev_range = self.width_range[range_ind-1]
                 lane_w_g.loc[((lane_w_g[self.lane_width] <= w_range) &
                               (lane_w_g[self.lane_width] > prev_range)),
-                             width_cat_col] = 'WIDTH_CAT_{0}'.format(range_ind + 1)
+                             width_cat_col] = '{0}{1}'.format(self.width_col_pref, range_ind + 1)
 
         pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
                                      aggfunc=np.sum)
         route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
         result = pivot.join(route_g).reset_index()
+        missing_col = np.setdiff1d(self.width_class_col, list(result))
+        result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
+
+        if write_to_db:
+            self._write_to_df(result, output_table)
 
         if return_df:
             return result
@@ -82,12 +92,57 @@ class RNISummary(object):
         """
         df = self.df.copy(deep=True)
         pivot_roadtype_col = '_road_type'
-        df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: 'ROAD_TYPE_'+str(x))
+        output_table = 'SMD.REKAP_TIPE_JALAN'
+        df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref+str(x))
         pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
                                columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
         pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
+        missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot_lkm))
+        pivot_lkm[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot_lkm.index)
+
+        if write_to_db:
+            self._write_to_df(pivot_lkm, output_table)
 
         if return_df:
             return pivot_lkm
         else:
             return self
+
+    @property
+    def roadtype_class_col(self):
+        cols = list()
+        for r_type in self.road_type_list:
+            column = self.road_type_col_pref + str(r_type)
+            cols.append(column)
+
+        return cols
+
+    @property
+    def width_class_col(self):
+        cols = list()
+        for width in range(1, (len(self.width_range) + 2)):
+            column = self.width_col_pref + str(width)
+            cols.append(column)
+
+        return cols
+
+    def _write_to_df(self, df, output_table):
+        col_details = dict()
+
+        for col_name in df.dtypes.to_dict():
+            col_details[col_name] = dict()
+            col_dtype = df.dtypes[col_name]
+
+            # Translate to GDB data type.
+            if col_dtype == 'object':
+                gdb_dtype = 'string'
+            elif col_dtype == 'float64':
+                gdb_dtype = 'double'
+            elif col_dtype in ['int64', 'int32']:
+                gdb_dtype = 'short'
+            else:
+                pass
+
+            col_details[col_name]['dtype'] = gdb_dtype
+
+        gdb_table_writer(env.workspace, df, output_table, col_details)
