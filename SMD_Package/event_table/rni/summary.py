@@ -75,3 +75,19 @@ class RNISummary(object):
             return result
         else:
             return self
+
+    def roadtype_summary(self, write_to_db=True, return_df=True):
+        """
+        Classification based on the roadtype.
+        """
+        df = self.df.copy(deep=True)
+        pivot_roadtype_col = '_road_type'
+        df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: 'ROAD_TYPE_'+str(x))
+        pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                               columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
+        pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
+
+        if return_df:
+            return pivot_lkm
+        else:
+            return self
