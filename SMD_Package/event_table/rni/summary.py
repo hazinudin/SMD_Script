@@ -100,6 +100,7 @@ class RNISummary(object):
         pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
         missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot_lkm))
         pivot_lkm[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot_lkm.index)
+        pivot_lkm.fillna(0, inplace=True)
 
         if write_to_db:
             self._write_to_df(pivot_lkm, output_table)
