@@ -77,6 +77,7 @@ class RNISummary(object):
         result = pivot.join(route_g).reset_index()
         missing_col = np.setdiff1d(self.width_class_col, list(result))
         result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
+        result.fillna(0, inplace=True)
 
         if write_to_db:
             self._write_to_df(result, output_table)
