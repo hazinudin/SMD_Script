@@ -543,6 +543,15 @@ class Kemantapan(object):
 
         return group_details
 
+    @staticmethod
+    def surface_group_df():
+        group_df = pd.DataFrame(Kemantapan.group_details()).transpose()
+        stack = group_df.apply(lambda x: pd.Series(x['group']), axis=1).stack().reset_index(level=1, drop=True)
+        stack.name = 'group'
+        group_df = group_df.drop('group', axis=1).join(stack)
+
+        return group_df
+
     def group_details_df(self):
         group_df = pd.DataFrame(self.group_details).transpose()
         stack = group_df.apply(lambda x: pd.Series(x['group']), axis=1).stack().reset_index(level=1, drop=True)
