@@ -107,10 +107,16 @@ class GetRoutes(object):
 
             with da.SearchCursor(lrs_network, req_columns,
                                  where_clause=where_statement + " and " + date_query) as search_cursor:
-                if codes not in balai_route_dict:
-                    balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                if lrs_lintas is not None:
+                    if codes not in balai_route_dict:
+                        balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                    else:
+                        balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
                 else:
-                    balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                    if codes not in balai_route_dict:
+                        balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": None} for row in search_cursor]
+                    else:
+                        balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": None} for row in search_cursor]
 
         self.code_route_dict = balai_route_dict
         self.prov_balai_dict = prov_balai_dict
