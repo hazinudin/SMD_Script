@@ -363,6 +363,8 @@ class EventValidation(object):
             df = self.selected_route_df(df, routes, routeid_col=routeid_col)
 
         for column in self.column_details.keys():
+            allow_null = self.column_details[column].get('allow_null')
+
             if 'range' in self.column_details[column].keys():
                 range_details = self.column_details[column]['range']
                 upper_bound = range_details['upper']  # The range upper bound
@@ -440,7 +442,10 @@ class EventValidation(object):
 
                         df.loc[(rev_upper_mask | rev_lower_mask) & df[status_col].isnull(), [status_col]] = 'ToBeReviewed'
 
-                error_row = df.loc[df[status_col].notnull()]  # Find the faulty row
+                if allow_null:
+                    error_row = df.loc[(df[status_col].notnull()) & (df[column].notnull())]
+                else:
+                    error_row = df.loc[df[status_col].notnull()]  # Find the faulty row
 
                 if len(error_row) != 0:
                     # Create error message
@@ -503,7 +508,11 @@ class EventValidation(object):
 
             if 'domain' in self.column_details[column].keys():
                 val_domain = self.column_details[column]['domain']  # The domain list
-                error_row = df.loc[~df[column].isin(val_domain)]  # Find the faulty row
+
+                if allow_null:
+                    error_row = df.loc[(~df[column].isin(val_domain)) & (df[column].notnull())]
+                else:
+                    error_row = df.loc[~df[column].isin(val_domain)]  # Find the faulty row
 
                 if len(error_row) != 0:
                     for index, row in error_row.iterrows():
