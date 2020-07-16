@@ -51,7 +51,9 @@
     "road_type_col":"ROAD_TYPE",
     "length_col":"SEGMENT_LENGTH",
     "lane_width_col":"LANE_WIDTH",
+    "surftype_col":"SURF_TYPE",
     "previous_data_mfactor":1,
+    "ignore_exceed_ref":true,
     "first_lane_only_gap":true
   },
     "compare_table":{
