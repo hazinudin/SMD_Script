@@ -116,11 +116,9 @@ class TableCheckService(object):
         self.output_index = output_index
         self.kwargs = data_config.kwargs
 
-    def write_to_table(self, trim_to_reference=None):
+    def write_to_table(self, trim_to_reference=None, replace_key=None):
         """
         Function to write selected route from valid DataFrame to GDB.
-        :param trim_to_reference: The reference used for trimming measurement value. Default is None
-        :return:
         """
         passed_routes = self.passed_routes()
 
@@ -137,7 +135,8 @@ class TableCheckService(object):
                 adjust.trim_to_reference(trim_to_reference)
                 rows = adjust.df
 
-            gdb_table_writer(env.workspace, rows, self.output_table, self.column_details)
+            gdb_table_writer(env.workspace, rows, self.output_table, self.column_details,
+                             replace_key=replace_key)
 
         return self
 
