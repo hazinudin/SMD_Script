@@ -1736,10 +1736,13 @@ class EventValidation(object):
         no_median = np.isclose(df[median_col], 0)
 
         if type(inn_shwidth_cols) == list:
-            with_shwidth = np.any(~np.isclose(df[inn_shwidth_cols], 0), axis=1)
+            not_zero = np.any(~np.isclose(df[inn_shwidth_cols], 0), axis=1)
+            not_null = np.any(df[inn_shwidth_cols].notnull(), axis=1)
         else:
-            with_shwidth = ~np.isclose(df[inn_shwidth_cols], 0)
+            not_zero = ~np.isclose(df[inn_shwidth_cols], 0)
+            not_null = df[inn_shwidth_cols].notnull()
 
+        with_shwidth = not_null & not_zero
         error_rows = df.loc[no_median & with_shwidth]
         for index, row in error_rows.iterrows():
             route = row[routeid_col]
