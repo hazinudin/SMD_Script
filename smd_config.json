@@ -38,7 +38,8 @@
       "longitude":"STATO_LONG",
       "latitude":"STATO_LAT",
       "median":"MED_WIDTH",
-      "road_type":"ROAD_TYPE"
+      "road_type":"ROAD_TYPE",
+      "length_col":"SEGMENT_LENGTH"
     },
     "balai_table":{
       "prov_code":"BM_PROV_ID",

@@ -40,6 +40,7 @@ if data_year == 2019:
     medwidth = smd_config.table_fields["rni"]["median"]
     road_type = smd_config.table_fields["rni"]["road_type"]
     lane_code = smd_config.table_fields["rni"]["lane_code"]
+    segment_len = smd_config.table_fields["rni"]["length_col"]
 
 elif data_year == 2020:
     rni_table = "SMD.RNI_2020"  # TODO: Don't forget to update this table name.
