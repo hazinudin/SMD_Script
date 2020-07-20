@@ -8,7 +8,7 @@
     "SURVEY_YEAR":{"dtype":"integer"},
     "SURVEY_DATE":{"dtype":"date"},
     "DEFL_LONG":{"dtype":"double", "range":{"upper":141, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}},
-    "DEFL_LAT":{"dtype":"double", "range":{"upper":-11, "lower":6, "eq_lower":true, "eq_upper":true, "review":false}},
+    "DEFL_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}},
     "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "AIR_TEMP":{"dtype":"double", "range":{"upper":40, "lower":20, "eq_upper":true, "eq_lower":true, "review":false}},
     "SURF_TEMP":{"dtype":"double", "range":{"upper":55, "lower":27, "eq_upper":true, "eq_lower":true, "review":false}},
