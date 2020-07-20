@@ -25,7 +25,7 @@
     "lane_code":"LANE_CODE"
   },
   "compare_table":{
-    "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2_COPY",
+    "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
     "route_id":"LINKID",
     "from_measure":"STA_FROM",
     "to_measure":"STA_TO",
