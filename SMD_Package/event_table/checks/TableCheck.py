@@ -751,14 +751,14 @@ class EventValidation(object):
                 more_than_reference = max_to_meas > comparison
                 close_to_reference = np.isclose(max_to_meas, comparison, atol=tolerance)
 
-                if not close_to_reference:
-                    if less_than_reference and (not ignore_end_gap):
-                        # Create an error message
-                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di akhir ruas)'.\
-                            format(route, max_to_meas, comparison)
-                        self.error_list.append(error_message)
-                        self.insert_route_message(route, 'error', error_message)
+                if less_than_reference and (not ignore_end_gap):
+                    # Create an error message
+                    error_message = 'Data survey pada rute {0} adalah {1}, masih lebih pendek daripada panjang datar'.\
+                        format(route, max_to_meas)
+                    self.error_list.append(error_message)
+                    self.insert_route_message(route, 'error', error_message)
 
+                elif not close_to_reference:
                     if more_than_reference and (not ignore_exceed_ref):
                         error_message = 'Rute {0} memiliki panjang yang melebihi data referensi yaitu {1} Km.'.\
                             format(route, max_to_meas)
