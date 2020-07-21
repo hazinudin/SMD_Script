@@ -2508,6 +2508,38 @@ class EventValidation(object):
                 format(route, from_m, to_m)
             self.insert_route_message(route, 'error', msg)
 
+    def col_unique_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO'
+                         , **kwargs):
+        """
+        Checks for column N unique value, if the value exceed one then an error message will be raised.
+        :param column: Column to be checked.
+        :param routes: Route selection.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From Measure column.
+        :param to_m_col: To Measure column.
+        :return:
+        """
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        grouped = df.groupby([routeid_col, from_m_col, to_m_col])
+        nunique = grouped.aggregate({column: 'nunique'}).reset_index()
+        error_row = nunique.loc[(nunique[column] > 1) | (nunique[column] == 0)]
+
+        for index, row in error_row.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            val_count = row[column]
+
+            if val_count > 1:  # Unique value count > 1
+                msg = "Rute {0} pada segmen {1}-{2} memiliki nilai unik yang lebih dari satu pada kolom {3}".\
+                    format(route, from_m, to_m, column)
+            else:  # No unique value detected, all Null.
+                msg = "Rute {0} pada segmen {1}-{2} tidak memiliki nilai {3}".\
+                    format(route, from_m, to_m, column)
+            self.insert_route_message(route, 'error', msg)
+
+        return self
+
     def copy_valid_df(self, dropna=False, ignore=False):
         """
         This function create a valid DataFrame from the dtype check class method, which ensures every column match the

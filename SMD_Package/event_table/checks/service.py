@@ -308,6 +308,8 @@ class RNICheck(TableCheckService):
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(r_shwidth='R_INN_SHWIDTH', l_shwidth='L_INN_SHWIDTH',
                                               routes=valid_routes, **self.kwargs)
+            self.check.col_unique_check('VER_ALIGNMENT', routes=valid_routes, **self.kwargs)
+            self.check.col_unique_check('HOR_ALIGNMENT', routes=valid_routes, **self.kwargs)
 
             for col in [["INN_SHTYPE", "INN_SHWIDTH"],
                         ["OUT_SHTYPE", "OUT_SHWIDTH"],
