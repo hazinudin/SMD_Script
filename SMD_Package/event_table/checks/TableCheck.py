@@ -1356,17 +1356,18 @@ class EventValidation(object):
 
         # The groupped DataFrame by RouteID, FromMeasure, and ToMeasure
         df_groupped = df.groupby(by=[routeid_col, from_m_col, to_m_col]).\
-            agg({lane_codes: ['nunique', 'unique'], median_col: ['sum', 'nunique'], road_type_col: 'unique'}).\
-            reset_index()
+            agg({lane_codes: ['nunique', 'unique'], median_col: ['sum', 'nunique'],
+                 road_type_col: ['unique', 'nunique']}).reset_index()
 
         for index, row in df_groupped.iterrows():
             route = str(row[routeid_col][0])
             from_m = str(row[from_m_col][0])
             to_m = str(row[to_m_col][0])
             road_type_code_list = row[road_type_col]['unique']  # Get the road type list
+            road_type_count = int(row[road_type_col]['nunique'])
 
             # If the road type is more than one in a single segment then give error message
-            if len(road_type_code_list) == 1:
+            if road_type_count == 1:
 
                 road_type_code = str(road_type_code_list[0])  # The road type in string
                 if road_type_code not in road_type_details.keys():
