@@ -1715,14 +1715,15 @@ class EventValidation(object):
 
         return self
 
-    def rni_median_inn_shwidth(self, inn_shwidth_cols, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM',
-                               to_m_col='STA_TO', lane_code='LANE_CODE', median_col='MED_WIDTH', empty_as_null=False,
-                               **kwargs):
+    def rni_median_inn_shwidth(self, r_shwidth, l_shwidth, routes='ALL', routeid_col='LINKID',
+                               from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', median_col='MED_WIDTH',
+                               empty_as_null=False, **kwargs):
         """
         This class method check for consistency between the value of median width and inner shoulder width columns,
         inner shoulder width should only available when the median is also available, otherwise an error message will be
         raised.
-        :param inn_shwidth_cols: The inner shoulder width columns to be checked.
+        :param r_shwidth: Right inner shoulder width column.
+        :param l_shwidth: Left inner shoulder witdth column.
         :param routes: Route selection.
         :param routeid_col: Route ID column.
         :param from_m_col: From measure column.
@@ -1733,25 +1734,51 @@ class EventValidation(object):
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Route selection
-        no_median = np.isclose(df[median_col], 0)
+        grouped = df.groupby([routeid_col, to_m_col, from_m_col])
 
-        if type(inn_shwidth_cols) == list:
-            not_zero = np.any(~np.isclose(df[inn_shwidth_cols], 0), axis=1)
-            not_null = np.any(df[inn_shwidth_cols].notnull(), axis=1)
-        else:
-            not_zero = ~np.isclose(df[inn_shwidth_cols], 0)
-            not_null = df[inn_shwidth_cols].notnull()
+        agg_func = {
+            median_col: (lambda x: x.dropna().values[0]),  # Get the first non N/A value.
+            lane_code: (lambda x: x.str.get(0).nunique()),  # The direction count 1(L or R) or 2 (L and R).
+            r_shwidth: (lambda x: x.dropna().values[0]),
+            l_shwidth: (lambda x: x.dropna().values[0])
+        }
 
-        with_shwidth = not_null & not_zero
-        error_rows = df.loc[no_median & with_shwidth]
+        grouped_val = grouped.aggregate(agg_func).reset_index()
+        no_median = np.isclose(grouped_val[median_col], 0)  # Median equal to zero
+        no_right_sh = np.isclose(grouped_val[r_shwidth], 0)  # Shoulder width equal to zero
+        no_left_sh = np.isclose(grouped_val[l_shwidth], 0)
+
+        # Error type
+        # With median but has no right shoulder OR left shoulder value.
+        # Without median but has right shoulder OR left shoulder value.
+        error_rows = grouped_val.loc[(no_median & (~no_right_sh | ~no_left_sh)) |
+                                     (~no_median & (no_right_sh | no_left_sh))]
+
+        # if type(inn_shwidth_cols) == list:
+        #     not_zero = np.any(~np.isclose(df[inn_shwidth_cols], 0), axis=1)
+        #     not_null = np.any(df[inn_shwidth_cols].notnull(), axis=1)
+        # else:
+        #     not_zero = ~np.isclose(df[inn_shwidth_cols], 0)
+        #     not_null = df[inn_shwidth_cols].notnull()
+        #
+        # with_shwidth = not_null & not_zero
+        # error_rows = df.loc[no_median & with_shwidth]
+
         for index, row in error_rows.iterrows():
             route = row[routeid_col]
             from_m = row[from_m_col]
             to_m = row[to_m_col]
             lane = row[lane_code]
+            median_val = row[median_col]
+            zero_median = np.isclose(median_val, 0)
 
-            msg = "Rute {0} pada segmen {1}-{2} di jalur {3} tidak memiliki median namun memiliki nilai {4}.".\
-                format(route, from_m, to_m, lane, inn_shwidth_cols)
+            if zero_median:
+                msg = "Rute {0} pada segmen {1}-{2} tidak memiliki median namun memiliki nilai {3} atau {4}.".\
+                    format(route, from_m, to_m, r_shwidth, l_shwidth)
+            else:
+                msg = "Rute {0} pada segmen {1}-{2} memiliki median namun tidak memiliki nilai {3} atau {4}.".\
+                    format(route, from_m, to_m, r_shwidth, l_shwidth)
+
             self.insert_route_message(route, 'error', msg)
 
         return self
