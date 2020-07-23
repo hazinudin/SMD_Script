@@ -438,3 +438,21 @@ class DeflectionCheck(TableCheckService):
 
             self.write_to_table(None)
             self.return_all_message()
+
+
+class ReviewToGDB(TableCheckService):
+    """
+    Class used for writing review results to GDB, does not include any table check method.
+    """
+    def __init__(self, trim_to, data_type, **kwargs):
+        super(ReviewToGDB, self).__init__(**kwargs)
+
+        if self.initial_check_passed:
+            self.check.route_domain(self.kode_balai, self.route_list)
+            self.check.route_selection(selection=self.route_req)
+
+            if data_type == 'RNI':
+                self.delete_non_rni(**kwargs)
+
+            self.write_to_table(trim_to)
+            self.return_all_message()

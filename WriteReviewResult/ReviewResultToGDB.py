@@ -1,115 +1,68 @@
+from SMD_Package import input_json_check, output_message
+from SMD_Package.event_table.checks.service import ReviewToGDB
+from arcpy import GetParameterAsText, SetParameterAsText
 import sys
-sys.path.append('E:/SMD_Script')
-from SMD_Package import gdb_table_writer, read_input_excel, input_json_check, output_message, convert_and_trim
-from SMD_Package.event_table.measurement.adjustment import Adjust
-from arcpy import GetParameterAsText, env, SetParameterAsText, AddMessage
-import numpy as np
-import json
-import os
-
-os.chdir('E:/SMD_Script')
-
-
-def load_config_data(config_file_path):
-    """
-    This function will load the specified JSON configuration file.
-    :param config_file_path: The JSON configuration file path.
-    :return: Dictionary object
-    """
-
-    with open(config_file_path) as config_f:
-        config_dict = json.load(config_f)
-
-    return config_dict
-
-
-# Load the SMD config JSON file
-smd_config = load_config_data('smd_config.json')
-
-# The smd config JSON details
-LrsNetwork = smd_config['table_names']['lrs_network']
-LrsNetworkRID = smd_config['table_fields']['lrs_network']['route_id']
-dbConnection = smd_config['smd_database']['instance']
 
 # Get GeoProcessing input parameter
-inputJSON = GetParameterAsText(0)
+input_json = GetParameterAsText(0)
 
 # Load the input JSON
-InputDetails = input_json_check(inputJSON, 1, req_keys=['file_name', 'routes', 'data', 'year'])
-TablePath = InputDetails["file_name"]
-Routes = InputDetails["routes"]
-DataType = InputDetails["data"]
-DataYear = InputDetails["year"]
-DataSemester = InputDetails.get("semester")
+input_details = input_json_check(input_json, 1, req_keys=['file_name', 'routes', 'data', 'year', 'balai'])
+data_type = input_details["data"]
+data_year = input_details["year"]
+data_semester = input_details.get("semester")
+trim_to = 'RNI'
+input_details['semester_data'] = False
+input_details['year_sem_check'] = False
 
-# The input Event Table Columns
-inputRouteID = 'LINKID'
-inputFromM = 'STA_FROM'
-inputToM = 'STA_TO'
-inputLaneCode = 'LANE_CODE'
+if str(data_type) == "RNI":  # If the data is IRI/Roughness
+    data_config = 'RNICheck/rni_config_2020.json'
+    output_table = "SMD.RNI" + str(data_year)
+    trim_to = 'LRS'
 
-# Load the excel file as an DataFrame
-try:
-    InputDF = read_input_excel(TablePath)  # Read the excel file
-except IOError:  # If the file path is invalid
-    SetParameterAsText(1, output_message("Failed", "Invalid file directory or invalid file name"))  # Throw an error message
-    sys.exit(0)  # Stop the script
-if InputDF is None:  # If the file format is not .xlsx
-    SetParameterAsText(1, output_message("Failed", "File is not in .xlsx format"))
-    sys.exit(0)  # Stop the script
+    rni_kwargs = {
+        'roughness_table': "SMD.ROUGHNESS_2_2020",
+        'pci_table': "SMD.PCI_2020",
+        'rtc_table': "SMD.RTC_2020",
+        'fwd_table': "SMD.FWD_2020",
+        'lwd_table': "SMD.LWD_2020",
+        'bb_table': "SMD.BB_2020"
+    }
+    input_details.update(rni_kwargs)
 
-# Check if the specified route is in the input table
-if type(Routes) is not list:  # Check if the inputted routes is a list
-    message = "Inputted Routes should be in array"
-    SetParameterAsText(1, message)
-    sys.exit(0)
-if type(Routes) is list:  # If the inputted routes is a list
-    df_routes = InputDF[inputRouteID]  # Available routes in the input table
-    mask = np.in1d(Routes, df_routes)  # Masking for input route array
-    invalid_route = np.array(Routes)[~mask]  # All the route which does not exist in input table
-    if len(invalid_route) != 0:  # There is an invalid route
-        message = "Rute {0} tidak terdapat pada table excel".format(invalid_route)
-        SetParameterAsText(1, output_message("Failed", message))
-        sys.exit(0)  # Stop the script
+elif str(data_type) == "IRI":  # If the data is RNI
+    data_config = 'RoughnessCheck/roughness_config_2020.json'
+    output_table = "SMD.ROUGHNESS" + str(data_semester) + "_" + str(data_year)
+    input_details['semester_data'] = True
 
-# Determine the output table based on the specified data type
-adjust = Adjust(InputDF, inputRouteID, inputFromM, inputToM, inputLaneCode)
-if str(DataType) == "RNI":  # If the data is IRI/Roughness
-    data_config = load_config_data('RNICheck/rni_config_2020.json')
-    OutputGDBTable = "SMD.RNI"+str(DataYear)
+elif str(data_type) == "PCI":  # If the data is RNI
+    data_config = 'PCICheck/pci_config_2020.json'
+    output_table = "SMD.PCI" + str(data_year)
 
-elif str(DataType) == "IRI":  # If the data is RNI
-    data_config = load_config_data('RoughnessCheck/roughness_config_2020.json')
-    OutputGDBTable = "SMD.ROUGHNESS"+str(DataSemester)+"_"+str(DataYear)
-    adjust.trim_to_reference(fit_to='RNI')
+elif str(data_type) == "RTC":  # If the data is RNI
+    data_config = 'RTCCheck/rtc_config_2020.json'
+    output_table = "SMD.RTC" + str(data_year)
 
-elif str(DataType) == "PCI":  # If the data is RNI
-    data_config = load_config_data('PCICheck/pci_config_2020.json')
-    OutputGDBTable = "SMD.PCI"+str(DataYear)
+elif str(data_type) == "FWD":  # If the data is RNI
+    data_config = 'FWDCheck/fwd_config_2020.json'
+    output_table = "SMD.FWD" + str(data_year)
+    trim_to = None
 
-elif str(DataType) == "RTC":  # If the data is RNI
-    data_config = load_config_data('RTCCheck/rtc_config_2020.json')
-    OutputGDBTable = "SMD.RTC"+str(DataYear)
+elif str(data_type) == "LWD":  # If the data is RNI
+    data_config = 'LWDCheck/lwd_config_2020.json'
+    output_table = "SMD.LWD" + str(data_year)
+    trim_to = None
 
-elif str(DataType) == "FWD":  # If the data is RNI
-    data_config = load_config_data('FWDCheck/fwd_config_2020.json')
-    OutputGDBTable = "SMD.FWD"+str(DataYear)
-
-elif str(DataType) == "LWD":  # If the data is RNI
-    data_config = load_config_data('LWDCheck/lwd_config_2020.json')
-    OutputGDBTable = "SMD.LWD"+str(DataYear)
-
-elif str(DataType) == "BB":  # If the data is RNI
-    data_config = load_config_data('BBCheck/bb_config_2020.json')
-    OutputGDBTable = "SMD.BB"+str(DataYear)
-
+elif str(data_type) == "BB":  # If the data is RNI
+    data_config = 'BBCheck/bb_config_2020.json'
+    output_table = "SMD.BB" + str(data_year)
+    trim_to = None
 
 else:  # If other than that, the process will be terminated with an error message.
-    message = 'Data type {0} is not supported'.format(DataType)
+    message = 'Data type {0} is not supported'.format(data_type)
     SetParameterAsText(1, output_message("Failed", message))
     sys.exit(0)
 
-# Start writing the input table to GDB
-ColumnDetails = data_config['column_details']
-gdb_table_writer(dbConnection, adjust.df, OutputGDBTable, ColumnDetails)
-SetParameterAsText(1, output_message("Succeeded", ""))
+ReviewToGDB(input_json=input_json, config_path=data_config, output_table=output_table, output_index=1,
+            trim_to=trim_to, data_type=data_type, **input_details)
+
