@@ -2289,7 +2289,7 @@ class EventValidation(object):
             agg({"DIR_COUNT": lambda x: x.nunique()})
         dir_count_df = segment_group.reset_index()
 
-        df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col])  # Add direction count for every segment.
+        df = df.merge(dir_count_df, on=[routeid_col, from_m_col, to_m_col], right_index=True)  # Add direction count for every segment.
 
         if type(columns) != list:  # Force columns variable as list type.
             columns = [columns]
