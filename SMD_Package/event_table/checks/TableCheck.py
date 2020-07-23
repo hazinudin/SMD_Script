@@ -1735,7 +1735,10 @@ class EventValidation(object):
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)  # Route selection
-        grouped = df.groupby([routeid_col, to_m_col, from_m_col])
+        filtered = df.groupby([routeid_col, to_m_col, from_m_col]).filter(lambda x: np.any(x[r_shwidth].notnull()) &
+                                                                                    np.any(x[l_shwidth].notnull()) &
+                                                                                    np.any(x[median_col].notnull()))
+        grouped = filtered.groupby([routeid_col, to_m_col, from_m_col])
 
         agg_func = {
             median_col: (lambda x: x.dropna().values[0]),  # Get the first non N/A value.
