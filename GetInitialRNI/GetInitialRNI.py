@@ -74,6 +74,12 @@ if __name__ == '__main__':
     m_conversion = 1  # Used for converting M-Value.
     rni_df[[from_m, to_m]] = rni_df[[from_m, to_m]].apply(lambda x: x/m_conversion, axis=1)
     rni_df[[routeid_col, lane_code]] = rni_df[[routeid_col, lane_code]].astype(str)
+
+    # Calculate the segment len if the segment length is Null
+    null_segment_len = rni_df[segment_len].isnull().index
+    rni_df.loc[null_segment_len, [segment_len]] = rni_df[to_m]-rni_df[from_m]
+    rni_df.loc[null_segment_len, [segment_len]] = rni_df[segment_len]/(100/m_conversion)
+
     output_j = rni_df.to_dict(orient='records')
     SetParameterAsText(1, output_j)
     print len(rni_df)
