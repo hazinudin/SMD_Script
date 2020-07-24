@@ -275,7 +275,7 @@ class FindCoordinateError(object):
                 other_meas_diff[lane] = m_diff
 
             # If any lane exceeds threshold
-            if (np.any(np.array([other_dist[x] for x in other_dist]) > width)) or \
+            if (np.any(np.array([other_dist[x] for x in other_dist]) > (width + m_threshold))) or \
                (np.any(np.array([other_meas_diff[x] for x in other_meas_diff]) > m_threshold)):
                 msg = "Rute {0} pada segmen {1}-{2} lajur {9} memiliki koordinat dengan jarak lebih dari lebar ruas ({3}m) terhadap {4} yaitu({6}) atau memiliki selisih nilai pengukuran yang melebihi ({5}m) terhadap {4} yaitu ({7}, referensi = {8})".\
                     format(self.route, group[0], group[1], width, ref, m_threshold, other_dist, other_meas_diff,
