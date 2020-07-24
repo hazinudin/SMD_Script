@@ -329,7 +329,9 @@ class FindCoordinateError(object):
 
         for group in groups:
             indexes = groups[group]  # Group index
-            group_df = self.df.loc[indexes]  # Group rows
+            group_df = self.df.loc[indexes, [self.routeid, self.from_m_col,
+                                             self.to_m_col, self.lane_code_col,
+                                             segment_len_col, measure_col]]  # Group rows
             group_df.sort_values(self.from_m_col, inplace=True)
             group_df['_diff'] = group_df[measure_col].diff()
             group_df[segment_len_col] = group_df[segment_len_col]*1000  # Convert segment length to meters
