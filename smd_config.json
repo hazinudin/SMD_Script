@@ -14,7 +14,7 @@
     "lrs_network":"ELRS.Road_Network_RI",
     "balai_table":"ELRS.map_balai_prov",
     "balai_route_table":"ELRS.map_balai_route",
-    "rni": "SMD.RNI_2019_RERUN_2",
+    "rni": "SMD.RNI_2020",
     "satker_route_table":"ELRS.map_satker_route",
     "satker_ppk_table":"ELRS.map_satker_ppk",
     "ppk_route_table":"ELRS.map_ppk_route"
@@ -31,12 +31,12 @@
     "rni":{
       "route_id":"LINKID",
       "lane_code":"LANE_CODE",
-      "from_measure":"STA_FROM",
-      "to_measure":"STA_TO",
+      "from_measure":"FROM_STA",
+      "to_measure":"TO_STA",
       "surface_type":"SURF_TYPE",
       "lane_width":"LANE_WIDTH",
-      "longitude":"STATO_LONG",
-      "latitude":"STATO_LAT",
+      "longitude":"TO_STA_LONG",
+      "latitude":"TO_STA_LAT",
       "median":"MED_WIDTH",
       "road_type":"ROAD_TYPE",
       "length_col":"SEGMENT_LENGTH"
