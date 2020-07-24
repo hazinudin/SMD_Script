@@ -24,7 +24,7 @@
       "route_id":"LINKID",
       "route_name":"LINK_NAME",
       "prov_code":"BM_PROV_ID",
-      "lintas":null,
+      "lintas":"CITY_REGENCY",
       "from_date":"FROMDATE",
       "to_date":"TODATE"
     },

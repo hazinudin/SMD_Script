@@ -17,6 +17,8 @@ class LRSShapeFile(object):
         self.lrs_routeid = smd_config.table_fields['lrs_network']['route_id']
         self.lrs_routename = smd_config.table_fields['lrs_network']['route_name']
         self.lrs_lintas = smd_config.table_fields['lrs_network']['lintas']
+        self.lrs_from_date = smd_config.table_fields['lrs_network']['from_date']
+        self.lrs_to_date = smd_config.table_fields['lrs_network']['to_date']
 
         self.outpath = outpath
         self.spatial_reference = Describe(self.lrs_network).spatialReference
@@ -35,7 +37,7 @@ class LRSShapeFile(object):
     @property
     def da_cursor(self):
         date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)".\
-            format("FROMDATE", "TODATE")
+            format(self.lrs_from_date, self.lrs_to_date)
         where_statement = "({0} IN ({1}))".format(self.lrs_routeid, self.route_list_sql)
 
         cursor = da.SearchCursor(self.lrs_network, ['SHAPE@', self.lrs_routeid, self.lrs_routename, self.lrs_lintas],
