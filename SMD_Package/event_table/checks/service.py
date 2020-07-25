@@ -292,7 +292,7 @@ class RNICheck(TableCheckService):
         super(RNICheck, self).__init__(**kwargs)
 
         road_type_details = self.data_config.roadtype_details  # RNI road type details from data config file.
-        compare_fc = self.smd_config.table_names['rni']
+        compare_fc = self.data_config.compare_table['table_name']
 
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
@@ -326,7 +326,8 @@ class RNICheck(TableCheckService):
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
-                self.check.rni_compare_surftype(routes=valid_routes, **self.kwargs)
+                self.check.rni_compare_surftype(routes=valid_routes,kwargs_comparison=self.data_config.compare_table,
+                                                **self.kwargs)
 
             # REVIEW
             if len(self.check.no_error_route) != 0:

@@ -1560,7 +1560,8 @@ class EventValidation(object):
         rni_df = event_fc_to_df(rni_table, rni_search_field, routes, rni_routeid, self.sde_connection, is_table=True)
 
     def rni_compare_surftype(self, routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO',
-                             surftype_col='SURF_TYPE', lane_code='LANE_CODE', routes='ALL', **kwargs):
+                             surftype_col='SURF_TYPE', lane_code='LANE_CODE', routes='ALL',
+                             kwargs_comparison=None, **kwargs):
         """
         This class method will compare the surface type length of a route to previous year data. If there is a
         difference in the surface type length of a route, then an error message will be written.
@@ -1586,7 +1587,7 @@ class EventValidation(object):
             df_route = self.selected_route_df(df, route)  # The input selected route DataFrame
             df_route = df_route[[routeid_col, from_m_col, to_m_col, surftype_col, lane_code]]
             merged = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
-                                  surftype_col, 'outer')
+                                  surftype_col, 'outer', kwargs_comparison=kwargs_comparison)
             merged.dropna(inplace=True)
 
             input_surftype = surftype_col + '_x'  # The surface type column for input and ref after merge
