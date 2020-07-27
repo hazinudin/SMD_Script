@@ -278,7 +278,8 @@ class RoughnessCheck(TableCheckService):
             # REVIEW
             if len(self.check.no_error_route) != 0:
                 self.check.compare_kemantapan('IRI', compare_fc, comp_from_m, comp_to_m, comp_routeid, comp_lane_code,
-                                              comp_iri, routes=self.check.no_error_route, **self.kwargs)
+                                              comp_iri, routes=self.check.no_error_route,
+                                              rni_comp_kwargs=self.data_config.rni_compare_table, **self.kwargs)
 
             self.write_to_table('RNI')  # Write passed routes to GDB
             self.return_all_message()

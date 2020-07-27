@@ -2097,7 +2097,8 @@ class EventValidation(object):
 
     def compare_kemantapan(self, grading_col, comp_fc, comp_from_col, comp_to_col, comp_route_col, comp_lane_code,
                            comp_grading_col, routes='ALL', routeid_col='LINKID', lane_codes='LANE_CODE',
-                           from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage = True, **kwargs):
+                           from_m_col='STA_FROM', to_m_col='STA_TO', threshold=0.05, percentage=True,
+                           rni_comp_kwargs=None, **kwargs):
         """
         This class method will compare the Kemantapan between the inputted data and previous year data, if the
         difference exceed the 5% absolute tolerance then the data will undergo further inspection.
@@ -2144,12 +2145,18 @@ class EventValidation(object):
             # Create Kemantapan instance for both input data and comparison data.
             kemantapan = Kemantapan(df_route, grading_col, routeid_col, from_m_col, to_m_col, lane_codes,
                                     lane_based=True)
-            kemantapan_compare = Kemantapan(df_comp, comp_grading_col, comp_route_col, comp_from_col,
-                                            comp_to_col, comp_lane_code, lane_based=True, to_km_factor=1)
+
+            if rni_comp_kwargs is None:
+                kemantapan_compare = Kemantapan(df_comp, comp_grading_col, comp_route_col, comp_from_col,
+                                                comp_to_col, comp_lane_code, lane_based=True, to_km_factor=1)
+            else:
+                kemantapan_compare = Kemantapan(df_comp, comp_grading_col, comp_route_col, comp_from_col,
+                                                comp_to_col, comp_lane_code, lane_based=True, to_km_factor=1,
+                                                **rni_comp_kwargs)
 
             if percentage:  # If the comparison is not lane based
-                current = kemantapan.mantap_percent.at['mantap', '_len']
-                compare = kemantapan_compare.mantap_percent.at['mantap', '_len']
+                current = kemantapan.summary()['mantap_km'].values[0]
+                compare = kemantapan_compare.summary()['mantap_km'].values[0]
 
                 # Compare the kemantapan percentage between current data and previous data
                 if np.isclose(compare, current, atol=(compare*threshold)):
@@ -2175,10 +2182,10 @@ class EventValidation(object):
                 merge_lane = merge.loc[merge[lane_codes] == lane]
                 merge_lane.sort_values(from_m_col, inplace=True)  # Sort the lane rows
                 diff_col = '_level_diff'
-                grade_diff = -2
+                grade_diff = 2
                 merge_lane[diff_col] = merge_lane['_grade_level_x'].astype(int) - \
                                        merge_lane['_grade_level_y'].astype(int)
-                error_rows = merge_lane.loc[merge_lane[diff_col] <= grade_diff]
+                error_rows = merge_lane.loc[merge_lane[diff_col] >= grade_diff]
                 runs = find_runs(error_rows, 5)
 
                 # Iterate over all error rows
