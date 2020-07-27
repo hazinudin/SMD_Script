@@ -670,7 +670,7 @@ class EventValidation(object):
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
                           routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False,
-                          ignore_exceed_ref=False, start_at_zero=True, tolerance=0.001, end_only=False, **kwargs):
+                          ignore_exceed_ref=False, start_at_zero=True, tolerance=0.01, end_only=False, **kwargs):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -747,23 +747,24 @@ class EventValidation(object):
             if comparison is None:
                 pass
             else:
-                less_than_reference = max_to_meas < comparison
-                more_than_reference = max_to_meas > comparison
-                close_to_reference = np.isclose(max_to_meas, comparison, atol=tolerance)
+                round_comp = np.round(comparison, decimals=1)
+                less_than_reference = max_to_meas < round_comp
+                more_than_reference = max_to_meas > round_comp
+                close_to_reference = np.isclose(max_to_meas, round_comp, atol=tolerance)
 
-                if less_than_reference and (not ignore_end_gap):
-                    if compare_to == 'LRS':
-                        # Create an error message
-                        msg = 'Data survey pada rute {0} adalah {1}, masih lebih pendek daripada panjang datar'.\
-                            format(route, max_to_meas)
-                    else:
-                        msg = "Tidak ditemukan data survey pada rute {0} dari km {1} hingga {2}. (Terdapat gap di akhir ruas).".\
-                            format(route, max_to_meas, comparison)
-                    self.error_list.append(msg)
-                    self.insert_route_message(route, 'error', msg)
+                if not close_to_reference:
+                    if less_than_reference and (not ignore_end_gap):
+                        if compare_to == 'LRS':
+                            # Create an error message
+                            msg = 'Data survey pada rute {0} adalah {1}, masih lebih pendek daripada panjang datar'.\
+                                format(route, max_to_meas)
+                        else:
+                            msg = "Tidak ditemukan data survey pada rute {0} dari km {1} hingga {2}. (Terdapat gap di akhir ruas).".\
+                                format(route, max_to_meas, comparison)
+                        self.error_list.append(msg)
+                        self.insert_route_message(route, 'error', msg)
 
-                elif not close_to_reference:
-                    if more_than_reference and (not ignore_exceed_ref):
+                    elif more_than_reference and (not ignore_exceed_ref):
                         msg = 'Rute {0} memiliki panjang yang melebihi data referensi yaitu {1} Km.'.\
                             format(route, max_to_meas)
                         self.insert_route_message(route, 'error', msg)
