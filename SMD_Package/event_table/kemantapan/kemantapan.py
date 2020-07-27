@@ -9,7 +9,7 @@ import os
 
 class Kemantapan(object):
     def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='IRI',
-                 lane_based=False, rni_mfactor=1, to_km_factor=0.01, agg_method='mean'):
+                 lane_based=False, rni_mfactor=1, to_km_factor=0.01, agg_method='mean', **kwargs):
         """
         Initialize the Kemantapan class for grading kemantapan value
         :param df_event: The DataFrame for the input table.
@@ -45,21 +45,26 @@ class Kemantapan(object):
         rni_to_col = SMDConfigs().table_fields['rni']['to_measure']
         rni_lane_code = SMDConfigs().table_fields['rni']['lane_code']
         surftype_col = SMDConfigs().table_fields['rni']['surface_type']
-        rni_request_cols = [rni_route_col, rni_from_col, rni_to_col, rni_lane_code, surftype_col]
-        input_routes = df_event[route_col].unique().tolist()
 
-        df_rni = event_fc_to_df(rni_table, rni_request_cols, input_routes, rni_route_col, env.workspace, True)
-        df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*rni_mfactor).round(1).astype(int)  # Convert the RNI measurement
-        df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*rni_mfactor).round(1).astype(int)
-
-        self.df_rni = df_rni
+        self.rni_table = rni_table
         self.rni_route_col = rni_route_col
         self.rni_from_col = rni_from_col
         self.rni_to_col = rni_to_col
+        self.rni_lane_code = rni_lane_code
         self.surftype_col = surftype_col
         self.grading_col = grading_col
         self.route_col = route_col
 
+        self.__dict__.update(kwargs)
+
+        rni_request_cols = [self.rni_route_col, self.rni_from_col, self.rni_to_col, self.rni_lane_code, self.surftype_col]
+        input_routes = df_event[route_col].unique().tolist()
+
+        df_rni = event_fc_to_df(self.rni_table, rni_request_cols, input_routes, self.rni_route_col, env.workspace, True)
+        df_rni[self.rni_from_col] = pd.Series(df_rni[self.rni_from_col]*rni_mfactor).round(1).astype(int)  # Convert the RNI measurement
+        df_rni[self.rni_to_col] = pd.Series(df_rni[self.rni_to_col]*rni_mfactor).round(1).astype(int)
+
+        self.df_rni = df_rni
         self.group_details = self.group_details()
         self.group_details_df = self.group_details_df()
         self.lane_based = lane_based
@@ -68,8 +73,8 @@ class Kemantapan(object):
 
         # The input and RNI DataFrame merge result
         merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
-                                       rni_route_col, rni_from_col, rni_to_col, surftype_col, lane_based,
-                                       match_only=False, lane_code=lane_code, rni_lane_code=rni_lane_code,
+                                       self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col, lane_based,
+                                       match_only=False, lane_code=lane_code, rni_lane_code=self.rni_lane_code,
                                        agg_method=agg_method)
         self.merged_df = merge_df
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
