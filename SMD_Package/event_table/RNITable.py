@@ -5,7 +5,7 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 
 
 def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connection, added_column=None, how='inner',
-                 kwargs_comparison=None, mfactor=1, agg_func=None):
+                 rni_kwargs=None, mfactor=1, agg_func=None):
     """
     This functions perform a merge operation between the inputted DataFrame with RNI DataFrame to add requested RNI'
     column to the inputted DataFrame.
@@ -24,11 +24,21 @@ def add_rni_data(df, routeid_col, from_m_col, to_m_col, lane_code_col, connectio
     """
 
     smd_config = SMDConfigs()  # Load the SMD config JSON.
-    rni_table = kwargs_comparison.get('table_name')
-    rni_routeid = kwargs_comparison.get('route_id')
-    rni_from_m = kwargs_comparison.get('from_measure')
-    rni_to_m = kwargs_comparison.get('to_measure')
-    rni_lane_code = kwargs_comparison.get('lane_code')
+
+    if rni_kwargs is None:
+        rni_table = smd_config.table_names['rni']
+        rni_fields = smd_config.table_fields['rni']
+
+        rni_routeid = rni_fields['route_id']
+        rni_from_m = rni_fields['from_measure']
+        rni_to_m = rni_fields['to_measure']
+        rni_lane_code = rni_fields['lane_code']
+    else:
+        rni_table = rni_kwargs.get('table_name')
+        rni_routeid = rni_kwargs.get('route_id')
+        rni_from_m = rni_kwargs.get('from_measure')
+        rni_to_m = rni_kwargs.get('to_measure')
+        rni_lane_code = rni_kwargs.get('lane_code')
 
     if type(added_column) == list:  # Make sure the added column is a list variable.
         pass

@@ -1587,7 +1587,7 @@ class EventValidation(object):
             df_route = self.selected_route_df(df, route)  # The input selected route DataFrame
             df_route = df_route[[routeid_col, from_m_col, to_m_col, surftype_col, lane_code]]
             merged = add_rni_data(df_route, routeid_col, from_m_col, to_m_col, lane_code, self.sde_connection,
-                                  surftype_col, 'outer', kwargs_comparison=kwargs_comparison)
+                                  surftype_col, 'outer', rni_kwargs=kwargs_comparison)
             merged.dropna(inplace=True)
 
             input_surftype = surftype_col + '_x'  # The surface type column for input and ref after merge
