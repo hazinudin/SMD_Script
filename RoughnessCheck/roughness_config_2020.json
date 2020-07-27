@@ -33,5 +33,13 @@
     "iri":"IRI_POK",
     "long_col":"STATO_LONG",
     "lat_col":"STATO_LAT"
+  },
+  "rni_compare_table":{
+    "rni_table": "SMD.RNI_2019_RERUN_2",
+    "rni_route_col": "LINKID",
+    "rni_from_col": "STA_FROM",
+    "rni_to_col": "STA_TO",
+    "rni_lane_code": "LANE_CODE",
+    "surftype_col": "SURF_TYPE"
   }
 }
