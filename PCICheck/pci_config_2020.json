@@ -74,7 +74,7 @@
   "asphalt_columns":["ALG_CRACK", "LONG_CRACK", "OTHER_CRACK", "POTHOLE", "PATCHING", "RUTTING", "CORRUGATION", "DEPRESSION", "RAVELING", "BLEEDING", "SH_DROPOFF"],
   "rigid_columns":["COBREAK", "DIV_SLAB", "FAULTING", "LINE_CRACK", "PUNCH_OUT", "SHRINKAGE", "PUMPING", "COSPALLING", "JSPALLING", "JSEAL", "PATCHING", "SH_DROPOFF"],
   "compare_table":{
-    "table_name":"SMD.PCI_2019_RERUN_2",
+    "table_name":"SMD.PCI_2019_RERUN2",
     "route_id":"LINKID",
     "from_measure":"STA_FROM",
     "to_measure":"STA_TO",
