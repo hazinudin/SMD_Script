@@ -327,12 +327,10 @@ class RNICheck(TableCheckService):
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
-                self.check.rni_compare_surftype(routes=valid_routes,kwargs_comparison=self.data_config.compare_table,
-                                                **self.kwargs)
 
             # REVIEW
-            if len(self.check.no_error_route) != 0:
-                self.check.rni_compare_surftype(routes=self.check.no_error_route, **self.kwargs)
+            self.check.rni_compare_surftype(routes=valid_routes, kwargs_comparison=self.data_config.compare_table,
+                                            **self.kwargs)
 
             self.write_to_table()  # Write passed routes to GDB
             self.delete_non_rni(**kwargs)
