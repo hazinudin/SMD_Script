@@ -669,8 +669,9 @@ class EventValidation(object):
         return self
 
     def measurement_check(self, routes='ALL', from_m_col='STA_FROM', to_m_col='STA_TO',
-                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', ignore_end_gap=False,
-                          ignore_exceed_ref=False, start_at_zero=True, tolerance=0.01, end_only=False, **kwargs):
+                          routeid_col='LINKID', lane_code='LANE_CODE', compare_to='RNI', length_col='SEGMENT_LENGTH',
+                          ignore_end_gap=False, ignore_exceed_ref=False, start_at_zero=True, tolerance=0.01,
+                          end_only=False, max_m='to_m', **kwargs):
         """
         This function checks all event segment measurement value (from and to) for gaps, uneven increment, and final
         measurement should match the route M-value where the event is assigned to.
@@ -704,7 +705,7 @@ class EventValidation(object):
         # Iterate over valid row in the input table
         for route in df[routeid_col].unique().tolist():
             # Create a route DataFrame
-            df_route = df.loc[df[routeid_col] == route, [routeid_col, from_m_col, to_m_col, lane_code]]
+            df_route = df.loc[df[routeid_col] == route, [routeid_col, from_m_col, to_m_col, lane_code, length_col]]
 
             if lane_code is not None:
                 df_groupped = df_route.groupby(by=groupby_cols)[lane_code].unique().\
@@ -717,7 +718,13 @@ class EventValidation(object):
             df_groupped.reset_index(drop=True)
 
             max_to_ind = df_groupped[to_m_col].idxmax()  # The index of segment with largest To Measure
-            max_to_meas = float(df_groupped.at[max_to_ind, to_m_col]) / 100  # The largest To Measure value
+            if max_m == 'to_m':
+                max_to_meas = float(df_groupped.at[max_to_ind, to_m_col]) / 100  # The largest To Measure value
+            elif max_m == 'segment_len':
+                pivot = df_route.pivot_table(length_col, None, lane_code, 'sum')
+                max_to_meas = pivot.max()
+            else:
+                raise TypeError('max_m parameter "{0}" is not valid.'.format(max_m))
 
             min_from_ind = df_groupped[from_m_col].idxmin()  # The index of segment with smallest From Measure
             min_from_meas = float(df_groupped.at[min_from_ind, from_m_col]) / 100  # The smallest From Measure value
