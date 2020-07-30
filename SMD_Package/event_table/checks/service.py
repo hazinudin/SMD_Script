@@ -289,7 +289,7 @@ class RNICheck(TableCheckService):
     """
     Class used for RNI table check service.
     """
-    def __init__(self, force_write, **kwargs):
+    def __init__(self, force_write, wipe_other=True, **kwargs):
         super(RNICheck, self).__init__(**kwargs)
 
         road_type_details = self.data_config.roadtype_details  # RNI road type details from data config file.
