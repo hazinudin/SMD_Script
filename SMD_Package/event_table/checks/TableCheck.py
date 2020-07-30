@@ -1598,6 +1598,9 @@ class EventValidation(object):
                                   surftype_col, 'outer', rni_kwargs=kwargs_comparison)
             merged.dropna(inplace=True)
 
+            if merged.empty:  # If the merged resulting empty DataFrame then continue.
+                continue
+
             input_surftype = surftype_col + '_x'  # The surface type column for input and ref after merge
             ref_surftype = surftype_col + '_y'
 
