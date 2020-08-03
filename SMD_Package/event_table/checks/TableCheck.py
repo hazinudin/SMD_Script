@@ -754,7 +754,7 @@ class EventValidation(object):
             if comparison is None:
                 pass
             else:
-                round_comp = np.round(comparison, decimals=1)
+                round_comp = np.round(comparison, decimals=2)
                 less_than_reference = max_to_meas < round_comp
                 more_than_reference = max_to_meas > round_comp
                 close_to_reference = np.isclose(max_to_meas, round_comp, atol=tolerance)
