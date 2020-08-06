@@ -68,11 +68,15 @@ def distance_series(latitude, longitude, route_geom, projections='4326', from_m=
 
 
 def to_polyline(dataframe, sorting_col, long_col, lat_col, to_m_col, lane_col='LANE_CODE', projections='4326',
-                to_meters=10, ref_lane='L1'):
+                to_meters=10, ref_lane='L1', second_ref='R1'):
     if dataframe.empty:
         return None
     else:
         ref_data = dataframe.loc[dataframe[lane_col] == ref_lane]  # Only select referenced lane
+
+        if ref_data.empty:
+            ref_data = dataframe.loc[dataframe[lane_col] == second_ref]  # If the ref lane does not exist
+
         ref_data.sort_values(by=sorting_col, inplace=True)
         ref_data['Point'] = ref_data.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]*to_meters), axis=1)
         coord_array = ref_data['Point'].values.tolist()
