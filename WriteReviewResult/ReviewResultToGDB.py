@@ -17,7 +17,7 @@ input_details['year_sem_check'] = False
 
 if str(data_type) == "RNI":  # If the data is IRI/Roughness
     data_config = 'RNICheck/rni_config_2020.json'
-    output_table = "SMD.RNI" + str(data_year)
+    output_table = "SMD.RNI_" + str(data_year)
     trim_to = 'LRS'
 
     rni_kwargs = {
@@ -37,25 +37,25 @@ elif str(data_type) == "IRI":  # If the data is RNI
 
 elif str(data_type) == "PCI":  # If the data is RNI
     data_config = 'PCICheck/pci_config_2020.json'
-    output_table = "SMD.PCI" + str(data_year)
+    output_table = "SMD.PCI_" + str(data_year)
 
 elif str(data_type) == "RTC":  # If the data is RNI
     data_config = 'RTCCheck/rtc_config_2020.json'
-    output_table = "SMD.RTC" + str(data_year)
+    output_table = "SMD.RTC_" + str(data_year)
 
 elif str(data_type) == "FWD":  # If the data is RNI
     data_config = 'FWDCheck/fwd_config_2020.json'
-    output_table = "SMD.FWD" + str(data_year)
+    output_table = "SMD.FWD_" + str(data_year)
     trim_to = None
 
 elif str(data_type) == "LWD":  # If the data is RNI
     data_config = 'LWDCheck/lwd_config_2020.json'
-    output_table = "SMD.LWD" + str(data_year)
+    output_table = "SMD.LWD_" + str(data_year)
     trim_to = None
 
 elif str(data_type) == "BB":  # If the data is RNI
     data_config = 'BBCheck/bb_config_2020.json'
-    output_table = "SMD.BB" + str(data_year)
+    output_table = "SMD.BB_" + str(data_year)
     trim_to = None
 
 else:  # If other than that, the process will be terminated with an error message.
