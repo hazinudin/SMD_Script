@@ -18,7 +18,7 @@ input_details['year_sem_check'] = False
 if str(data_type) == "RNI":  # If the data is IRI/Roughness
     data_config = 'RNICheck/rni_config_2020.json'
     output_table = "SMD.RNI_" + str(data_year)
-    trim_to = 'LRS'
+    trim_to = None
 
     rni_kwargs = {
         'roughness_table': "SMD.ROUGHNESS_2_2020",
