@@ -7,7 +7,7 @@ import numpy as np
 
 
 class RNISummary(object):
-    def __init__(self, **kwargs):
+    def __init__(self, routes, **kwargs):
         """
         Used for summarizing RNI dataset.
         """
@@ -20,18 +20,17 @@ class RNISummary(object):
         db_connection = smd_config.smd_database['instance']
         env.workspace = db_connection
         rni_config = Configs('RNICheck/rni_config_2020.json')
-        self.table_name = "SMD.RNI_2020"
+        self.table_name = smd_config.table_names['rni']
 
-        self.routeid_col = rni_config.kwargs['routeid_col']
-        self.from_m_col = rni_config.kwargs['from_m_col']
-        self.to_m_col = rni_config.kwargs['to_m_col']
-        self.lane_code_col = rni_config.kwargs['lane_code']
-        self.lane_width = rni_config.kwargs['lane_width_col']
-        self.road_type_col = rni_config.kwargs['road_type_col']
-        self.segment_len_col = rni_config.kwargs['length_col']
-        self.surf_type_col = rni_config.kwargs['surftype_col']
-        self.routes = list()
-        self.output_table = "SMD.REKAP_LEBAR_RNI"
+        self.routeid_col = smd_config.table_fields['rni']['route_id']
+        self.from_m_col = smd_config.table_fields['rni']['from_measure']
+        self.to_m_col = smd_config.table_fields['rni']['to_measure']
+        self.lane_code_col = smd_config.table_fields['rni']['lane_code']
+        self.lane_width = smd_config.table_fields['rni']['lane_width']
+        self.road_type_col = smd_config.table_fields['rni']['road_type']
+        self.segment_len_col = smd_config.table_fields['rni']['length_col']
+        self.surf_type_col = smd_config.table_fields['rni']['surface_type']
+        self.routes = routes
         self.width_range = [4.5, 6, 7, 8, 14]
         self.width_col_pref = "WIDTH_CAT_"
         self.road_type_list = range(1, 26)  # From 1 to 25
@@ -46,7 +45,7 @@ class RNISummary(object):
         self.df = event_fc_to_df(self.table_name, columns, self.routes, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
-    def width_summary(self, write_to_db=True, return_df=True):
+    def width_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_LEBAR_RNI'):
         """
         Classify segments based on its surface width, create a DataFrame and write it to a database table.
         """
@@ -55,7 +54,6 @@ class RNISummary(object):
         lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
         width_cat_col = 'width_cat'
         lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
-        output_table = 'SMD.REKAP_LEBAR_RNI'
 
         first_range = self.width_range[0]
         last_range = self.width_range[len(self.width_range)-1]
@@ -89,13 +87,12 @@ class RNISummary(object):
         else:
             return self
 
-    def roadtype_summary(self, write_to_db=True, return_df=True):
+    def roadtype_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_TIPE_JALAN'):
         """
         Classification based on the roadtype.
         """
         df = self.df.copy(deep=True)
         pivot_roadtype_col = '_road_type'
-        output_table = 'SMD.REKAP_TIPE_JALAN'
         df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref+str(x))
         pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
                                columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
@@ -112,13 +109,12 @@ class RNISummary(object):
         else:
             return self
 
-    def surface_summary(self, write_to_db=True, return_df=True):
+    def surface_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_TIPE_PERKERASAN'):
         """
         Classification based on the surface type.
         """
         df = self.df.copy(deep=True)
         pivot_surface_type = '_surface_type'
-        output_table = 'SMD.REKAP_TIPE_PERKERASAN'
 
         surface_g_df = Kemantapan.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
         surface_g_df['group'] = surface_g_df['group'].astype(int)  # Convert to integer.
