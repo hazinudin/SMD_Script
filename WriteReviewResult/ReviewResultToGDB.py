@@ -32,30 +32,30 @@ if str(data_type) == "RNI":  # If the data is IRI/Roughness
 
 elif str(data_type) == "IRI":  # If the data is RNI
     data_config = 'RoughnessCheck/roughness_config_2020.json'
-    output_table = "SMD.ROUGHNESS" + str(data_semester) + "_" + str(data_year)
+    output_table = "SMD.ROUGHNESS"
     input_details['semester_data'] = True
 
 elif str(data_type) == "PCI":  # If the data is RNI
     data_config = 'PCICheck/pci_config_2020.json'
-    output_table = "SMD.PCI_" + str(data_year)
+    output_table = "SMD.PCI"
 
 elif str(data_type) == "RTC":  # If the data is RNI
     data_config = 'RTCCheck/rtc_config_2020.json'
-    output_table = "SMD.RTC_" + str(data_year)
+    output_table = "SMD.RTC"
 
 elif str(data_type) == "FWD":  # If the data is RNI
     data_config = 'FWDCheck/fwd_config_2020.json'
-    output_table = "SMD.FWD_" + str(data_year)
+    output_table = "SMD.FWD"
     trim_to = None
 
 elif str(data_type) == "LWD":  # If the data is RNI
     data_config = 'LWDCheck/lwd_config_2020.json'
-    output_table = "SMD.LWD_" + str(data_year)
+    output_table = "SMD.LWD"
     trim_to = None
 
 elif str(data_type) == "BB":  # If the data is RNI
     data_config = 'BBCheck/bb_config_2020.json'
-    output_table = "SMD.BB_" + str(data_year)
+    output_table = "SMD.BB"
     trim_to = None
 
 else:  # If other than that, the process will be terminated with an error message.
