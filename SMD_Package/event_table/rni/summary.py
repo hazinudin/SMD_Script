@@ -36,6 +36,13 @@ class RNISummary(object):
         self.road_type_list = range(1, 26)  # From 1 to 25
         self.road_type_col_pref = "ROAD_TYPE_"
 
+        if (type(routes) == str) or (type(routes) == unicode):
+            self.routes = [routes]
+        elif type(routes) == list:
+            self.routes = routes
+        else:
+            raise TypeError("Routes is not in str, unicode, or list.")
+
         self.__dict__.update(kwargs)  # Update all class attribute.
 
         # Put all columns variable to a list.
@@ -45,10 +52,18 @@ class RNISummary(object):
         self.df = event_fc_to_df(self.table_name, columns, self.routes, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
+        self.status = {_route: "RNI data available." for _route in self.routes}
+        missing_routes = np.setdiff1d(self.routes, self.df[self.routeid_col]).tolist()
+        missing_status = {_route: "Missing RNI data." for _route in missing_routes}
+        self.status.update(missing_status)
+
     def width_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_LEBAR_RNI'):
         """
         Classify segments based on its surface width, create a DataFrame and write it to a database table.
         """
+        if self.df.empty:
+            return self
+
         df = self.df.copy(deep=True)
         segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
         lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
@@ -91,6 +106,9 @@ class RNISummary(object):
         """
         Classification based on the roadtype.
         """
+        if self.df.empty:
+            return self
+
         df = self.df.copy(deep=True)
         pivot_roadtype_col = '_road_type'
         df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref+str(x))
@@ -113,6 +131,9 @@ class RNISummary(object):
         """
         Classification based on the surface type.
         """
+        if self.df.empty:
+            return self
+
         df = self.df.copy(deep=True)
         pivot_surface_type = '_surface_type'
 
