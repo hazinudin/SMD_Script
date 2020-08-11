@@ -2,6 +2,7 @@ import pandas as pd
 from zipfile import BadZipfile
 from arcpy import SetParameterAsText
 from SMD_Package.OutputMessage import output_message
+from numpy import nan
 import sys
 
 
@@ -29,6 +30,7 @@ def read_input_excel(event_table_path, parameter_index=2):
 
         try:
             df_string = pd.read_excel(event_table_path, converters=s_converter, keep_default_na=False)  # Convert all column to 'str' type.
+            df_string.replace("", nan, inplace=True)
         except UnicodeEncodeError:  # Handle if there is a non ascii character.
             SetParameterAsText(parameter_index, output_message("Failed", "Terdapat karakter yang tidak bisa diconvert."))
             sys.exit(0)
