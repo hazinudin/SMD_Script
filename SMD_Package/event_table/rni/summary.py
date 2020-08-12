@@ -4,10 +4,11 @@ from arcpy import env
 import os
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 
 class RNISummary(object):
-    def __init__(self, routes, **kwargs):
+    def __init__(self, routes, year=None, **kwargs):
         """
         Used for summarizing RNI dataset.
         """
@@ -35,6 +36,11 @@ class RNISummary(object):
         self.width_col_pref = "WIDTH_CAT_"
         self.road_type_list = range(1, 26)  # From 1 to 25
         self.road_type_col_pref = "ROAD_TYPE_"
+
+        if year is None:
+            self.year = datetime.now().year
+        else:
+            self.year = year
 
         if (type(routes) == str) or (type(routes) == unicode):
             self.routes = [routes]
@@ -178,6 +184,8 @@ class RNISummary(object):
 
     def _write_to_df(self, df, output_table):
         col_details = dict()
+        year_col = 'YEAR'
+        df[year_col] = self.year
 
         for col_name in df.dtypes.to_dict():
             col_details[col_name] = dict()
@@ -195,4 +203,4 @@ class RNISummary(object):
 
             col_details[col_name]['dtype'] = gdb_dtype
 
-        gdb_table_writer(env.workspace, df, output_table, col_details)
+        gdb_table_writer(env.workspace, df, output_table, col_details, replace_key=[self.routeid_col, year_col])
