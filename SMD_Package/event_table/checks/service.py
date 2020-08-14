@@ -148,6 +148,9 @@ class TableCheckService(object):
         passed_routes = self.passed_routes()
         routeid_col = self.kwargs.get('routeid_col')
 
+        if len(passed_routes) == 0:
+            return self
+
         other_tables = [
             kwargs.get('roughness_table'),
             kwargs.get('pci_table'),
