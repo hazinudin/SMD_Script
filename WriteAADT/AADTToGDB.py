@@ -19,10 +19,7 @@ env.workspace = dbConnection
 # Get all the request detail
 routeSelection = request_j['routes']
 if routeSelection == "ALL":
-    lrsNetwork = smd_config["table_names"]["lrs_network"]
-    balaiTable = smd_config["table_names"]["balai_table"]
-    balaiRouteTable = smd_config["table_names"]["balai_route_table"]
-    getRoute = GetRoutes("balai", 'ALL', lrsNetwork, balaiTable, balaiRouteTable)
+    getRoute = GetRoutes("balai", 'ALL')
     routeSelection = getRoute.route_list()
     pass
 elif type(routeSelection) == unicode:

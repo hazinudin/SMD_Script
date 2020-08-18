@@ -117,8 +117,7 @@ class KemantapanService(object):
             self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
 
         if self.routes == 'ALL':
-            lrs_network = smd_config.table_names['lrs_network']
-            get_route = GetRoutes("balai", "ALL", lrs_network)
+            get_route = GetRoutes("balai", "ALL")
             self.route_selection = get_route.route_list()
         elif type(self.routes) == unicode:
             self.route_selection = [self.routes]
