@@ -63,6 +63,7 @@
       "from_m_col": "FROM_STA",
       "to_m_col": "TO_STA",
       "lane_code": "LANE_CODE",
+      "date_col":"SURVEY_DATE",
       "to_km_factor": 1
     }
   },
