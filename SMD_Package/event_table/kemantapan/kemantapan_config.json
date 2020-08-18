@@ -57,12 +57,12 @@
       "to_km_factor": 1
     },
     "2020": {
-      "table_name": "",
-      "grading_col": "",
-      "routeid_col": "",
-      "from_m_col": "",
-      "to_m_col": "",
-      "lane_code": "",
+      "table_name": "SMD.PCI_2020",
+      "grading_col": "PCI",
+      "routeid_col": "LINKID",
+      "from_m_col": "FROM_STA",
+      "to_m_col": "TO_STA",
+      "lane_code": "LANE_CODE",
       "to_km_factor": 1
     }
   },
