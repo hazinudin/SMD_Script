@@ -14,6 +14,8 @@
     "lrs_network":"ELRS.Road_Network_RI",
     "balai_table":"ELRS.map_balai_prov",
     "balai_route_table":"ELRS.map_balai_route",
+    "route_lintas_table":"ELRS.map_route_lintas",
+    "lintas_ref_table":"ELRS.ref_lintas",
     "rni": "SMD.RNI_2020",
     "satker_route_table":"ELRS.map_satker_route",
     "satker_ppk_table":"ELRS.map_satker_ppk",
@@ -24,7 +26,6 @@
       "route_id":"LINKID",
       "route_name":"LINK_NAME",
       "prov_code":"BM_PROV_ID",
-      "lintas":"CITY_REGENCY",
       "from_date":"FROMDATE",
       "to_date":"TODATE"
     },
@@ -74,6 +75,10 @@
       "satker_ppk_id":"SATKER_PPK_ID",
       "from_date":"START_DATE",
       "to_date":"END_DATE"
+    },
+    "lintas_ref_table":{
+      "lintas_id":"LINTAS_ID",
+      "lintas_name":"LINTAS_NAME"
     }
   },
   "output_tables":{
