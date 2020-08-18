@@ -2,39 +2,45 @@ import json
 from arcpy import da, env
 from pandas import DataFrame
 from SMD_Package.load_config import SMDConfigs
+from SMD_Package import event_fc_to_df
 
 
 class GetRoutes(object):
     """
     This Object is used for RouteID query based on requesty type either Province Code or Balai Code.
     """
-    def __init__(self, query_type, query_value, lrs_network=None, balai_table=None, balai_route_table=None):
+    def __init__(self, query_type, query_value):
         """
         :param query_type: The query type, either 'no_prov' or 'balai'
         :param query_value: The query value.
-        :param lrs_network: The LRS Network which store all the route.
-        :param balai_table: The Balai Table which store the Balai-Prov Mapping.
-        :param balai_route_table: The Table which store the Balai-Route Mapping.
         """
+        import os
+
+        if SMDConfigs.smd_dir() == '':
+            pass
+        else:
+            os.chdir(SMDConfigs.smd_dir())
+
         smd_configs = SMDConfigs()
         env.workspace = smd_configs.smd_database['instance']
 
-        if lrs_network is None:
-            lrs_network = smd_configs.table_names['lrs_network']
-            lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
-            lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
-            lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
-            lrs_lintas = smd_configs.table_fields['lrs_network']['lintas']
+        self.route_lintas_table = smd_configs.table_names['route_lintas_table']
+        self.lintas_ref_table = smd_configs.table_names['lintas_ref_table']
+        self.lintas_id = smd_configs.table_fields['lintas_ref_table']['lintas_id']
+        self.lintas_name = smd_configs.table_fields['lintas_ref_table']['lintas_name']
 
-        if balai_table is None:
-            balai_table = smd_configs.table_names['balai_table']
-            balai_prov = smd_configs.table_fields['balai_table']['prov_code']
-            balai_code = smd_configs.table_fields['balai_table']['balai_code']
+        lrs_network = smd_configs.table_names['lrs_network']
+        lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
+        lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
+        lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
 
-        if balai_route_table is None:
-            balai_route_table = smd_configs.table_names['balai_route_table']
-            balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
-            balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
+        balai_table = smd_configs.table_names['balai_table']
+        balai_prov = smd_configs.table_fields['balai_table']['prov_code']
+        balai_code = smd_configs.table_fields['balai_table']['balai_code']
+
+        balai_route_table = smd_configs.table_names['balai_route_table']
+        balai_route_routeid = smd_configs.table_fields['balai_route_table']['route_id']
+        balai_route_code = smd_configs.table_fields['balai_route_table']['balai_code']
 
         # Check for query value type
         if query_value == "ALL":  # If the query value is 'ALL'
@@ -47,6 +53,7 @@ class GetRoutes(object):
 
         self.string_json_output = None
         self.query_value = query_value
+        self.lrs_routeid = lrs_routeid
 
         prov_balai_dict = {}  # Create a "prov": "kode_balai" dictionary
         balai_route_dict = {}  # Creating a "prov":"route" dictionary to map the province and route relation
@@ -96,27 +103,17 @@ class GetRoutes(object):
                 search_val = prov_code[balai_prov]
 
             where_statement = '({0} in ({1}))'.format(in_field, search_val)
-
-            if lrs_lintas is None:  # In case the LRS lintas column is not available
-                req_columns = [lrs_routeid, lrs_route_name]
-            else:
-                req_columns = [lrs_routeid, lrs_route_name, lrs_lintas]
+            req_columns = [lrs_routeid, lrs_route_name]
 
             date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)". \
                 format("FROMDATE", "TODATE")
 
             with da.SearchCursor(lrs_network, req_columns,
                                  where_clause=where_statement + " and " + date_query) as search_cursor:
-                if lrs_lintas is not None:
-                    if codes not in balai_route_dict:
-                        balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
-                    else:
-                        balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": str(row[2])} for row in search_cursor]
+                if codes not in balai_route_dict:
+                    balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1])} for row in search_cursor]
                 else:
-                    if codes not in balai_route_dict:
-                        balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": None} for row in search_cursor]
-                    else:
-                        balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1]), "lintas": None} for row in search_cursor]
+                    balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1])} for row in search_cursor]
 
         self.code_route_dict = balai_route_dict
         self.prov_balai_dict = prov_balai_dict
@@ -125,7 +122,10 @@ class GetRoutes(object):
         """
         This funtion create the JSON string to be used as the output of the script
         """
+        from numpy import nan
+
         results_list = []
+        route_lintas = self.route_lintas().set_index('route_id')
 
         for code in self.query_value:
             if code in self.code_route_dict:
@@ -137,6 +137,9 @@ class GetRoutes(object):
                     results_list.append(result_object)
                 else:
                     df_route_id = df.set_index('route_id')
+                    df_route_id = df_route_id.join(route_lintas)
+                    df_route_id.replace(nan, "-", inplace=True)  # Replace NaN value with "-"
+                    df_route_id.rename(columns={self.lintas_name: "lintas"}, inplace=True)
                     detailed_dict = df_route_id.T.to_dict()
                     result_object = {"code": str(code), "routes": detailed_dict}
                     results_list.append(result_object)
@@ -173,6 +176,23 @@ class GetRoutes(object):
                     pass
 
         return route_list
+
+    def route_lintas(self):
+        values = list()
+
+        for code in self.code_route_dict:
+            values += self.code_route_dict[code]
+
+        df = DataFrame.from_dict(values)
+        routes = df["route_id"].tolist()
+
+        route_lintas = event_fc_to_df(self.route_lintas_table, '*', routes, self.lrs_routeid, env.workspace, True)
+        ref_lintas = event_fc_to_df(self.lintas_ref_table, '*', 'ALL', self.lintas_id, env.workspace, True)
+
+        merged = df.merge(route_lintas, left_on="route_id", right_on=self.lrs_routeid)
+        merged = merged.merge(ref_lintas, on=self.lintas_id)
+
+        return merged[['route_id', self.lintas_name]]
 
     @staticmethod
     def results_output(status, type, results):

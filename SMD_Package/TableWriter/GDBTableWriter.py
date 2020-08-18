@@ -1,5 +1,6 @@
 from arcpy import da, env, CreateTable_management, AddField_management, Exists, ListFields
 import datetime
+import time
 
 env.overwriteOutput = True
 
