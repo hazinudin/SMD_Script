@@ -36,7 +36,7 @@
     "2020_1":{
       "table_name":"SMD.ROUGHNESS_1_2020",
       "grading_col":"IRI_POK",
-      "route_id_col":"LINKID",
+      "routeid_col":"LINKID",
       "from_m_col":"FROM_STA",
       "to_m_col":"TO_STA",
       "lane_code_col":"LANE_CODE",
