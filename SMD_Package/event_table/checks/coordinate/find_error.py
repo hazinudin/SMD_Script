@@ -310,14 +310,14 @@ class FindCoordinateError(object):
 
         return self
 
-    def find_segment_len_error(self, measure_col, segment_len_col='SEGMENT_LENGTH', tolerance=30):
+    def find_segment_len_error(self, measure_col, tolerance=30, to_meters=10):
         """
         This class method check the consistency between measured M-Value difference between segment and stated segment
         length in the input table, if the M-Value difference between two segment is not the same with the stated
         segment value within the defined tolerance then an error message will be written.
         :param measure_col: The M-Value column of each segment.
-        :param segment_len_col: The segment length column.
         :param tolerance: The error tolerance in meters.
+        :param to_meters: Multiplier for converting units to meters.
         :return:
         """
         if self.lane_code_col is not None:
@@ -331,18 +331,20 @@ class FindCoordinateError(object):
             indexes = groups[group]  # Group index
             group_df = self.df.loc[indexes, [self.routeid, self.from_m_col,
                                              self.to_m_col, self.lane_code_col,
-                                             segment_len_col, measure_col]]  # Group rows
+                                             measure_col]]  # Group rows
             group_df.sort_values(self.from_m_col, inplace=True)
+            group_df[self.to_m_col] = group_df[self.to_m_col].astype(float)*to_meters
+
             group_df['_diff'] = group_df[measure_col].diff()
-            group_df[segment_len_col] = group_df[segment_len_col]*1000  # Convert segment length to meters
+            group_df['_seg_len'] = group_df[self.to_m_col].diff()  # Calculate segment length from to_meas diff.
             group_df.dropna(inplace=True)
 
-            error_rows = group_df.loc[~np.isclose(group_df[segment_len_col], group_df['_diff'], atol=tolerance)]
+            error_rows = group_df.loc[~np.isclose(group_df['_seg_len'], group_df['_diff'], atol=tolerance)]
             for index, row in error_rows.iterrows():
                 route = row[self.routeid]
                 from_m = row[self.from_m_col]
                 to_m = row[self.to_m_col]
-                length = row[segment_len_col]
+                length = row['_seg_len']
                 m_diff = row['_diff']
 
                 if self.lane_code_col is not None:
