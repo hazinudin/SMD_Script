@@ -2572,6 +2572,10 @@ class EventValidation(object):
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)
+
+        if df.empty:
+            return self
+
         grouped = df.groupby([routeid_col, from_m_col, to_m_col])
         nunique = grouped.aggregate({column: 'nunique'}).reset_index()
         error_row = nunique.loc[(nunique[column] > 1) | (nunique[column] == 0)]
