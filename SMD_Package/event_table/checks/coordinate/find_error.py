@@ -333,10 +333,10 @@ class FindCoordinateError(object):
                                              self.to_m_col, self.lane_code_col,
                                              measure_col]]  # Group rows
             group_df.sort_values(self.from_m_col, inplace=True)
-            group_df[self.to_m_col] = group_df[self.to_m_col].astype(float)*to_meters
+            group_df['converted_to'] = group_df[self.to_m_col].astype(float)*to_meters
 
             group_df['_diff'] = group_df[measure_col].diff()
-            group_df['_seg_len'] = group_df[self.to_m_col].diff()  # Calculate segment length from to_meas diff.
+            group_df['_seg_len'] = group_df['converted_to'].diff()  # Calculate segment length from to_meas diff.
             group_df.dropna(inplace=True)
 
             error_rows = group_df.loc[~np.isclose(group_df['_seg_len'], group_df['_diff'], atol=tolerance)]
