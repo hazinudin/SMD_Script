@@ -205,7 +205,9 @@ class EventValidation(object):
             dtype = details['dtype']
 
             if dtype == string_type:
-                string_cols.append(col)
+                all_null = np.all(self.df_valid[col].isnull())
+                if not all_null:
+                    string_cols.append(col)
 
         self.df_valid[string_cols] = self.df_valid[string_cols].apply(lambda x: x.str.upper())
         return self
