@@ -15,7 +15,7 @@ class KemantapanService(object):
         Class initialization.
         :param input_json: The input JSON. Contain 'routes', 'data_type', 'lane_based' and 'year',
         optional parameter 'semester', 'table_name', 'routeid_col', 'from_m_col', 'to_m_col', 'lane_code_col',
-         'output_table' and 'grading_col'.
+        'output_table' and 'grading_col'.
         """
         import os
 
@@ -98,6 +98,8 @@ class KemantapanService(object):
         self.year_col = 'YEAR'
         self.prov_column = 'BM_PROV_ID'
         self.balai_column = 'BALAI_ID'
+        self.update_date_col = 'UPDATE_DATE'
+        self.force_update = False
 
         # For AADT only
         self.hour_col = None
@@ -116,19 +118,10 @@ class KemantapanService(object):
         else:
             self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
 
-        if self.routes == 'ALL':
-            get_route = GetRoutes("balai", "ALL")
-            self.route_selection = get_route.route_list()
-        elif type(self.routes) == unicode:
-            self.route_selection = [self.routes]
-        elif type(self.routes) == list:
-            self.route_selection = self.routes
-        elif self.routes is None:
-            raise ("No Route parameter in the input JSON.")
-        else:
-            raise ("Route selection is neither list or string.")
-
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
+
+        # Select the route request based on source-output update date.
+        self.route_selection = self._route_date_selection()
 
         if self.suffix is not None:
             self.output_table = self.output_table + '_' + self.suffix
@@ -338,6 +331,34 @@ class KemantapanService(object):
 
     def _success_route(self):
         return self.route_status.loc[self.route_status['status'] == 'Succeeded', self.routeid_col].tolist()
+
+    def _route_date_selection(self):
+        if self.routes == 'ALL':
+            routes = self.routes
+        elif (type(self.routes) == unicode) or (type(self.routes) == str):
+            routes = [self.routes]
+        elif type(self.routes) == list:
+            routes = self.routes
+        elif self.routes is None:
+            raise ("No Route parameter in the input JSON.")
+        else:
+            raise ("Route selection is neither list or string.")
+
+        req_columns = [self.update_date_col, self.routeid_col]
+        source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
+                                     sql_prefix='MAX ({0})'.format(self.update_date_col),
+                                     sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+
+        if not self.force_update:
+            output_date = event_fc_to_df(self.output_table, req_columns, routes, self.routeid_col, env.workspace, True)
+            merged = pd.merge(source_date, output_date, on=self.routeid_col, how='outer', suffixes=('_SOURCE', '_TARGET'))
+            selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
+                                   (merged['UPDATE_DATE_TARGET'].isnull())]
+            routes = selection[self.routeid_col].tolist()
+        else:
+            routes = source_date[self.routeid_col].tolist()
+
+        return routes
 
     def write_summary_to_gdb(self):
         col_details = dict()
