@@ -33,6 +33,7 @@ class GetRoutes(object):
         lrs_routeid = smd_configs.table_fields['lrs_network']['route_id']
         lrs_prov_code = smd_configs.table_fields['lrs_network']['prov_code']
         lrs_route_name = smd_configs.table_fields['lrs_network']['route_name']
+        lrs_sk_length = smd_configs.table_fields['lrs_network']['sk_length']
 
         balai_table = smd_configs.table_names['balai_table']
         balai_prov = smd_configs.table_fields['balai_table']['prov_code']
@@ -103,7 +104,7 @@ class GetRoutes(object):
                 search_val = prov_code[balai_prov]
 
             where_statement = '({0} in ({1}))'.format(in_field, search_val)
-            req_columns = [lrs_routeid, lrs_route_name]
+            req_columns = [lrs_routeid, lrs_route_name, lrs_sk_length]
 
             date_query = "({0} is null or {0}<=CURRENT_TIMESTAMP) and ({1} is null or {1}>CURRENT_TIMESTAMP)". \
                 format("FROMDATE", "TODATE")
@@ -111,9 +112,13 @@ class GetRoutes(object):
             with da.SearchCursor(lrs_network, req_columns,
                                  where_clause=where_statement + " and " + date_query) as search_cursor:
                 if codes not in balai_route_dict:
-                    balai_route_dict[codes] = [{"route_id": str(row[0]), "route_name": str(row[1])} for row in search_cursor]
+                    balai_route_dict[codes] = [{"route_id": str(row[0]),
+                                                "route_name": str(row[1]),
+                                                "sk_length": str(row[2])} for row in search_cursor]
                 else:
-                    balai_route_dict[codes] += [{"route_id": str(row[0]), "route_name": str(row[1])} for row in search_cursor]
+                    balai_route_dict[codes] += [{"route_id": str(row[0]),
+                                                 "route_name": str(row[1]),
+                                                 "sk_length": str(row[2])} for row in search_cursor]
 
         self.code_route_dict = balai_route_dict
         self.prov_balai_dict = prov_balai_dict
