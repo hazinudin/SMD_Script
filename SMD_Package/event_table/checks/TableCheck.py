@@ -947,6 +947,9 @@ class EventValidation(object):
                 self.insert_route_message(route, 'error', msg)
                 continue
 
+            if rni_df.empty:
+                return self
+
             if rni_segment_count < 2 and (comparison != 'LRS'):
                 comparison = 'RNIPoint-LRS'
                 segment_data = False
