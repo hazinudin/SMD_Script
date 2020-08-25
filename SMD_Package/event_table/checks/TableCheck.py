@@ -735,7 +735,7 @@ class EventValidation(object):
             if compare_to == 'RNI':
                 # Get the RNI Max Measurement
                 rni_df = event_fc_to_df(rni_table, [rni_routeid, rni_to_m], route, rni_routeid, self.sde_connection,
-                                        is_table=False, include_all=True, orderby=None)  # The RNI DataFrame
+                                        is_table=False, include_all=True)  # The RNI DataFrame
 
                 if len(rni_df) == 0:  # If the RNI Table does not exist for a route
                     comparison = None  # The comparison value will be None
@@ -1194,8 +1194,7 @@ class EventValidation(object):
 
             # The RNI DataFrame
             search_field = [rni_routeid, rni_from_col, rni_to_col, rni_lane_col]
-            df_rni = event_fc_to_df(rni_table, search_field, route, rni_routeid, self.sde_connection, is_table=True,
-                                    orderby=None)
+            df_rni = event_fc_to_df(rni_table, search_field, route, rni_routeid, self.sde_connection, is_table=True)
             df_rni[rni_from_col] = pd.Series(df_rni[rni_from_col]*self.rni_mfactor).round(2).astype(int)
             df_rni[rni_to_col] = pd.Series(df_rni[rni_to_col]*self.rni_mfactor).round(2).astype(int)
 
@@ -1362,7 +1361,7 @@ class EventValidation(object):
 
         input_routes = df[routeid_col]  # The routes in the input table in np.array format
         rni_df = event_fc_to_df(rni_table, rni_route_col, input_routes.tolist(), rni_route_col, self.sde_connection,
-                                is_table=True, orderby=None)  # The input routes in RNI Table DF in np.array format
+                                is_table=True)  # The input routes in RNI Table DF in np.array format
         rni_routes = np.array(rni_df[rni_route_col])  # The available routes in the RNI Table in np.array
         missing_route = np.setdiff1d(input_routes, rni_routes)  # The unavailable route in the RNI Table
 
@@ -1680,7 +1679,7 @@ class EventValidation(object):
 
         for route in route_list:  # Iterate over all available route in the input table.
             df_comp = event_fc_to_df(comp_fc, [comp_route_col, comp_from_col, comp_to_col, comp_lane_width], route,
-                                     comp_route_col, self.sde_connection, is_table=False, include_all=True, orderby=None)
+                                     comp_route_col, self.sde_connection, is_table=False, include_all=True)
             df_route = self.selected_route_df(df, route)
 
             if len(df_comp) == 0:
@@ -2171,7 +2170,7 @@ class EventValidation(object):
             # Create the comparison DataFrame
             comp_search_field = [comp_route_col, comp_from_col, comp_to_col, comp_grading_col, comp_lane_code]
             df_comp = event_fc_to_df(comp_fc, comp_search_field, route,
-                                     comp_route_col, self.sde_connection, include_all=True, orderby=None)
+                                     comp_route_col, self.sde_connection, include_all=True)
 
             if len(df_comp) == 0:  # Check if the specified route exist in the comparison table.
                 error_message = "Data rute {0} pada tahun sebelumnya tidak tersedia, sehingga perbandingan kemantapan tidak dapat dilakukan.". \
