@@ -4,15 +4,16 @@ import numpy as np
 
 
 def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, sde_connection, is_table=False,
-                   include_all=False, orderby=None, add_date_query=False, from_date='FROMDATE', to_date='TODATE',
-                   replace_null=True, *args, **kwargs):
+                   include_all=False, sql_prefix=None, sql_postfix=None, add_date_query=False, from_date='FROMDATE',
+                   to_date='TODATE', replace_null=True, *args, **kwargs):
     """
     Create a Pandas DataFrame from ArcGIS feature class/table, from a set of route selection.
     :param gdb_table: GeoDataBase table or FeatureClass to be converted as pandas DataFrame.
     :param search_field: The field which will be included in the Pandas DataFrame.
     :param route_selection: The selected route to be included in the Pandas DataFrame.
     :param route_identifier: The RouteID column in the GeoDataBase table or FeatureClass.
-    :param orderby: The column which the table will be sorted.
+    :param sql_prefix: SQL prefix used in the cursor SQL clause.
+    :param sql_postfix: SQL postfix used in the cursor SQL clause.
     :param sde_connection: The SDE Instance for accessing the FeatureClass
     :param is_table: If True then the requested table are a table without geometry.
     :param include_all: If True then the method will return all features including features with null geometry, if False
@@ -55,15 +56,7 @@ def event_fc_to_df(gdb_table, search_field, route_selection, route_identifier, s
         where_clause += date_query
 
     # Create the sql_clause for DataAccess module
-    if orderby is None:
-        sql_clause = (None, None)
-    elif orderby is not None:
-        if type(orderby) == str:
-            pass
-        elif type(orderby) == list:
-            orderby = str(orderby).strip('[]')
-
-        sql_clause = (None, 'ORDER BY {0}'.format(orderby))
+    sql_clause = (sql_prefix, sql_postfix)
 
     # Find shape field in the search_field, if exist then pop it
     if search_field == '*':
