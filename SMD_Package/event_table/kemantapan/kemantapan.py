@@ -8,20 +8,20 @@ import os
 
 
 class Kemantapan(object):
-    def __init__(self, df_event, grading_col, route_col, from_m_col, to_m_col, lane_code,  kemantapan_type='IRI',
-                 lane_based=False, rni_mfactor=1, to_km_factor=0.01, agg_method='mean', **kwargs):
+    def __init__(self, df_event, grading_col, routeid_col, from_m_col, to_m_col, lane_code_col, data_type='IRI',
+                 lane_based=False, rni_mfactor=1, to_km_factor=0.01, method='mean', **kwargs):
         """
         Initialize the Kemantapan class for grading kemantapan value
         :param df_event: The DataFrame for the input table.
         :param grading_col: The value used for grading
-        :param route_col: The RouteID column of the input DataFrame.
+        :param routeid_col: The RouteID column of the input DataFrame.
         :param from_m_col: The From Measure column of the input DataFrame.
         :param to_m_col: The To Measure column of the input DataFrame.
-        :param kemantapan_type: The type of kemantapan will be calculated. ROUGHNESS or PCI only. The selection will
+        :param data_type: The type of kemantapan will be calculated. ROUGHNESS or PCI only. The selection will
         effect the amount of grading level.
         :param lane_based: Determine whether the Kemantapan will be calculated as lane based or calculated based on the
         segment interval.
-        :param agg_method: 'mean' or 'max'. This parameter determine the aggregation method used for summarizing event
+        :param method: 'mean' or 'max'. This parameter determine the aggregation method used for summarizing event
         data.
         """
         # Convert the measurement value of the event dataframe to DM
@@ -30,10 +30,10 @@ class Kemantapan(object):
         df_event[[from_m_col, to_m_col]] = df_event[[from_m_col, to_m_col]].round(1).astype(int)
 
         # make sure the kemantapan_type is between 'IRI and 'PCI'
-        if kemantapan_type not in ['IRI', 'PCI']:
-            raise Exception('{0} is not a valid kemantapan type.'.format(kemantapan_type))  # Raise an exception
+        if data_type not in ['IRI', 'PCI']:
+            raise Exception('{0} is not a valid kemantapan type.'.format(data_type))  # Raise an exception
         else:
-            self.type = kemantapan_type
+            self.type = data_type
 
         if len(df_event) == 0:
             raise Exception('Input Event DataFrame is Empty')
@@ -53,12 +53,12 @@ class Kemantapan(object):
         self.rni_lane_code = rni_lane_code
         self.surftype_col = surftype_col
         self.grading_col = grading_col
-        self.route_col = route_col
+        self.route_col = routeid_col
 
         self.__dict__.update(kwargs)
 
         rni_request_cols = [self.rni_route_col, self.rni_from_col, self.rni_to_col, self.rni_lane_code, self.surftype_col]
-        input_routes = df_event[route_col].unique().tolist()
+        input_routes = df_event[routeid_col].unique().tolist()
 
         df_rni = event_fc_to_df(self.rni_table, rni_request_cols, input_routes, self.rni_route_col, env.workspace, True)
         df_rni[self.rni_from_col] = pd.Series(df_rni[self.rni_from_col]*rni_mfactor).round(1).astype(int)  # Convert the RNI measurement
@@ -68,19 +68,19 @@ class Kemantapan(object):
         self.group_details = self.group_details()
         self.group_details_df = self.group_details_df()
         self.lane_based = lane_based
-        self.lane_code = lane_code
+        self.lane_code = lane_code_col
         self.graded_df = None
 
         # The input and RNI DataFrame merge result
-        merge_df = self.rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col,
+        merge_df = self.rni_table_join(df_rni, df_event, routeid_col, from_m_col, to_m_col, grading_col,
                                        self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col, lane_based,
-                                       match_only=False, lane_code=lane_code, rni_lane_code=self.rni_lane_code,
-                                       agg_method=agg_method)
+                                       match_only=False, lane_code=lane_code_col, rni_lane_code=self.rni_lane_code,
+                                       agg_method=method)
         self.merged_df = merge_df
         self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
         self.grading(surftype_col, grading_col)
-        self.mantap_percent = self.kemantapan_percentage(self.graded_df, route_col, from_m_col, to_m_col, 0.01)
-        self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', route_col].tolist()
+        self.mantap_percent = self.kemantapan_percentage(self.graded_df, routeid_col, from_m_col, to_m_col, 0.01)
+        self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', routeid_col].tolist()
 
         if len(self.no_match_route) != 0:
             self.all_match = False

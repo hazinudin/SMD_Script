@@ -10,7 +10,7 @@ class KemantapanService(object):
     """
     This class provide class method for multiple Kemantapan data type calculation.
     """
-    def __init__(self, input_json):
+    def __init__(self, input_json, **kwargs):
         """
         Class initialization.
         :param input_json: The input JSON. Contain 'routes', 'data_type', 'lane_based' and 'year',
@@ -119,6 +119,7 @@ class KemantapanService(object):
             self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
 
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
+        self.kwargs = kwargs
 
         # Select the route request based on source-output update date.
         self.route_selection = self._route_date_selection()
@@ -185,9 +186,7 @@ class KemantapanService(object):
             self.failed_route.append(route)
             return self
 
-        kemantapan = Kemantapan(input_df, self.grading_col, self.routeid_col, self.from_m_col, self.to_m_col,
-                                self.lane_code_col, self.data_type, self.lane_based, to_km_factor=self.to_km_factor,
-                                agg_method=self.method)
+        kemantapan = Kemantapan(input_df, **self.__dict__)
 
         summary_table = kemantapan.summary().reset_index()
 
