@@ -349,11 +349,11 @@ class FindCoordinateError(object):
 
                 if self.lane_code_col is not None:
                     lane = row[self.lane_code_col]
-                    msg = "Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai panjang segmen ({4}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({5}m).".\
+                    msg = "Rute {0} pada segmen {1}-{2} lane {3} memiliki selisih TO_STA dengan segmen sebelumnya ({4}m), sementara jarak antara koordinat segmen ini dengan koordinat segmen sebelumnya ({5}m).".\
                         format(route, from_m, to_m, lane, length, m_diff)
                     self.error_msg.append(msg)
                 else:
-                    msg = "Rute {0} pada segmen {1}-{2} memiliki nilai panjang segmen ({3}m) yang berbeda dengan jarak koordinat segmen sebelumnya ({4}m}.".\
+                    msg = "Rute {0} pada segmen {1}-{2} memiliki selisih TO_STA dengan segmen sebelumnya ({3}m), sementara jarak antara koordinat segmen ini dengan koordinat segmen sebelumnya ({4}m}.".\
                         format(route, from_m, to_m, length, m_diff)
                     self.error_msg.append(msg)
 
