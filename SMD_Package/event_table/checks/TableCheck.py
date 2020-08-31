@@ -947,7 +947,7 @@ class EventValidation(object):
                 self.insert_route_message(route, 'error', msg)
                 continue
 
-            if rni_df.empty:
+            if rni_df.empty and (comparison != 'LRS'):
                 return self
 
             if rni_segment_count < 2 and (comparison != 'LRS'):
@@ -1068,7 +1068,7 @@ class EventValidation(object):
                 coordinate_error.find_end_error(route_geom, 'end')
 
                 if lane_code is not None:
-                    coordinate_error.find_lane_error(rni_df=rni_df)
+                    coordinate_error.find_lane_error(rni_df=df_route)
 
                 coordinate_error.close_to_zero('rniDistance')
 
