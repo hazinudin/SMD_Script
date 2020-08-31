@@ -906,11 +906,15 @@ class EventValidation(object):
             # Get LRS route geometry
             route_geom = self.route_geometry(route, self.lrs_network, self.lrs_routeid)
 
-            # Get the RNI table
-            rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat, rni_lane_width],
-                                    route, rni_routeid, self.sde_connection, True)
-            rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
-            rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
+            if comparison != 'LRS':
+                # Get the RNI table
+                rni_df = event_fc_to_df(rni_table, [rni_from_m, rni_to_m, rni_lane, rni_long, rni_lat, rni_lane_width],
+                                        route, rni_routeid, self.sde_connection, True)
+                rni_df[rni_from_m] = pd.Series(rni_df[rni_from_m] * self.rni_mfactor, index=rni_df.index).astype(int)
+                rni_df[rni_to_m] = pd.Series(rni_df[rni_to_m] * self.rni_mfactor, index=rni_df.index).astype(int)
+            else:
+                rni_df = df.loc[df[routeid_col] == route, (column_selection + [rni_lane_width])]
+
             rni_invalid = rni_df[[rni_lat, rni_long]].isnull().any().any()  # If True then there is Null in RNI coords
             rni_segment_count = len(rni_df.groupby([rni_from_m, rni_to_m]).groups)  # The count of RNI data segment/s
 
@@ -1068,7 +1072,7 @@ class EventValidation(object):
                 coordinate_error.find_end_error(route_geom, 'end')
 
                 if lane_code is not None:
-                    coordinate_error.find_lane_error(rni_df=df_route)
+                    coordinate_error.find_lane_error(rni_df=rni_df)
 
                 coordinate_error.close_to_zero('rniDistance')
 
