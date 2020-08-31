@@ -16,7 +16,6 @@ class LRSShapeFile(object):
         self.lrs_network = smd_config.table_names['lrs_network']
         self.lrs_routeid = smd_config.table_fields['lrs_network']['route_id']
         self.lrs_routename = smd_config.table_fields['lrs_network']['route_name']
-        self.lrs_lintas = smd_config.table_fields['lrs_network']['lintas']
         self.lrs_from_date = smd_config.table_fields['lrs_network']['from_date']
         self.lrs_to_date = smd_config.table_fields['lrs_network']['to_date']
 
@@ -40,7 +39,7 @@ class LRSShapeFile(object):
             format(self.lrs_from_date, self.lrs_to_date)
         where_statement = "({0} IN ({1}))".format(self.lrs_routeid, self.route_list_sql)
 
-        cursor = da.SearchCursor(self.lrs_network, ['SHAPE@', self.lrs_routeid, self.lrs_routename, self.lrs_lintas],
+        cursor = da.SearchCursor(self.lrs_network, ['SHAPE@', self.lrs_routeid, self.lrs_routename],
                                  where_clause=where_statement + " and " + date_query)
 
         return cursor
@@ -57,11 +56,10 @@ class LRSShapeFile(object):
         field_name_and_type = {
             'LINKID': 'TEXT',
             'ROUTE_NAME': 'TEXT',
-            'LINTAS': 'TEXT'
         }
 
         # Insert cursor field
-        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME', 'LINTAS']
+        insert_field = ['SHAPE@', 'LINKID', 'ROUTE_NAME']
 
         # Add new field to the shapefile
         for field_name in field_name_and_type:
@@ -78,10 +76,9 @@ class LRSShapeFile(object):
             route_geom = cursor[0]  # The whole route geometry
             route_id = cursor[1]
             route_name = cursor[2]
-            route_lintas = cursor[3]
 
             # Creating new row object to be inserted to the ShapeFile
-            new_row = [route_geom, route_id, route_name, route_lintas]
+            new_row = [route_geom, route_id, route_name]
             no_null = [val if val is not None else "Data tidak tersedia." for val in new_row]
             insert_cursor.insertRow(no_null)
             polyline_feature_count += 1
