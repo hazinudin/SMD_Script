@@ -72,14 +72,15 @@ def to_polyline(dataframe, sorting_col, long_col, lat_col, to_m_col, lane_col='L
     if dataframe.empty:
         return None
     else:
-        ref_data = dataframe.loc[dataframe[lane_col] == ref_lane]  # Only select referenced lane
+        ref_data = dataframe.loc[dataframe[lane_col] == ref_lane].set_index(to_m_col)  # Only select referenced lane
+        second_lane = dataframe.loc[dataframe[lane_col] == second_ref].set_index(to_m_col)  # The second referenced lane
+        missing_index = np.setdiff1d(second_lane.index, ref_data.index)
+        missing_segm = second_lane.loc[missing_index]
+        appended = ref_data.append(missing_segm).reset_index()
 
-        if ref_data.empty:
-            ref_data = dataframe.loc[dataframe[lane_col] == second_ref]  # If the ref lane does not exist
-
-        ref_data.sort_values(by=sorting_col, inplace=True)
-        ref_data['Point'] = ref_data.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]*to_meters), axis=1)
-        coord_array = ref_data['Point'].values.tolist()
+        appended.sort_values(by=sorting_col, inplace=True)
+        appended['Point'] = appended.apply(lambda x: Point(x[long_col], x[lat_col], M=x[to_m_col]*to_meters), axis=1)
+        coord_array = appended['Point'].values.tolist()
         arcpy_ar = Array(coord_array)
         spat_ref = SpatialReference(int(projections))
 
