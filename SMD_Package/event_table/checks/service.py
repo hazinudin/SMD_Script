@@ -308,8 +308,6 @@ class RNICheck(TableCheckService):
             self.check.range_domain_check(routes=valid_routes, **self.kwargs)
             self.check.survey_year_check(self.data_year, **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, **self.kwargs)
-            self.check.measurement_check(routes=valid_routes, compare_to='LRS', max_m='segment_len',
-                                         **self.kwargs)
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(r_shwidth='R_INN_SHWIDTH', l_shwidth='L_INN_SHWIDTH',
                                               routes=valid_routes, **self.kwargs)
@@ -331,6 +329,11 @@ class RNICheck(TableCheckService):
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
+                self.check.measurement_check(routes=valid_routes, compare_to='LRS', max_m='segment_len',
+                                             **self.kwargs)
+            else:
+                self.check.measurement_check(routes=valid_routes, compare_to='LRS', max_m='segment_len',
+                                             ignore_end_gap=True, **self.kwargs)
 
             # REVIEW
             self.check.rni_compare_surftype(routes=valid_routes, kwargs_comparison=self.data_config.compare_table,
