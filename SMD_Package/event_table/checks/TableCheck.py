@@ -1074,7 +1074,7 @@ class EventValidation(object):
                 if lane_code is not None:
                     coordinate_error.find_lane_error(rni_df=rni_df)
 
-                coordinate_error.close_to_zero('rniDistance')
+                coordinate_error.close_to_zero('lrsDistance')
 
                 if previous_year_table is not None:
                     coordinate_error.close_to_zero('previousYear')
