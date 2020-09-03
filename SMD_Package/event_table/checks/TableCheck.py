@@ -790,7 +790,11 @@ class EventValidation(object):
 
             if not end_only:  # If end_only is False then checks for all error at the middle of inputted data.
                 if (kwargs.get('first_lane_only_gap') is None) or (not kwargs.get('first_lane_only_gap')):
-                    lane_group = df_route.groupby(by=[lane_code])
+
+                    if lane_code is not None:
+                        lane_group = df_route.groupby(by=[str(lane_code)])
+                    else:
+                        lane_group = df_route.groupby(by=[str(routeid_col)])
 
                     error_rows = None
                     for name, group_df in lane_group:
@@ -830,25 +834,45 @@ class EventValidation(object):
                 for index, row in error_rows.iterrows():
                     from_m = row[from_m_col]
                     to_m = row[to_m_col]
-                    lane = row[lane_code]
+
+                    if lane_code is None:
+                        lane = None
+                    else:
+                        lane = row[lane_code]
+
                     next_from_m = row['SHIFTED_FROM_M']
                     next_to_m = g_sorted.at[index+1, to_m_col]
 
                     if row['MIDDLE_GAP'] is True:
-                        error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane {3}. (Terdapat gap di tengah ruas)'. \
-                            format(route, to_m, next_from_m, lane)
+                        if lane is None:
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2}. (Terdapat gap di tengah ruas)'. \
+                                format(route, to_m, next_from_m)
+                        else:
+                            error_message = 'Tidak ditemukan data survey pada rute {0} dari Km {1} hingga {2} pada lane {3}. (Terdapat gap di tengah ruas)'. \
+                                format(route, to_m, next_from_m, lane)
+
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
                     if row['OVERLAP'] is True:
-                        error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4} di jalur {5}'. \
-                            format(next_from_m, next_to_m, from_m, to_m, route, lane)
+                        if lane is None:
+                            error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}.'. \
+                                format(next_from_m, next_to_m, from_m, to_m, route)
+                        else:
+                            error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4} di jalur {5}'. \
+                                format(next_from_m, next_to_m, from_m, to_m, route, lane)
+
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
                     if row['FROM>TO'] is True:
-                        error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane {5}.'.\
-                            format(to_m, from_m, route, from_m_col, to_m_col, lane)
+                        if lane is None:
+                            error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane.'. \
+                                format(to_m, from_m, route, from_m_col, to_m_col)
+                        else:
+                            error_message = 'Segmen {0}-{1} pada rute {2} memiliki arah segmen yang terbalik, {3} > {4} lane {5}.'.\
+                                format(to_m, from_m, route, from_m_col, to_m_col, lane)
+
                         self.error_list.append(error_message)
                         self.insert_route_message(route, 'error', error_message)
 
