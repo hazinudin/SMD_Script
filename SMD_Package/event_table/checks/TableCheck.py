@@ -2110,7 +2110,7 @@ class EventValidation(object):
         merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection,
                               rni_surface_type, agg_func={rni_surface_type: lambda x: x.value_counts().index[0]})
 
-        grouped = merged.groupby([routeid_col, from_m_col, to_m_col, survey_dir_col]).\
+        grouped = merged.groupby([routeid_col, "_"+from_m_col, "_"+to_m_col, survey_dir_col]).\
             agg({rni_surface_type: lambda x: x.value_counts().index[0],
                  thickness_col: lambda x: x.value_counts().index[0]}).reset_index()
 
@@ -2553,8 +2553,8 @@ class EventValidation(object):
 
         merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection, rni_medwidth,
                               agg_func={rni_medwidth: lambda x: x.max()})
-        grouped = merged.groupby([routeid_col, from_m_col, to_m_col]).agg({direction_col: lambda x: x.nunique(),
-                                                                           rni_medwidth: lambda x: x.max()}).reset_index()
+        grouped = merged.groupby([routeid_col, "_"+from_m_col, "_"+to_m_col]).agg({direction_col: lambda x: x.nunique(),
+                                                                              rni_medwidth: lambda x: x.max()}).reset_index()
         error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
 
         for index, row in error_rows.iterrows():
