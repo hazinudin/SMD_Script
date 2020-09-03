@@ -32,7 +32,9 @@
   "kwargs":{
     "routeid_col":"LINKID",
     "from_m_col":"FROM_STA",
-    "to_m_col":"TO_STA"
+    "to_m_col":"TO_STA",
+    "lane_code":null,
+    "length_col":"SEGMENT_LENGTH"
   },
   "search_radius":30
 }
