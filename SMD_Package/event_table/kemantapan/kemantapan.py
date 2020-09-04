@@ -435,14 +435,15 @@ class Kemantapan(object):
         for index, row in df_merge.iterrows():
             group_not_found = True
 
-            while group_not_found:  # Iterate until a group is found
+            for group in group_details:
+                if row[surftype_col] in group_details[group]['group']:  # If the group was found
+                    group_not_found = False  # group not found is False
+                    surface_group = str(group)  # surface group
+                    paved_group = group_details[group]['category']
+                    range = np.array(group_details[group]['iri_range'])  # group's range in np.array
 
-                for group in group_details:
-                    if row[surftype_col] in group_details[group]['group']:  # If the group was found
-                        group_not_found = False  # group not found is False
-                        surface_group = str(group)  # surface group
-                        paved_group = group_details[group]['category']
-                        range = np.array(group_details[group]['iri_range'])  # group's range in np.array
+            if group_not_found:
+                return None
 
             lower_bound = np.amin(range)  # The lower bound
             upper_bound = np.amax(range)  # The upper bound

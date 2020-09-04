@@ -1662,8 +1662,15 @@ class EventValidation(object):
             # Add surface group and category column
             merged = Kemantapan.static_grading(merged, input_surftype, None, Kemantapan.group_details(), None,
                                                surftype_group='input_group', surftype_cat='input_cat')
+
+            if merged is None:
+                return self
+
             merged = Kemantapan.static_grading(merged, ref_surftype, None, Kemantapan.group_details(), None,
                                                surftype_group='ref_group', surftype_cat='ref_cat')
+
+            if merged is None:
+                return self
 
             merged['status'] = pd.Series(np.nan)
             merged.loc[(merged['ref_cat'] == 'p') & (merged['input_cat'] == 'up'), ['status']] = 'error'
