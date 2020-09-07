@@ -1,6 +1,6 @@
 from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
 from SMD_Package.event_table.traffic.aadt import AADT
-from arcpy import env
+from arcpy import env, ListFields
 import json
 import pandas as pd
 import datetime
@@ -120,6 +120,12 @@ class KemantapanService(object):
 
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
         self.kwargs = kwargs
+        grade_col_exist = self.check_grading_column()
+
+        if not grade_col_exist:  # Check if the grading column does not exist.
+            self.status_json = "Kolom {0} tidak dapat ditemukan pada table {1}.".\
+                format(self.grading_col, self.table_name)
+            return
 
         # Select the route request based on source-output update date.
         self.route_selection = self._route_date_selection()
@@ -358,6 +364,13 @@ class KemantapanService(object):
             routes = source_date[self.routeid_col].tolist()
 
         return routes
+
+    def check_grading_column(self):
+        list_fields = ListFields(self.table_name)
+        fields = [f.name for f in list_fields]
+        col_exist = self.grading_col in fields
+
+        return col_exist
 
     def write_summary_to_gdb(self):
         col_details = dict()
