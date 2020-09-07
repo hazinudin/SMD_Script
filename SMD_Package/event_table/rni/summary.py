@@ -31,11 +31,13 @@ class RNISummary(object):
         self.road_type_col = smd_config.table_fields['rni']['road_type']
         self.segment_len_col = smd_config.table_fields['rni']['length_col']
         self.surf_type_col = smd_config.table_fields['rni']['surface_type']
-        self.routes = routes
+        self.route_req = routes
         self.width_range = [4.5, 6, 7, 8, 14]
         self.width_col_pref = "WIDTH_CAT_"
         self.road_type_list = range(1, 26)  # From 1 to 25
         self.road_type_col_pref = "ROAD_TYPE_"
+        self.update_date_col = 'UPDATE_DATE'
+        self.force_update = False
 
         if year is None:
             self.year = datetime.now().year
@@ -43,9 +45,9 @@ class RNISummary(object):
             self.year = year
 
         if (type(routes) == str) or (type(routes) == unicode):
-            self.routes = [routes]
+            self.route_req = [routes]
         elif type(routes) == list:
-            self.routes = routes
+            self.route_req = routes
         else:
             raise TypeError("Routes is not in str, unicode, or list.")
 
@@ -55,11 +57,11 @@ class RNISummary(object):
         columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col, self.lane_width,
                    self.road_type_col, self.segment_len_col, self.surf_type_col]
 
-        self.df = event_fc_to_df(self.table_name, columns, self.routes, self.routeid_col, env.workspace, True)
+        self.df = event_fc_to_df(self.table_name, columns, self.route_req, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
-        self.status = {_route: "RNI data available." for _route in self.routes}
-        missing_routes = np.setdiff1d(self.routes, self.df[self.routeid_col]).tolist()
+        self.status = {_route: "RNI data available." for _route in self.route_req}
+        missing_routes = np.setdiff1d(self.route_req, self.df[self.routeid_col]).tolist()
         missing_status = {_route: "Missing RNI data." for _route in missing_routes}
         self.status.update(missing_status)
 
@@ -204,3 +206,31 @@ class RNISummary(object):
             col_details[col_name]['dtype'] = gdb_dtype
 
         gdb_table_writer(env.workspace, df, output_table, col_details, replace_key=[self.routeid_col, year_col])
+
+    def _route_date_selection(self, output_table):
+        if self.route_req == 'ALL':
+            routes = self.route_req
+        elif (type(self.route_req) == unicode) or (type(self.route_req) == str):
+            routes = [self.route_req]
+        elif type(self.route_req) == list:
+            routes = self.route_req
+        elif self.route_req is None:
+            raise ("No Route parameter in the input JSON.")
+        else:
+            raise ("Route selection is neither list or string.")
+
+        req_columns = [self.update_date_col, self.routeid_col]
+        source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
+                                     sql_prefix='MAX ({0})'.format(self.update_date_col),
+                                     sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+
+        if not self.force_update:
+            output_date = event_fc_to_df(output_table, req_columns, routes, self.routeid_col, env.workspace, True)
+            merged = pd.merge(source_date, output_date, on=self.routeid_col, how='outer', suffixes=('_SOURCE', '_TARGET'))
+            selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
+                                   (merged['UPDATE_DATE_TARGET'].isnull())]
+            routes = selection[self.routeid_col].tolist()
+        else:
+            routes = source_date[self.routeid_col].tolist()
+
+        return routes
