@@ -242,7 +242,7 @@ class RNISummary(object):
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, **kwargs):
-        super(WidthSummary, self).__init__(**kwargs)
+        super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI",**kwargs)
 
         routes = self._route_date_selection(self.output_table)
 
