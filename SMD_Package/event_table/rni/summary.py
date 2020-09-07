@@ -216,11 +216,15 @@ class RNISummary(object):
         else:
             raise ("Route selection is neither list or string.")
 
-        self.status = {_route: "Not updated." for _route in routes}  # Create status for each route
+        self.status = {_route: "Missing RNI data." for _route in routes}  # Initialize route status.
+
         req_columns = [self.update_date_col, self.routeid_col]
         source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
                                      sql_prefix='MAX ({0})'.format(self.update_date_col),
                                      sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+
+        source_routes = source_date[self.routeid_col].tolist()  # Get the available route from source table.
+        self.status.update({_route: "Updated." for _route in source_routes})  # Update the status attribute.
 
         if not self.force_update:
             output_date = event_fc_to_df(output_table, req_columns, routes, self.routeid_col, env.workspace, True)
@@ -228,11 +232,10 @@ class RNISummary(object):
             selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
                                    (merged['UPDATE_DATE_TARGET'].isnull())]
             route_selection = selection[self.routeid_col].tolist()
+            not_updated = np.setdiff1d(source_routes, route_selection).tolist()  # Routes that will not be updated
+            self.status.update({_route: "Not updated." for _route in not_updated})
         else:
-            route_selection = source_date[self.routeid_col].tolist()
-
-        update_status = {_route: "Updated." for _route in route_selection}
-        self.status.update(update_status)  # Update the route status based on selection result.
+            route_selection = source_routes
 
         return route_selection
 
@@ -240,14 +243,11 @@ class RNISummary(object):
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, **kwargs):
         super(WidthSummary, self).__init__(**kwargs)
+
         routes = self._route_date_selection(self.output_table)
 
         for route in routes:
             df = self.rni_route_df(route)
-
-            if df.empty:
-                self.status.update({route: "Missing RNI data."})
-                continue
 
             segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
             lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
