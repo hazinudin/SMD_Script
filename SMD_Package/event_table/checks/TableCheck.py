@@ -622,7 +622,8 @@ class EventValidation(object):
 
                 df_route_lane = df.loc[(df[lane_code] == lane) & (df[routeid_col] == route)]
                 max_to_ind = df_route_lane[from_m_col].idxmax()
-                last_segment_len = df_route_lane.at[max_to_ind, 'diff']  # The last segment real length
+                # Rounded
+                last_segment_len = np.round(df_route_lane.at[max_to_ind, 'diff'], 2)  # The last segment real length
                 last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]  # The last segment stated len
                 last_from = df_route_lane.at[max_to_ind, from_m_col]*100  # Last segment from measure in Decameters
                 last_to = df_route_lane.at[max_to_ind, to_m_col]*100  # Last segment to measure in Decameters
