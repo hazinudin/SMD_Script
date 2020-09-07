@@ -55,10 +55,8 @@ class RNISummary(object):
         self.df = event_fc_to_df(self.table_name, columns, self.route_req, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
-        self.status = {_route: "RNI data available." for _route in self.route_req}
-        missing_routes = np.setdiff1d(self.route_req, self.df[self.routeid_col]).tolist()
-        missing_status = {_route: "Missing RNI data." for _route in missing_routes}
-        self.status.update(missing_status)
+        self.status = None
+        self.route_selection = self._route_date_selection(self.output_table)
 
     def width_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_LEBAR_RNI'):
         """
@@ -218,6 +216,7 @@ class RNISummary(object):
         else:
             raise ("Route selection is neither list or string.")
 
+        self.status = {_route: "Not updated." for _route in routes}  # Create status for each route
         req_columns = [self.update_date_col, self.routeid_col]
         source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
                                      sql_prefix='MAX ({0})'.format(self.update_date_col),
@@ -228,11 +227,14 @@ class RNISummary(object):
             merged = pd.merge(source_date, output_date, on=self.routeid_col, how='outer', suffixes=('_SOURCE', '_TARGET'))
             selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
                                    (merged['UPDATE_DATE_TARGET'].isnull())]
-            routes = selection[self.routeid_col].tolist()
+            route_selection = selection[self.routeid_col].tolist()
         else:
-            routes = source_date[self.routeid_col].tolist()
+            route_selection = source_date[self.routeid_col].tolist()
 
-        return routes
+        update_status = {_route: "Updated." for _route in route_selection}
+        self.status.update(update_status)  # Update the route status based on selection result.
+
+        return route_selection
 
 
 class WidthSummary(RNISummary):
@@ -241,7 +243,12 @@ class WidthSummary(RNISummary):
         routes = self._route_date_selection(self.output_table)
 
         for route in routes:
-            df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
+            df = self.rni_route_df(route)
+
+            if df.empty:
+                self.status.update({route: "Missing RNI data."})
+                continue
+
             segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
             lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
             width_cat_col = 'width_cat'
