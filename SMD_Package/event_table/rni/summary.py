@@ -280,3 +280,25 @@ class WidthSummary(RNISummary):
 
             if write_to_db:
                 self._write_to_df(result, self.output_table)
+
+
+class RoadTypeSummary(RNISummary):
+    def __init__(self, write_to_db=True, **kwargs):
+        super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
+
+        routes = self._route_date_selection(self.output_table)
+
+        for route in routes:
+            df = self.rni_route_df(route)
+
+            pivot_roadtype_col = '_road_type'
+            df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref + str(x))
+            pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                                   columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
+            pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
+            missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot_lkm))
+            pivot_lkm[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot_lkm.index)
+            pivot_lkm.fillna(0, inplace=True)
+
+            if write_to_db:
+                self._write_to_df(pivot_lkm, self.output_table)
