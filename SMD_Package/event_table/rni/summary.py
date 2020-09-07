@@ -179,6 +179,10 @@ class RNISummary(object):
 
         return cols
 
+    def rni_route_df(self, route):
+        df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
+        return df
+
     def _write_to_df(self, df, output_table):
         col_details = dict()
         year_col = 'YEAR'
