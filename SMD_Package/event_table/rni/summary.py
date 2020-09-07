@@ -8,7 +8,7 @@ from datetime import datetime
 
 
 class RNISummary(object):
-    def __init__(self, routes, year=None, **kwargs):
+    def __init__(self, output_table, routes, year=None, **kwargs):
         """
         Used for summarizing RNI dataset.
         """
@@ -38,24 +38,19 @@ class RNISummary(object):
         self.road_type_col_pref = "ROAD_TYPE_"
         self.update_date_col = 'UPDATE_DATE'
         self.force_update = False
+        self.output_table = output_table
 
         if year is None:
             self.year = datetime.now().year
         else:
             self.year = year
 
-        if (type(routes) == str) or (type(routes) == unicode):
-            self.route_req = [routes]
-        elif type(routes) == list:
-            self.route_req = routes
-        else:
-            raise TypeError("Routes is not in str, unicode, or list.")
-
         self.__dict__.update(kwargs)  # Update all class attribute.
 
         # Put all columns variable to a list.
         columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col, self.lane_width,
                    self.road_type_col, self.segment_len_col, self.surf_type_col]
+        self.rni_columns = columns
 
         self.df = event_fc_to_df(self.table_name, columns, self.route_req, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
@@ -234,3 +229,43 @@ class RNISummary(object):
             routes = source_date[self.routeid_col].tolist()
 
         return routes
+
+
+class WidthSummary(RNISummary):
+    def __init__(self, write_to_db=True, **kwargs):
+        super(WidthSummary, self).__init__(**kwargs)
+        routes = self._route_date_selection(self.output_table)
+
+        for route in routes:
+            df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
+            segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
+            lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
+            width_cat_col = 'width_cat'
+            lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
+
+            first_range = self.width_range[0]
+            last_range = self.width_range[len(self.width_range)-1]
+            lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = '{0}1'.format(self.width_col_pref)
+            lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = '{0}{1}'.\
+                format(self.width_col_pref, len(self.width_range))
+
+            for w_range in self.width_range:
+                range_ind = self.width_range.index(w_range)
+                if range_ind == 0:
+                    continue
+                else:
+                    prev_range = self.width_range[range_ind-1]
+                    lane_w_g.loc[((lane_w_g[self.lane_width] <= w_range) &
+                                  (lane_w_g[self.lane_width] > prev_range)),
+                                 width_cat_col] = '{0}{1}'.format(self.width_col_pref, range_ind + 1)
+
+            pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
+                                         aggfunc=np.sum)
+            route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
+            result = pivot.join(route_g).reset_index()
+            missing_col = np.setdiff1d(self.width_class_col, list(result))
+            result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
+            result.fillna(0, inplace=True)
+
+            if write_to_db:
+                self._write_to_df(result, self.output_table)
