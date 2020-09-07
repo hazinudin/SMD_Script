@@ -302,3 +302,31 @@ class RoadTypeSummary(RNISummary):
 
             if write_to_db:
                 self._write_to_df(pivot_lkm, self.output_table)
+
+
+class SurfaceTypeSummary(RNISummary):
+    def __init__(self, write_to_db=True, **kwargs):
+        super(SurfaceTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_PERKERASAN", **kwargs)
+
+        routes = self._route_date_selection(self.output_table)
+
+        for route in routes:
+            df = self.rni_route_df(route)
+            pivot_surface_type = '_surface_type'
+
+            surface_g_df = Kemantapan.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
+            surface_g_df['group'] = surface_g_df['group'].astype(int)  # Convert to integer.
+            surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
+            surfaces = surface_g_df[pivot_surface_type].tolist()
+
+            merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
+            pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                                       columns=pivot_surface_type, aggfunc=np.sum).reset_index()
+            pivot_lkm = pivot.groupby(self.routeid_col).sum().reset_index()
+            missing_col = np.setdiff1d(surfaces, list(pivot_lkm))
+            pivot_lkm[missing_col] = pd.DataFrame(0, index=pivot_lkm.index, columns=missing_col)
+            pivot_lkm.fillna(0, inplace=True)
+
+            if write_to_db:
+                self._write_to_df(pivot_lkm, self.output_table)
+
