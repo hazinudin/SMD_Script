@@ -1,3 +1,4 @@
+import json
 from SMD_Package import SMDConfigs, Configs, event_fc_to_df, gdb_table_writer
 from SMD_Package.event_table.kemantapan.kemantapan import Kemantapan
 from arcpy import env
@@ -20,7 +21,10 @@ class RNISummary(object):
         smd_config = SMDConfigs()
         db_connection = smd_config.smd_database['instance']
         env.workspace = db_connection
+
         rni_config = Configs('RNICheck/rni_config_2020.json')
+        self.road_type_group_path = "SMD_Package/event_table/rni/roadtype_group.json"
+
         self.table_name = smd_config.table_names['rni']
 
         self.routeid_col = smd_config.table_fields['rni']['route_id']
@@ -58,112 +62,11 @@ class RNISummary(object):
         self.status = None
         self.route_selection = self._route_date_selection(self.output_table)
 
-    def width_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_LEBAR_RNI'):
-        """
-        Classify segments based on its surface width, create a DataFrame and write it to a database table.
-        """
-        if self.df.empty:
-            return self
-
-        df = self.df.copy(deep=True)
-        segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
-        lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
-        width_cat_col = 'width_cat'
-        lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
-
-        first_range = self.width_range[0]
-        last_range = self.width_range[len(self.width_range)-1]
-        lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = '{0}1'.format(self.width_col_pref)
-        lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = '{0}{1}'.\
-            format(self.width_col_pref, len(self.width_range))
-
-        for w_range in self.width_range:
-            range_ind = self.width_range.index(w_range)
-            if range_ind == 0:
-                continue
-            else:
-                prev_range = self.width_range[range_ind-1]
-                lane_w_g.loc[((lane_w_g[self.lane_width] <= w_range) &
-                              (lane_w_g[self.lane_width] > prev_range)),
-                             width_cat_col] = '{0}{1}'.format(self.width_col_pref, range_ind + 1)
-
-        pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
-                                     aggfunc=np.sum)
-        route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
-        result = pivot.join(route_g).reset_index()
-        missing_col = np.setdiff1d(self.width_class_col, list(result))
-        result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
-        result.fillna(0, inplace=True)
-
-        if write_to_db:
-            self._write_to_df(result, output_table)
-
-        if return_df:
-            return result
-        else:
-            return self
-
-    def roadtype_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_TIPE_JALAN'):
-        """
-        Classification based on the roadtype.
-        """
-        if self.df.empty:
-            return self
-
-        df = self.df.copy(deep=True)
-        pivot_roadtype_col = '_road_type'
-        df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref+str(x))
-        pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                               columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
-        pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
-        missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot_lkm))
-        pivot_lkm[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot_lkm.index)
-        pivot_lkm.fillna(0, inplace=True)
-
-        if write_to_db:
-            self._write_to_df(pivot_lkm, output_table)
-
-        if return_df:
-            return pivot_lkm
-        else:
-            return self
-
-    def surface_summary(self, write_to_db=True, return_df=True, output_table='SMD.REKAP_TIPE_PERKERASAN'):
-        """
-        Classification based on the surface type.
-        """
-        if self.df.empty:
-            return self
-
-        df = self.df.copy(deep=True)
-        pivot_surface_type = '_surface_type'
-
-        surface_g_df = Kemantapan.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
-        surface_g_df['group'] = surface_g_df['group'].astype(int)  # Convert to integer.
-        surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
-        surfaces = surface_g_df[pivot_surface_type].tolist()
-
-        merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
-        pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                                   columns=pivot_surface_type, aggfunc=np.sum).reset_index()
-        pivot_lkm = pivot.groupby(self.routeid_col).sum().reset_index()
-        missing_col = np.setdiff1d(surfaces, list(pivot_lkm))
-        pivot_lkm[missing_col] = pd.DataFrame(0, index=pivot_lkm.index, columns=missing_col)
-        pivot_lkm.fillna(0, inplace=True)
-
-        if write_to_db:
-            self._write_to_df(pivot_lkm, output_table)
-
-        if return_df:
-            return pivot_lkm
-        else:
-            return self
-
     @property
     def roadtype_class_col(self):
         cols = list()
-        for r_type in self.road_type_list:
-            column = self.road_type_col_pref + str(r_type)
+        for r_group in self.road_type_group_df['ROAD_TYPE_GROUP'].tolist():
+            column = self.road_type_col_pref + str(r_group)
             cols.append(column)
 
         return cols
@@ -239,10 +142,21 @@ class RNISummary(object):
 
         return route_selection
 
+    @property
+    def road_type_group_df(self):
+        with open(self.road_type_group_path) as j_file:
+            type_dict = json.load(j_file)
+
+        df = pd.DataFrame.from_dict(type_dict, orient='index').stack().reset_index(level=0)
+        df.rename(columns={'level_0': 'ROAD_TYPE_GROUP', 0: 'ROAD_TYPE'}, inplace=True)
+        df['ROAD_TYPE'] = df['ROAD_TYPE'].astype(int)
+
+        return df
+
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, **kwargs):
-        super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI",**kwargs)
+        super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
 
@@ -287,12 +201,14 @@ class RoadTypeSummary(RNISummary):
         super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
+        type_group_df = self.road_type_group_df
 
         for route in routes:
             df = self.rni_route_df(route)
 
             pivot_roadtype_col = '_road_type'
-            df[pivot_roadtype_col] = df[self.road_type_col].apply(lambda x: self.road_type_col_pref + str(x))
+            df = df.merge(type_group_df, on='ROAD_TYPE')
+            df[pivot_roadtype_col] = df['ROAD_TYPE_GROUP'].apply(lambda x: self.road_type_col_pref + str(x))
             pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
                                    columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
             pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
