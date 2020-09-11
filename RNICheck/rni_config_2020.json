@@ -91,6 +91,7 @@
     "22":{"lane_count":2, "direction":2, "median":true},
     "23":{"lane_count":6, "direction":2, "median":false},
     "24":{"lane_count":5, "direction":2, "median":false},
-    "25":{"lane_count":8, "direction":2, "median":false}
+    "25":{"lane_count":8, "direction":2, "median":false},
+    "26":{"lane_count":3, "direction":1, "median":true}
   }
 }
