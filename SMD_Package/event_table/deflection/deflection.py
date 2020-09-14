@@ -5,15 +5,15 @@ sorting process and table lookup from a database connection.
 
 
 class Deflection(object):
-    def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, route_col='LINKID', from_m_col='STA_FROM',
-                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL'):
+    def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, routeid_col='LINKID', from_m_col='STA_FROM',
+                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL', **kwargs):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
         :param d0_col: The D0 column.
         :param d200_col: The d200 column.
         :param asp_temp: The asphalt temperature column.
-        :param route_col: The route id column
+        :param routeid_col: The route id column
         :param from_m_col: The From Measure column
         :param to_m_col: The To Measure column
         :param survey_direc: The Survey Direction column
@@ -27,12 +27,12 @@ class Deflection(object):
         if routes == 'ALL':
             self.df = df.copy(deep=True)
         elif type(routes) == list:
-            self.df = df.loc[df[route_col].isin(routes)].copy(deep=True)
+            self.df = df.loc[df[routeid_col].isin(routes)].copy(deep=True)
         else:
-            self.df = df.loc[df[route_col] == routes].copy(deep=True)
+            self.df = df.loc[df[routeid_col] == routes].copy(deep=True)
 
         self.force_col = force_col
-        self.route_col = route_col
+        self.route_col = routeid_col
         self.from_m = from_m_col
         self.to_m = to_m_col
         self.force_ref = force_ref
