@@ -257,7 +257,7 @@ class EventValidation(object):
             for index, row in error_row.iterrows():
 
                 if year_check_only:
-                    if lane_code is not None:
+                    if (lane_code is not None) and (row.get(lane_code) is not None):
                         result = "Rute {0} memiliki {1} yang tidak sesuai dengan input {2} pada segmen {3}-{4} {5}.".\
                             format(row[routeid_col], year_col, year_input, row[from_m_col], row[to_m_col], row[lane_code])
                         self.insert_route_message(row[routeid_col], 'error', result)
@@ -267,7 +267,7 @@ class EventValidation(object):
                         self.insert_route_message(row[routeid_col], 'error', result)
 
                 else:
-                    if lane_code is not None:
+                    if (lane_code is not None) and (row.get(lane_code) is not None):
                         result = "Rute {0} memiliki {1} atau {2} yang tidak sesuai dengan input {3}/{4} pada segmen {5}-{6} {7}.".\
                             format(row[routeid_col], year_col, sem_col, year_input, semester_input, row[from_m_col],
                                    row[to_m_col], row[lane_code])
@@ -641,7 +641,7 @@ class EventValidation(object):
                         excel_i = error_index + 2  # Create the index for excel table
                         from_m = df_route_lane.at[error_index, from_m_col]  # The from m value
                         to_m = df_route_lane.at[error_index, to_m_col]  # The to m value
-                        segment_real_len = df_route_lane.at[error_index, 'diff']
+                        segment_real_len = df_route_lane.at[error_index, length_col]
                         # Create error message
                         error_message = 'Segmen pada baris {2} memiliki {0}-{1} ({4}-{5}) dan panjang segmen ({3}) yang tidak konsisten atau memiliki panjang segmen yang tidak sama dengan {6}.'.\
                             format(from_m_col, to_m_col, excel_i, segment_real_len, from_m, to_m, segment_len)
