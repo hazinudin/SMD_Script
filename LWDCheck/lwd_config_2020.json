@@ -28,7 +28,8 @@
     "routeid_col":"LINKID",
     "from_m_col":"FROM_STA",
     "to_m_col":"TO_STA",
-    "length_col":"SEGMENT_LENGTH"
+    "length_col":"SEGMENT_LENGTH",
+    "segment_len": 0.5
   },
   "search_radius":30
 }
