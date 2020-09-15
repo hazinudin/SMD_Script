@@ -46,6 +46,11 @@ class Kemantapan(object):
         rni_lane_code = SMDConfigs().table_fields['rni']['lane_code']
         surftype_col = SMDConfigs().table_fields['rni']['surface_type']
 
+        lrs_table = SMDConfigs().table_names['lrs_network']
+        lrs_routeid = SMDConfigs().table_fields['lrs_network']['route_id']
+        self.sklen_col = SMDConfigs().table_fields['lrs_network']['sk_length']
+        lrs_cols = [lrs_routeid, self.sklen_col]
+
         self.rni_table = rni_table
         self.rni_route_col = rni_route_col
         self.rni_from_col = rni_from_col
@@ -63,6 +68,10 @@ class Kemantapan(object):
         df_rni = event_fc_to_df(self.rni_table, rni_request_cols, input_routes, self.rni_route_col, env.workspace, True)
         df_rni[self.rni_from_col] = pd.Series(df_rni[self.rni_from_col]*rni_mfactor).round(1).astype(int)  # Convert the RNI measurement
         df_rni[self.rni_to_col] = pd.Series(df_rni[self.rni_to_col]*rni_mfactor).round(1).astype(int)
+
+        # Get the LRS SK Length data.
+        self.sklen_df = event_fc_to_df(lrs_table, lrs_cols, input_routes, lrs_routeid, env.workspace, True).\
+            set_index(lrs_routeid)
 
         self.df_rni = df_rni
         self.group_details = self.group_details()
