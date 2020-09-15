@@ -70,22 +70,28 @@ class Kemantapan(object):
         self.lane_based = lane_based
         self.lane_code = lane_code_col
         self.graded_df = None
+        self.missing_rni = False
 
-        # The input and RNI DataFrame merge result
-        merge_df = self.rni_table_join(df_rni, df_event, routeid_col, from_m_col, to_m_col, grading_col,
-                                       self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col, lane_based,
-                                       match_only=False, lane_code=lane_code_col, rni_lane_code=self.rni_lane_code,
-                                       agg_method=method)
-        self.merged_df = merge_df
-        self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
-        self.grading(surftype_col, grading_col)
-        self.mantap_percent = self.kemantapan_percentage(self.graded_df, routeid_col, from_m_col, to_m_col, 0.01)
-        self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', routeid_col].tolist()
+        if not df_rni.empty:
+            # The input and RNI DataFrame merge result
+            merge_df = self.rni_table_join(df_rni, df_event, routeid_col, from_m_col, to_m_col, grading_col,
+                                           self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col, lane_based,
+                                           match_only=False, lane_code=lane_code_col, rni_lane_code=self.rni_lane_code,
+                                           agg_method=method)
+            self.merged_df = merge_df
+            self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
+            self.grading(surftype_col, grading_col)
+            self.mantap_percent = self.kemantapan_percentage(self.graded_df, routeid_col, from_m_col, to_m_col, 0.01)
+            self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', routeid_col].tolist()
 
-        if len(self.no_match_route) != 0:
-            self.all_match = False
+            if len(self.no_match_route) != 0:
+                self.all_match = False
+            else:
+                self.all_match = True
         else:
-            self.all_match = True
+            self.all_match = False
+            self.missing_rni = True
+            self.no_match_route = input_routes
 
     def summary(self, flatten=True, lane_km=True):
         """
