@@ -205,6 +205,8 @@ class WidthSummary(RNISummary):
 
             if project_to_sk:
                 result = self.project_to_sklen(result).reset_index()
+            else:
+                result.reset_index(inplace=True)
 
             missing_col = np.setdiff1d(self.width_class_col, list(result))
             result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
