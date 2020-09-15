@@ -86,6 +86,14 @@ class RNISummary(object):
 
         return cols
 
+    def project_to_sklen(self, df):
+        df['sum'] = df.sum(axis=1)
+        joined = df.join(self.sklen_df[self.lrs_sklen_col])
+        joined['factor'] = joined[self.lrs_sklen_col]/joined['sum']
+        joined = joined.apply(lambda x:x*x['factor'], axis=1).drop(['factor', 'sum', self.lrs_sklen_col], axis=1)
+
+        return joined
+
     def rni_route_df(self, route):
         df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
         return df
@@ -161,7 +169,7 @@ class RNISummary(object):
 
 
 class WidthSummary(RNISummary):
-    def __init__(self, write_to_db=True, **kwargs):
+    def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
         super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
@@ -193,7 +201,11 @@ class WidthSummary(RNISummary):
             pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
                                          aggfunc=np.sum)
             route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
-            result = pivot.join(route_g).reset_index()
+            result = pivot.join(route_g)
+
+            if project_to_sk:
+                result = self.project_to_sklen(result).reset_index()
+
             missing_col = np.setdiff1d(self.width_class_col, list(result))
             result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
             result.fillna(0, inplace=True)
@@ -227,7 +239,7 @@ class RoadTypeSummary(RNISummary):
 
 
 class SurfaceTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, **kwargs):
+    def __init__(self, write_to_db=True, lkm=True, project_to_sk=False, **kwargs):
         super(SurfaceTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_PERKERASAN", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
@@ -242,13 +254,27 @@ class SurfaceTypeSummary(RNISummary):
             surfaces = surface_g_df[pivot_surface_type].tolist()
 
             merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
-            pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                                       columns=pivot_surface_type, aggfunc=np.sum).reset_index()
-            pivot_lkm = pivot.groupby(self.routeid_col).sum().reset_index()
-            missing_col = np.setdiff1d(surfaces, list(pivot_lkm))
-            pivot_lkm[missing_col] = pd.DataFrame(0, index=pivot_lkm.index, columns=missing_col)
-            pivot_lkm.fillna(0, inplace=True)
+
+            if lkm:
+                pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                                           columns=pivot_surface_type, aggfunc=np.sum).reset_index()
+                pivot = pivot.groupby(self.routeid_col).sum().reset_index()
+            else:
+                centerline = merged.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
+                    agg({self.segment_len_col: np.mean,
+                         '_surface_type': (lambda x: x.value_counts().index[0])
+                         }).reset_index()
+                pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                                               columns=pivot_surface_type, aggfunc=np.sum)
+                if project_to_sk:
+                    pivot = self.project_to_sklen(pivot)
+
+                pivot.reset_index(inplace=True)
+
+            missing_col = np.setdiff1d(surfaces, list(pivot))
+            pivot[missing_col] = pd.DataFrame(0, index=pivot.index, columns=missing_col)
+            pivot.fillna(0, inplace=True)
 
             if write_to_db:
-                self._write_to_df(pivot_lkm, self.output_table)
+                self._write_to_df(pivot, self.output_table)
 
