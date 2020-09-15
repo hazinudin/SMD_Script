@@ -100,6 +100,11 @@ class KemantapanService(object):
         self.balai_column = 'BALAI_ID'
         self.update_date_col = 'UPDATE_DATE'
         self.force_update = False
+        self.project_len = False
+
+        # Change the output table suffix if self.project_len is True
+        if self.project_len:
+            self.suffix = 'SK'
 
         # For AADT only
         self.hour_col = None
