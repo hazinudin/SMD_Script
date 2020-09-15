@@ -44,6 +44,10 @@ class RNISummary(object):
         self.force_update = False
         self.output_table = output_table
 
+        lrs_table = smd_config.table_names['lrs_network']
+        self.lrs_routeid_col = smd_config.table_fields['lrs_network']['route_id']
+        self.lrs_sklen_col = smd_config.table_fields['lrs_network']['sk_length']
+
         if year is None:
             self.year = datetime.now().year
         else:
@@ -61,6 +65,8 @@ class RNISummary(object):
 
         self.status = None
         self.route_selection = self._route_date_selection(self.output_table)
+        self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], self.route_selection,
+                                       self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
 
     @property
     def roadtype_class_col(self):
