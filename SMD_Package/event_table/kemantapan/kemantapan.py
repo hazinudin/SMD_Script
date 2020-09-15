@@ -59,7 +59,7 @@ class Kemantapan(object):
         self.surftype_col = surftype_col
         self.grading_col = grading_col
         self.route_col = routeid_col
-        self.project_len = False
+        self.project_to_sk = False
 
         self.__dict__.update(kwargs)
 
@@ -358,7 +358,7 @@ class Kemantapan(object):
         if lane_code is None:  # If no lane code column is specified
             pivot = self.graded_df.pivot_table('_len', index=self.route_col, columns=columns, aggfunc=np.sum,
                                                fill_value=0)
-            if self.project_len:
+            if self.project_to_sk:
                 len_sum = pivot.sum(axis=1)
                 len_sum.name = 'sum'
                 factor = self.sklen_df.join(len_sum, how='inner')
