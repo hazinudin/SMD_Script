@@ -133,7 +133,7 @@ class KemantapanService(object):
         if self.suffix is not None:
             self.output_table = self.output_table + '_' + self.suffix
 
-        self.summary = pd.DataFrame()  # For storing all summary result
+        self.summary_result = pd.DataFrame()  # For storing all summary result
         self.route_date = None
         self.failed_route = list()  # For storing route which cannot be calculated.
         self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
@@ -194,10 +194,9 @@ class KemantapanService(object):
 
         kemantapan = Kemantapan(input_df, **self.__dict__)
 
-        summary_table = kemantapan.summary().reset_index()
-
         if kemantapan.all_match:
-            self.summary = self.summary.append(summary_table)
+            summary_table = kemantapan.summary().reset_index()
+            self.summary_result = self.summary_result.append(summary_table)
 
         self.failed_route += kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
 
@@ -216,7 +215,7 @@ class KemantapanService(object):
 
         aadt = AADT(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
                     self.veh_col_prefix)
-        self.summary = aadt.daily_aadt()
+        self.summary_result = aadt.daily_aadt()
 
         return self
 
@@ -249,9 +248,9 @@ class KemantapanService(object):
 
     def add_year_semester_col(self):
         if self.semester is not None:
-            self.summary[self.semester_col] = pd.Series(self.semester, index=self.summary.index)
+            self.summary_result[self.semester_col] = pd.Series(self.semester, index=self.summary_result.index)
 
-        self.summary[self.year_col] = pd.Series(self.year, index=self.summary.index)
+        self.summary_result[self.year_col] = pd.Series(self.year, index=self.summary_result.index)
 
         return self
 
@@ -264,7 +263,7 @@ class KemantapanService(object):
         satker_df = self.route_date_query(satker_df, self.satker_routeid, self.satker_route_from_date,
                                           self.satker_route_to_date)[[self.satker_routeid, self.satker_ppk_id]]
 
-        self.summary = self.summary.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
+        self.summary_result = self.summary_result.merge(satker_df, left_on=self.routeid_col, right_on=self.satker_routeid)
 
         return self
 
@@ -285,7 +284,7 @@ class KemantapanService(object):
         return df.loc[from_date_q & to_date_q]
 
     def add_prov_id(self):
-        self._add_prov_id(self.summary, self.routeid_col, self.prov_column)
+        self._add_prov_id(self.summary_result, self.routeid_col, self.prov_column)
         # self.summary[self.prov_column] = self.summary[self.routeid_col].apply(lambda x: str(x[:2]))
 
         return self
@@ -295,7 +294,7 @@ class KemantapanService(object):
         df[prov_column] = df[routeid_col].apply(lambda x: str(x[:2]))
 
     def add_balai_id(self):
-        input_provs = self.summary[self.prov_column].tolist()
+        input_provs = self.summary_result[self.prov_column].tolist()
         input_routes = self.success_route
 
         # Get the Database table
@@ -314,18 +313,18 @@ class KemantapanService(object):
                                                self.balai_route_to_date)[[self.balai_route_route_id,
                                                                          self.balai_route_balai_id]]
 
-        self.summary = self.summary.merge(balai_prov_df, left_on=self.prov_column, right_on=self.balai_prov_prov_id)
-        self.summary.set_index(self.routeid_col, inplace=True)
+        self.summary_result = self.summary_result.merge(balai_prov_df, left_on=self.prov_column, right_on=self.balai_prov_prov_id)
+        self.summary_result.set_index(self.routeid_col, inplace=True)
 
         if not balai_route_df.empty:
             balai_route_df.rename(columns={self.balai_route_balai_id: self.balai_prov_balai_id}, inplace=True)
             balai_route_df.set_index(self.balai_route_route_id, inplace=True)
 
-            self.summary.update(balai_route_df)
+            self.summary_result.update(balai_route_df)
 
-        self.summary[self.balai_prov_balai_id] = self.summary[self.balai_prov_balai_id].astype(int)
-        self.summary.drop_duplicates(inplace=True)
-        self.summary.reset_index(inplace=True)
+        self.summary_result[self.balai_prov_balai_id] = self.summary_result[self.balai_prov_balai_id].astype(int)
+        self.summary_result.drop_duplicates(inplace=True)
+        self.summary_result.reset_index(inplace=True)
 
         return self
 
@@ -375,9 +374,9 @@ class KemantapanService(object):
     def write_summary_to_gdb(self):
         col_details = dict()
 
-        for col_name in self.summary.dtypes.to_dict():
+        for col_name in self.summary_result.dtypes.to_dict():
             col_details[col_name] = dict()
-            col_dtype = self.summary.dtypes[col_name]
+            col_dtype = self.summary_result.dtypes[col_name]
 
             # Translate to GDB data type.
             if col_dtype == 'object':
@@ -392,9 +391,9 @@ class KemantapanService(object):
             col_details[col_name]['dtype'] = gdb_dtype
 
         if self.semester is not None:
-            gdb_table_writer(env.workspace, self.summary, self.output_table, col_details,
+            gdb_table_writer(env.workspace, self.summary_result, self.output_table, col_details,
                              replace_key=[self.routeid_col, self.year_col, self.semester_col])
         else:
-            gdb_table_writer(env.workspace, self.summary, self.output_table, col_details,
+            gdb_table_writer(env.workspace, self.summary_result, self.output_table, col_details,
                              replace_key=[self.routeid_col, self.year_col])
 
