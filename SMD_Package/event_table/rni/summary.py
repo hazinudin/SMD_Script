@@ -205,8 +205,8 @@ class WidthSummary(RNISummary):
 
             if project_to_sk:
                 result = self.project_to_sklen(result).reset_index()
-            else:
-                result.reset_index(inplace=True)
+
+            result.reset_index(inplace=True)
 
             missing_col = np.setdiff1d(self.width_class_col, list(result))
             result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
@@ -217,7 +217,7 @@ class WidthSummary(RNISummary):
 
 
 class RoadTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, **kwargs):
+    def __init__(self, write_to_db=True, lkm=True, project_to_sk=False, **kwargs):
         super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
@@ -229,15 +229,30 @@ class RoadTypeSummary(RNISummary):
             pivot_roadtype_col = '_road_type'
             df = df.merge(type_group_df, on='ROAD_TYPE')
             df[pivot_roadtype_col] = df['ROAD_TYPE_GROUP'].apply(lambda x: self.road_type_col_pref + str(x))
-            pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                                   columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
-            pivot_lkm = pivot.groupby([self.routeid_col]).sum().reset_index()
-            missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot_lkm))
-            pivot_lkm[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot_lkm.index)
-            pivot_lkm.fillna(0, inplace=True)
+
+            if lkm:
+                pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                                       columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
+                pivot = pivot.groupby([self.routeid_col]).sum().reset_index()
+            else:
+                centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
+                    agg({self.segment_len_col: np.mean,
+                         pivot_roadtype_col: (lambda x: x.value_counts().index[0])
+                         }).reset_index()
+                pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                                               columns=pivot_roadtype_col, aggfunc=np.sum)
+
+                if project_to_sk:
+                    pivot = self.project_to_sklen(pivot)
+
+                pivot.reset_index(inplace=True)
+
+            missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot))
+            pivot[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot.index)
+            pivot.fillna(0, inplace=True)
 
             if write_to_db:
-                self._write_to_df(pivot_lkm, self.output_table)
+                self._write_to_df(pivot, self.output_table)
 
 
 class SurfaceTypeSummary(RNISummary):
