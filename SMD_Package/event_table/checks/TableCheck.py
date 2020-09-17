@@ -842,7 +842,6 @@ class EventValidation(object):
                         lane = row[lane_code]
 
                     next_from_m = row['SHIFTED_FROM_M']
-                    next_to_m = g_sorted.at[index+1, to_m_col]
 
                     if row['MIDDLE_GAP'] is True:
                         if lane is None:
@@ -856,6 +855,7 @@ class EventValidation(object):
                         self.insert_route_message(route, 'error', error_message)
 
                     if row['OVERLAP'] is True:
+                        next_to_m = g_sorted.at[index + 1, to_m_col]
                         if lane is None:
                             error_message = 'Terdapat tumpang tindih antara segmen {0}-{1} dengan {2}-{3} pada rute {4}.'. \
                                 format(next_from_m, next_to_m, from_m, to_m, route)
