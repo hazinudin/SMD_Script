@@ -2,7 +2,7 @@ import pandas as pd
 from zipfile import BadZipfile
 from arcpy import SetParameterAsText
 from SMD_Package.OutputMessage import output_message
-from numpy import nan
+from numpy import nan, unique
 import sys
 
 
@@ -20,12 +20,19 @@ def read_input_excel(event_table_path, parameter_index=2):
         try:
             df_self_dtype = pd.read_excel(event_table_path)
             s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
+            col_ar = [x.split('.')[0] for x in s_converter.keys()]
+            unique_col_ar = unique(col_ar)
+            contain_dup = len(unique_col_ar) != len(col_ar)
             del df_self_dtype
         except IOError:  # Handle error if the file path is invalid
             SetParameterAsText(parameter_index, output_message("Failed", "File tidak ditemukan."))
             sys.exit(0)
         except BadZipfile:  # Handle corrupt file.
             SetParameterAsText(parameter_index, output_message("Failed", "File tidak dapat dibaca."))
+            sys.exit(0)
+
+        if contain_dup:
+            SetParameterAsText(parameter_index, output_message("Failed", "File excel memiliki duplikasi nama kolom."))
             sys.exit(0)
 
         try:
