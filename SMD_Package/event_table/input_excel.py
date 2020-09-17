@@ -41,6 +41,9 @@ def read_input_excel(event_table_path, parameter_index=2):
         except UnicodeEncodeError:  # Handle if there is a non ascii character.
             SetParameterAsText(parameter_index, output_message("Failed", "Terdapat karakter yang tidak bisa diconvert."))
             sys.exit(0)
+        except TypeError:
+            SetParameterAsText(parameter_index, output_message("Failed", "File excel memiliki kolom tanpa header."))
+            sys.exit(0)
 
         df_string.columns = df_string.columns.str.upper()  # Uppercase all the column name
         return df_string  # df_string is DataFrame which contain all data in string format
