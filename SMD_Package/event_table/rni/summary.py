@@ -283,7 +283,7 @@ class SurfaceTypeSummary(RNISummary):
             df = self.rni_route_df(route)
             pivot_surface_type = '_surface_type'
 
-            surface_g_df = Kemantapan.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
+            surface_g_df = self.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
             surface_g_df['group'] = surface_g_df['group'].astype(int)  # Convert to integer.
             surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
             surfaces = surface_g_df[pivot_surface_type].tolist()
