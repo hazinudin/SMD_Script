@@ -60,11 +60,14 @@ class RNISummary(object):
                    self.road_type_col, self.segment_len_col, self.surf_type_col]
         self.rni_columns = columns
 
+        # Get the evenet DataFrame.
         self.df = event_fc_to_df(self.table_name, columns, self.route_req, self.routeid_col, env.workspace, True)
         self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
         self.status = None
-        self.route_selection = self._route_date_selection(self.output_table)
+        self.route_selection = self._route_date_selection(self.output_table)  # Create the route selection.
+
+        # Get the LRS SK length DataFrame.
         self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], self.route_selection,
                                        self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
 
