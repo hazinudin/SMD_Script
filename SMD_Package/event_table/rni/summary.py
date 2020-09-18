@@ -217,7 +217,7 @@ class WidthSummary(RNISummary):
 
 
 class RoadTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, lkm=True, project_to_sk=False, **kwargs):
+    def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
         super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
@@ -256,7 +256,7 @@ class RoadTypeSummary(RNISummary):
 
 
 class SurfaceTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, lkm=True, project_to_sk=False, **kwargs):
+    def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
         super(SurfaceTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_PERKERASAN", **kwargs)
 
         routes = self._route_date_selection(self.output_table)
