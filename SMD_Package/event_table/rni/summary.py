@@ -170,6 +170,21 @@ class RNISummary(object):
 
         return df
 
+    @staticmethod
+    def surface_group_df():
+        module_folder = os.path.dirname(__file__)
+        surftype_json_file = os.path.join(module_folder, 'surftype_group.json')
+        with open(surftype_json_file) as group_json:
+            group_details = json.load(group_json)  # Load the surface type group JSON
+
+        group_df = pd.DataFrame(group_details).transpose()
+        stack = group_df.apply(lambda x: pd.Series(x['group']), axis=1).stack().reset_index(level=1, drop=True)
+        stack.name = 'group'
+        group_df = group_df.drop('group', axis=1).join(stack)
+        group_df['group'] = group_df['group'].astype(int)
+
+        return group_df
+
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
