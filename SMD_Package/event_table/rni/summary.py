@@ -99,6 +99,7 @@ class RNISummary(object):
 
     def rni_route_df(self, route):
         df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
+        df[[self.from_m_col, self.to_m_col]] = df[[self.from_m_col, self.to_m_col]].astype(int)
         return df
 
     def _write_to_df(self, df, output_table):
