@@ -127,7 +127,8 @@ class KemantapanService(object):
         self.kwargs = kwargs
         grade_col_exist = self.check_grading_column()
 
-        if not grade_col_exist:  # Check if the grading column does not exist.
+        if not grade_col_exist and \
+                (self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']):  # Check if the grading column does not exist.
             self.status_json = "Kolom {0} tidak dapat ditemukan pada table {1}.".\
                 format(self.grading_col, self.table_name)
             return
