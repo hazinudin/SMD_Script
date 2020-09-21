@@ -278,16 +278,35 @@ class SurfaceTypeSummary(RNISummary):
     def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
         super(SurfaceTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_PERKERASAN", **kwargs)
 
+        def select_surf_type(series):
+            count = series.value_counts()
+
+            if len(count) == 1:  # If there is only single value.
+                return count.index[0]
+            else:
+                first_count = count[0]  # The most common value count.
+                same_count = count.loc[count == first_count]  # The same count as the most common.
+
+                if len(same_count) == 1:  # If there is no same count with the most common value.
+                    return count.index[0]
+                else:
+                    same_count.reset_index(name='count', inplace=True)
+                    same_count = same_count.merge(surface_order, on='index')
+                    min_order = same_count['order'].min()  # The highest available order.
+                    highest_ind = same_count.loc[same_count['order'] == min_order].index[0]
+
+                    return highest_ind
+
         routes = self._route_date_selection(self.output_table)
+        pivot_surface_type = '_surface_type'
+
+        surface_g_df = self.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
+        surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
+        surfaces = surface_g_df[pivot_surface_type].tolist()
+        surface_order = surface_g_df.groupby(['_surface_type'])['order'].max().reset_index(name='order')
 
         for route in routes:
             df = self.rni_route_df(route)
-            pivot_surface_type = '_surface_type'
-
-            surface_g_df = self.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
-            surface_g_df['group'] = surface_g_df['group'].astype(int)  # Convert to integer.
-            surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
-            surfaces = surface_g_df[pivot_surface_type].tolist()
 
             merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
 
@@ -298,7 +317,7 @@ class SurfaceTypeSummary(RNISummary):
             else:
                 centerline = merged.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
                     agg({self.segment_len_col: np.mean,
-                         '_surface_type': (lambda x: x.value_counts().index[0])
+                         '_surface_type': (lambda x: select_surf_type(x))
                          }).reset_index()
                 pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
                                                columns=pivot_surface_type, aggfunc=np.sum)
