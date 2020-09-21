@@ -19,6 +19,7 @@ class TrafficSummary(object):
         self.survey_direction = survey_direction
         self.col_prefix = veh_col_prefix
         self.exclude = ['NUM_VEH1', 'NUM_VEH8']  # Exclude these veh column from AADT sum
+        self.R_value = 50.54
 
         self.df_multiplied = self._traffic_multiplier()
 
@@ -31,17 +32,28 @@ class TrafficSummary(object):
         veh_columns = self.veh_columns  # Get all the veh columns
         df = self._add_survey_time()  # Add the survey time column
         df.set_index('_survey_time', inplace=True)  # Set the survey time as index
+        vdf_df = self.vdf_df()
         grouped = df.groupby(by=[self.routeid_col])
         resample_result = grouped[veh_columns].apply(lambda x: x.resample('1440T', label='right',
                                                      base=(x.index.min().hour*60)+x.index.min().minute).
                                                      sum().reset_index(drop=True).mean()).astype(int)
+
+        # Calculate the CESA based on the resampled AADT.
+        vdf_calc = resample_result.transpose().join(vdf_df).fillna(1)
+        vdf_calc = vdf_calc.apply(lambda x: x*x['VDF'], axis=1)  # Multiply the VDF.
+        vdf_calc = vdf_calc.drop('VDF', axis=1).transpose()
+        vdf_calc['CESA'] = vdf_calc.apply(lambda x: x.sum(), axis=1)
+        vdf_calc['CESA'] = vdf_calc['CESA']*365*float(self.R_value/1000000)  # Multiply with R value.
+
+        # Create AADT column which sum all veh columns
+        resample_result['AADT'] = resample_result[self.excluded_veh_cols].sum(axis=1)
+        resample_result = resample_result.join(vdf_calc[['CESA']])  # Join the CESA column.
 
         if lane_aadt:
             veh_summary = resample_result.reset_index()  # Lane AADT
         else:
             veh_summary = resample_result.reset_index().groupby(by='LINKID').sum().reset_index()  # Route AADT
 
-        veh_summary['AADT'] = veh_summary[self.excluded_veh_cols].sum(axis=1)  # Create AADT column which sum all veh columns
         return veh_summary
 
     def _traffic_multiplier(self):
@@ -90,3 +102,14 @@ class TrafficSummary(object):
 
         excluded = np.setdiff1d(veh_cols, self.exclude)
         return excluded
+
+    @staticmethod
+    def vdf_df():
+        module_dir = os.path.dirname(__file__)
+        json_file = 'vdf.json'
+
+        with open(module_dir + "/" + json_file) as f:  # Load the VDF JSON.
+            vdf_dict = json.load(f)
+
+        df = pd.DataFrame.from_dict(vdf_dict, orient='index').rename(columns={0: "VDF"})
+        return df
