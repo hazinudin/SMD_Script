@@ -1,7 +1,7 @@
 import sys
 sys.path.append('E:/SMD_Script')
 from SMD_Package import gdb_table_writer, event_fc_to_df, GetRoutes
-from SMD_Package.event_table.traffic.aadt import AADT
+from SMD_Package.event_table.traffic.aadt import TrafficSummary
 from arcpy import GetParameterAsText, env
 import json
 import os
@@ -46,7 +46,7 @@ for route in routeSelection:
         continue
 
     # Initialize the AADT class
-    aadt = AADT(InputDF)
+    aadt = TrafficSummary(InputDF)
 
     summaryTable = aadt.daily_aadt()  # Create the daily AADT summary
 

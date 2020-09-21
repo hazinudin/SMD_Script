@@ -8,7 +8,7 @@ import os
 import datetime
 
 
-class AADT(object):
+class TrafficSummary(object):
     def __init__(self, dataframe, date_col='SURVEY_DATE', hour_col='SURVEY_HOURS', minute_col='SURVEY_MINUTE',
                  routeid_col='LINKID', survey_direction='SURVEY_DIREC', veh_col_prefix='NUM_VEH'):
         self.df = dataframe

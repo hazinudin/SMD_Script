@@ -1,5 +1,5 @@
 from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
-from SMD_Package.event_table.traffic.aadt import AADT
+from SMD_Package.event_table.traffic.aadt import TrafficSummary
 from arcpy import env, ListFields
 import json
 import pandas as pd
@@ -218,8 +218,8 @@ class KemantapanService(object):
             self.failed_route.append(route)
             return self
 
-        aadt = AADT(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
-                    self.veh_col_prefix)
+        aadt = TrafficSummary(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
+                              self.veh_col_prefix)
         self.summary_result = aadt.daily_aadt()
 
         return self
