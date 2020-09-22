@@ -41,7 +41,7 @@ class TrafficSummary(object):
         # Calculate the CESA based on the resampled AADT.
         vdf_calc = resample_result.transpose().join(vdf_df).fillna(1)
         vdf_calc = vdf_calc.apply(lambda x: x*x['VDF'], axis=1)  # Multiply the VDF.
-        vdf_calc = vdf_calc.drop('VDF', axis=1).transpose()
+        vdf_calc = vdf_calc.drop('VDF', axis=1).transpose()  # Transpose to original format.
         vdf_calc['CESA'] = vdf_calc.apply(lambda x: x.sum(), axis=1)
         vdf_calc['CESA'] = vdf_calc['CESA']*365*float(self.R_value/1000000)  # Multiply with R value.
 
@@ -57,6 +57,10 @@ class TrafficSummary(object):
         return veh_summary
 
     def _traffic_multiplier(self):
+        """
+        Load the traffic multiplier JSON file as DataFrame.
+        :return:
+        """
         df = self.df.copy(deep=True)
         survey_date = self.date_col
         veh_columns = self.veh_columns
@@ -105,6 +109,10 @@ class TrafficSummary(object):
 
     @staticmethod
     def vdf_df():
+        """
+        Load the VDF JSON file as DataFrame.
+        :return:
+        """
         module_dir = os.path.dirname(__file__)
         json_file = 'vdf.json'
 
