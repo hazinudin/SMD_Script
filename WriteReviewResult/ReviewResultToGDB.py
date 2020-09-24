@@ -21,7 +21,7 @@ if str(data_type) == "RNI":  # If the data is IRI/Roughness
     trim_to = None
 
     rni_kwargs = {
-        'roughness_table': "SMD.ROUGHNESS_2_2020",
+        'roughness_table': "SMD.ROUGHNESS_1_2020",
         'pci_table': "SMD.PCI_2020",
         'rtc_table': "SMD.RTC_2020",
         'fwd_table': "SMD.FWD_2020",
