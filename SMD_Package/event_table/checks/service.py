@@ -90,7 +90,10 @@ class TableCheckService(object):
                                                                            **data_config.kwargs)
         else:
             year_sem_check_result = None
-            output_table = output_table + "_{0}".format(data_year)
+            if not semester_data:
+                output_table = output_table + "_{0}".format(data_year)
+            else:
+                output_table = output_table + "_{0}_{1}".format(data_semester, data_year)
 
         if table_suffix is not None:
             output_table = output_table + "_{0}".format(table_suffix)
@@ -455,14 +458,14 @@ class ReviewToGDB(TableCheckService):
     """
     Class used for writing review results to GDB, does not include any table check method.
     """
-    def __init__(self, trim_to, data_type, **kwargs):
+    def __init__(self, trim_to, data_type, wipe_other=True, **kwargs):
         super(ReviewToGDB, self).__init__(**kwargs)
 
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
 
-            if data_type == 'RNI':
+            if (data_type == 'RNI') and wipe_other:
                 self.delete_non_rni(**kwargs)
 
             self.write_to_table(trim_to)
