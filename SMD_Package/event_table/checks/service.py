@@ -331,16 +331,15 @@ class RNICheck(TableCheckService):
                                             **self.kwargs)
                 self.check.measurement_check(routes=valid_routes, compare_to='LRS', max_m='segment_len',
                                              **self.kwargs)
+                self.check.rni_compare_surftype(routes=valid_routes, kwargs_comparison=self.data_config.compare_table,
+                                                **self.kwargs)
             else:
                 self.check.measurement_check(routes=valid_routes, compare_to='LRS', max_m='segment_len',
                                              ignore_end_gap=True, **self.kwargs)
 
-            # REVIEW
-            self.check.rni_compare_surftype(routes=valid_routes, kwargs_comparison=self.data_config.compare_table,
-                                            **self.kwargs)
-
             self.write_to_table()  # Write passed routes to GDB
-            self.delete_non_rni(**kwargs)
+            if wipe_other:
+                self.delete_non_rni(**kwargs)
             self.return_all_message()
 
 
