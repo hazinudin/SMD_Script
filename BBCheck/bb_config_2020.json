@@ -12,7 +12,7 @@
     "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}},
     "AIR_TEMP":{"dtype":"double", "range":{"upper":40, "lower":20, "eq_upper":true, "eq_lower":true, "review":false}},
     "SURF_TEMP":{"dtype":"double", "range":{"upper":55, "lower":27, "eq_upper":true, "eq_lower":true, "review":false}},
-    "SURF_THICKNESS":{"dtype":"double", "range":{"upper":3500, "lower":700, "eq_upper":true, "eq_lower":true, "review":true}},
+    "SURF_THICKNESS":{"dtype":"double", "range":{"upper":350, "lower":70, "eq_upper":true, "eq_lower":true, "review":true}},
     "LOAD_TON":{"dtype":"double"},
     "BB_D1":{"dtype":"double"},
     "BB_D2":{"dtype":"double"},
