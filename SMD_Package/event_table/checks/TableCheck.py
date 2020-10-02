@@ -2590,8 +2590,8 @@ class EventValidation(object):
         error_rows = grouped.loc[(grouped[rni_medwidth] > 0) & (grouped[direction_col] < 2)]
 
         for index, row in error_rows.iterrows():
-            from_m = row[from_m_col]
-            to_m = row[to_m_col]
+            from_m = row["_"+from_m_col]
+            to_m = row["_"+to_m_col]
             route = row[routeid_col]
 
             msg = "Rute {0} pada segmen {1}-{2} memiliki median namum hanya memiliki data pada di satu arah saja.".\
