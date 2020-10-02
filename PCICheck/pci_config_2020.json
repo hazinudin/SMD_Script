@@ -69,7 +69,8 @@
     "to_m_col":"TO_STA",
     "lane_code":"LANE_CODE",
     "lat_col":"TO_STA_LAT",
-    "long_col":"TO_STA_LONG"
+    "long_col":"TO_STA_LONG",
+    "first_lane_only_gap":true
   },
   "asphalt_columns":["ALG_CRACK", "LONG_CRACK", "OTHER_CRACK", "POTHOLE", "PATCHING", "RUTTING", "CORRUGATION", "DEPRESSION", "RAVELING", "BLEEDING", "SH_DROPOFF"],
   "rigid_columns":["COBREAK", "DIV_SLAB", "FAULTING", "LINE_CRACK", "PUNCH_OUT", "SHRINKAGE", "PUMPING", "COSPALLING", "JSPALLING", "JSEAL", "PATCHING", "SH_DROPOFF"],
