@@ -17,8 +17,8 @@
     "NUM_VEH7B":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
     "NUM_VEH7C":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
     "NUM_VEH8":{"dtype":"integer", "range":{"lower":0, "upper":1000, "eq_lower":true, "eq_upper":true, "review":false}},
-    "TO_STA_LONG":{"dtype":"double", "range":{"upper":141, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}},
-    "TO_STA_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}},
+    "RTC_LONG":{"dtype":"double", "range":{"upper":141, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}},
+    "RTC_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}},
     "CONSULTANT_ID":{"dtype":"integer"},
     "TEAM_LEAD_ID":{"dtype":"integer"},
     "SURV_TOOL_ID":{"dtype":"integer"}
