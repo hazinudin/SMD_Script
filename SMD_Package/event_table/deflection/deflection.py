@@ -5,8 +5,8 @@ sorting process and table lookup from a database connection.
 
 
 class Deflection(object):
-    def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, routeid_col='LINKID', from_m_col='STA_FROM',
-                 to_m_col='STA_TO', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL', **kwargs):
+    def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, routeid_col='LINKID', from_m_col='FROM_STA',
+                 to_m_col='TO_STA', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL', **kwargs):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
@@ -49,7 +49,7 @@ class Deflection(object):
         elif data_type == 'LWD':
             self.sorted = self.df
 
-        self.sorted[[self.norm_d0, self.norm_d200]] = self.normalized()  # Create and fill the normalized columns
+        self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
         self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
         self.sorted[self.ampt_tlap] = 41/self.sorted[asp_temp]  # The AMPT/TLAP value
 
@@ -66,7 +66,7 @@ class Deflection(object):
 
         return closest_row  # Return closest row
 
-    def normalized(self):
+    def _normalized_d0_d200(self):
         """
         This class method calculate the normalized value of D0 and D200 column.
         :return:
