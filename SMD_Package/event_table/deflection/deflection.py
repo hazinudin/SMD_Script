@@ -2,11 +2,16 @@
 This script contains function used to calculate FWD/LWD d0-d200 and its normalized value. The calculation also includes
 sorting process and table lookup from a database connection.
 """
+import json
+import pandas as pd
+import os
+import numpy as np
 
 
 class Deflection(object):
     def __init__(self, df, force_col, data_type, d0_col, d200_col, asp_temp, routeid_col='LINKID', from_m_col='FROM_STA',
-                 to_m_col='TO_STA', survey_direc='SURVEY_DIREC', force_ref=40, routes='ALL', **kwargs):
+                 to_m_col='TO_STA', survey_direc='SURVEY_DIREC', surf_thickness_col='SURF_THICKNESS', force_ref=40,
+                 routes='ALL', **kwargs):
         """
         This class is used to calculate D0-D200 value for FWD/LWD
         :param df: The input Pandas DataFrame
@@ -17,6 +22,7 @@ class Deflection(object):
         :param from_m_col: The From Measure column
         :param to_m_col: The To Measure column
         :param survey_direc: The Survey Direction column
+        :param surf_thickness_col: The survey thickness column.
         :param force_col: The Force/Load column
         :param data_type: FWD or LWD data set.
         :param force_ref: The value of reference force in kN.
@@ -37,10 +43,13 @@ class Deflection(object):
         self.to_m = to_m_col
         self.force_ref = force_ref
         self.survey_direc = survey_direc
-        self.d0 = d0_col
-        self.d200 = d200_col
-        self.norm_d0 = 'NORM_'+self.d0
-        self.norm_d200 = 'NORM_'+self.d200
+        self.d0_col = d0_col
+        self.d200_col = d200_col
+        self.surf_thickness_col = surf_thickness_col
+        self.norm_d0 = 'NORM_'+self.d0_col
+        self.norm_d200 = 'NORM_'+self.d200_col
+        self.corr_d0 = 'CORR_'+self.d0_col
+        self.corr_d200 = 'CORR_'+self.d200_col
         self.curvature = 'D0_D200'
         self.ampt_tlap = 'AMPT_TLAP'
 
@@ -71,7 +80,7 @@ class Deflection(object):
         This class method calculate the normalized value of D0 and D200 column.
         :return:
         """
-        result = self.sorted[[self.d0, self.d200, self.force_col]].\
+        result = self.sorted[[self.d0_col, self.d200_col, self.force_col]].\
             apply(lambda x: (self.force_ref/x[self.force_col])*(x/1000), axis=1)  # The normalized calculation
 
         return result[[self.d0, self.d200]]  # Only return the D0 and D200 column
