@@ -402,7 +402,7 @@ class RTCCheck(TableCheckService):
             self.check.route_selection(selection=self.route_req)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(from_m_col=None, to_m_col=None, **self.kwargs)
+            self.check.range_domain_check(routes=valid_routes, from_m_col=None, to_m_col=None, **self.kwargs)
             self.check.rtc_duration_check(routes=valid_routes, **self.kwargs)
             self.check.rtc_time_interval_check(routes=valid_routes, **self.kwargs)
 
@@ -426,7 +426,7 @@ class DeflectionCheck(TableCheckService):
             self.check.route_selection(selection=self.route_req)
             valid_routes = self.check.valid_route
 
-            self.check.range_domain_check(lane_code='SURVEY_DIREC', **self.kwargs)
+            self.check.range_domain_check(routes=valid_routes, lane_code='SURVEY_DIREC', **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, lane_code='SURVEY_DIREC', **self.kwargs)
 
             valid_routes = self.check.no_error_route  # Refresh the valid route with no error routes.
