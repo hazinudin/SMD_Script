@@ -61,6 +61,8 @@ class Deflection(object):
         self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
         self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
         self.sorted[self.ampt_tlap] = 41/self.sorted[asp_temp]  # The AMPT/TLAP value
+        self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
+        self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
 
     def _sorting(self):
         """
@@ -83,4 +85,28 @@ class Deflection(object):
         result = self.sorted[[self.d0_col, self.d200_col, self.force_col]].\
             apply(lambda x: (self.force_ref/x[self.force_col])*(x/1000), axis=1)  # The normalized calculation
 
-        return result[[self.d0, self.d200]]  # Only return the D0 and D200 column
+        return result[[self.d0_col, self.d200_col]]  # Only return the D0 and D200 column
+
+    def _temp_correction(self, lookup_table_path, deflection_col, corrected_col):
+        """
+        This class method calculate the temperature corrected value of D0 and D200.
+        """
+        module_folder = os.path.dirname(__file__)
+        table_path = os.path.join(module_folder, lookup_table_path)
+
+        with open(table_path) as j_file:
+            lookup_dict = json.load(j_file)
+
+        lookup_df = pd.DataFrame.from_dict(lookup_dict, orient='index')
+        lookup_df.index = lookup_df.index.map(float)
+        lookup_df.columns = lookup_df.columns.map(int)  # Change the column from string to integer.
+        lookup_thickness = list(lookup_df)  # Available thickness from the lookup table columns.
+
+        input_thickness = self.sorted[self.surf_thickness_col].apply(lambda x: lookup_thickness[
+            np.argmin([abs(_ - x) for _ in lookup_thickness])
+        ])
+
+        temp_factor = lookup_df.lookup(self.sorted['AMPT_TLAP'].round(1), input_thickness)
+        self.sorted[corrected_col] = self.sorted[deflection_col]*temp_factor
+
+        return self
