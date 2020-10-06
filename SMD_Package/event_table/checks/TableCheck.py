@@ -966,7 +966,7 @@ class EventValidation(object):
 
             # Check if the coordinate is valid
             # TODO: In case if these coordinate range needs further adjustment
-            long_condition = (df_route[long_col] > 94) & (df_route[long_col] < 142)
+            long_condition = (df_route[long_col] > 95) & (df_route[long_col] < 142)
             lat_condition = (df_route[lat_col] > -12) & (df_route[lat_col] < 7)
             valid_coords = np.all(long_condition & lat_condition)
             self._coordinate_status[route] = [0]  # Initiate the route's status value.
