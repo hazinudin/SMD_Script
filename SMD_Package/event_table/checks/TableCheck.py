@@ -1931,6 +1931,8 @@ class EventValidation(object):
         :param to_m_col: The To Measure column.
         :param lane_code: The Lane Code.
         :param routes: The route selections.
+        :param min_value: The minimum value of pci_col.
+        :param max_value: The maximum value of pci_col.
         :return:
         """
         df = self.copy_valid_df()  # Create the valid DataFrame copy
