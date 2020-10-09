@@ -51,7 +51,7 @@ class Deflection(object):
         self.corr_d0 = 'CORR_'+self.d0_col
         self.corr_d200 = 'CORR_'+self.d200_col
         self.curvature = 'D0_D200'
-        self.ampt_tlap = 'AMPT_TLAP'
+        self.corr_curvature = 'CORR_D0_D200'
 
         if data_type == 'FWD':
             self.sorted = self._sorting()
@@ -60,9 +60,10 @@ class Deflection(object):
 
         self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
         self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
-        self.sorted[self.ampt_tlap] = 41/self.sorted[asp_temp]  # The AMPT/TLAP value
+        self.ampt_tlap = 41/self.sorted[asp_temp]  # The AMPT/TLAP series.
         self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
         self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
+        self.sorted[self.corr_curvature] = self.sorted[self.corr_d0]-self.sorted[self.corr_d200]
 
     def _sorting(self):
         """
@@ -73,7 +74,7 @@ class Deflection(object):
         self.df['_ref_diff'] = self.df['_ref_diff'].abs()  # Get only the absolute value
         grouped = self.df.groupby([self.route_col, self.survey_direc, self.from_m, self.to_m])  # Do a group by
         closest_index = grouped['_ref_diff'].idxmin()  # Get the closest index
-        closest_row = self.df.loc[closest_index]  # Get the closest rows
+        closest_row = self.df.loc[closest_index].drop('_ref_diff', axis=1)  # Get the closest rows
 
         return closest_row  # Return closest row
 
@@ -106,7 +107,7 @@ class Deflection(object):
             np.argmin([abs(_ - x) for _ in lookup_thickness])
         ])
 
-        temp_factor = lookup_df.lookup(self.sorted['AMPT_TLAP'].round(1), input_thickness)
+        temp_factor = lookup_df.lookup(self.ampt_tlap.round(1), input_thickness)
         self.sorted[corrected_col] = self.sorted[deflection_col]*temp_factor
 
         return self
