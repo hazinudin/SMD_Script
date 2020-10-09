@@ -1921,7 +1921,8 @@ class EventValidation(object):
         return self
 
     def pci_val_check(self, rg_pref='RG_', asp_pref='AS_', pci_col='PCI', routeid_col='LINKID', from_m_col='STA_FROM',
-                      to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL', min_value=0, max_value=100, **kwargs):
+                      to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL', min_value=0, max_value=100,
+                      check_null=False, **kwargs):
         """
         This class method will check for consistency between the value of PCI and the RG_x and AS_x columns.
         :param rg_pref: The prefix of Rigid column.
@@ -1934,6 +1935,7 @@ class EventValidation(object):
         :param routes: The route selections.
         :param min_value: The minimum value of pci_col.
         :param max_value: The maximum value of pci_col.
+        :param check_null: Check for consistency between asp_ and rg_ column if the pci_col value is Null.
         :return:
         """
         df = self.copy_valid_df()  # Create the valid DataFrame copy
@@ -1951,6 +1953,7 @@ class EventValidation(object):
         for route in route_list:
             df_route = df.loc[df[routeid_col] == route]
 
+            # Check for the consistency for min and max value.
             if (min_value is not None) and (max_value is not None):
                 df_pci = df_route.loc[(df_route[pci_col] == min_value) |
                                       (df_route[pci_col] == max_value)]
@@ -1961,6 +1964,10 @@ class EventValidation(object):
             else:
                 raise TypeError("max_value and min_value could not be None at the same time.")
 
+            if check_null:
+                null_pci = df_route.loc[df_route[pci_col].isnull()]
+                df_pci = df_pci.append(null_pci)
+
             for index, row in df_pci.iterrows():
                 from_m = row[from_m_col]
                 to_m = row[to_m_col]
@@ -1969,16 +1976,27 @@ class EventValidation(object):
 
                 asp_rg = row[rg_mask | asp_mask]
                 asp_rg_cond = asp_rg.mask(asp_rg == 0)
-                asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero
+                asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero.
+                asp_rg_allnull = np.all(asp_rg.isnull())  # True if all value in asp_rg_cond is Null.
 
                 if (pci_val == min_value) and asp_rg_allzero and (min_value is not None):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col, min_value)
                     self.insert_route_message(route, 'error', error_message)
-                if (pci_val == max_value) and (not asp_rg_allzero) and (max_value is not None):
+                if (pci_val == max_value) and (not asp_rg_allzero and not asp_rg_allnull) and (max_value is not None):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col, max_value)
                     self.insert_route_message(route, 'error', error_message)
+
+                if check_null:
+                    if (pci_val is None) and (not asp_rg_allnull):
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} tidak memiliki nilai {4} namun memiliki nilai kerusakan aspal atau rigid.'.\
+                            format(route, from_m, to_m, lane, pci_col)
+                        self.insert_route_message(route, 'error', error_message)
+                    elif (pci_val is not None or (pci_val != max_value)) and asp_rg_allnull:
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4} yang bukan {5} atau Null namun tidak memiliki nilai kerusakan aspal atau rigid.'.\
+                            format(route, from_m, to_m, lane, pci_col, max_value)
+                        self.insert_route_message(route, 'error', error_message)
 
         return self
 
