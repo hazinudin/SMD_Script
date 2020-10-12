@@ -1983,12 +1983,18 @@ class EventValidation(object):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col, min_value)
                     self.insert_route_message(route, 'error', error_message)
-                if (pci_val == max_value) and (not asp_rg_allzero and not asp_rg_allnull) and (max_value is not None):
+                if (pci_val == max_value) and (not asp_rg_allzero) and (max_value is not None):
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'.\
                         format(route, from_m, to_m, lane, pci_col, max_value)
                     self.insert_route_message(route, 'error', error_message)
 
                 if check_null:
+                    if (pci_val == max_value) and (not asp_rg_allzero and not asp_rg_allnull) and (
+                            max_value is not None):
+                        error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4}={5} namun nilai kerusakan perkerasan aspal ataupun rigid yang tidak sepenuhnya bernilai 0.'. \
+                            format(route, from_m, to_m, lane, pci_col, max_value)
+                        self.insert_route_message(route, 'error', error_message)
+
                     if (pci_val is None) and (not asp_rg_allnull):
                         error_message = 'Rute {0} pada segmen {1}-{2} lane {3} tidak memiliki nilai {4} namun memiliki nilai kerusakan aspal atau rigid.'.\
                             format(route, from_m, to_m, lane, pci_col)
