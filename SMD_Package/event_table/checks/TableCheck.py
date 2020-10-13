@@ -6,6 +6,7 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.event_table.kemantapan.kemantapan import Kemantapan
 from SMD_Package.event_table.RNITable import RNIRouteDetails, add_rni_data
 from SMD_Package.load_config import SMDConfigs
+from SMD_Package.event_table.rni.summary import RNISummary
 import coordinate
 
 
@@ -2647,7 +2648,7 @@ class EventValidation(object):
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)
         rni_surf_type = self.config.table_fields['rni']['surface_type']
-        surface_group = Kemantapan.surface_group_df()
+        surface_group = RNISummary.surface_group_df().reset_index()
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)
 
         new_from_col = '_'+from_m_col  # The new from and to measurement column from the expand_segment function.
@@ -2665,9 +2666,9 @@ class EventValidation(object):
         merged_surf = merged.merge(surface_group, left_on=rni_surf_type, right_on='group')
 
         all_null_deflection = np.all(merged_surf[deflection_cols].isnull(), axis=1)
-        unpaved = merged_surf['category'] == 'up'
+        not_aspal = merged_surf['index'] != 'aspal'
 
-        error_rows = merged_surf.loc[(unpaved & ~all_null_deflection) | (~unpaved & all_null_deflection)]
+        error_rows = merged_surf.loc[(not_aspal & ~all_null_deflection) | (~not_aspal & all_null_deflection)]
         for index, row in error_rows.iterrows():
             route = row[routeid_col]
             from_m = row[from_m_col]
