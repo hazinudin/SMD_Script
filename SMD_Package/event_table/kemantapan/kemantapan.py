@@ -583,6 +583,7 @@ class Kemantapan(object):
         stack = group_df.apply(lambda x: pd.Series(x['group']), axis=1).stack().reset_index(level=1, drop=True)
         stack.name = 'group'
         group_df = group_df.drop('group', axis=1).join(stack)
+        group_df['group'] = group_df['group'].astype(int)  # Convert the group column to integer.
 
         return group_df
 
