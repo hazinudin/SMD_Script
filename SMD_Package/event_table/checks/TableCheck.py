@@ -2634,6 +2634,57 @@ class EventValidation(object):
                 format(route, from_m, to_m)
             self.insert_route_message(route, 'error', msg)
 
+    def deflection_surface_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
+                                 to_m_col='TO_STA', **kwargs):
+        """
+        Checks for deflection value for paved segment, unpaved segment should not have any deflection value (all Null).
+        :param deflection_cols: The deflection columns to be checked.
+        :param routes: Route selection.
+        :param routeid_col: Route ID column.
+        :param from_m_col: From Measure column.
+        :param to_m_col: To Measure column.
+        :return:
+        """
+        df = self.selected_route_df(self.copy_valid_df(), routes)
+        rni_surf_type = self.config.table_fields['rni']['surface_type']
+        surface_group = Kemantapan.surface_group_df()
+        self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)
+
+        new_from_col = '_'+from_m_col  # The new from and to measurement column from the expand_segment function.
+        new_to_col = '_'+to_m_col
+
+        if deflection_cols is None:
+            return self
+
+        if type(deflection_cols) != list:
+            deflection_cols = list(deflection_cols)
+
+        # Get the first available surface type from each RNI segment.
+        merged = add_rni_data(df, routeid_col, new_from_col, new_to_col, None, self.sde_connection, rni_surf_type,
+                              agg_func={rni_surf_type: lambda x: x.values[0]})
+        merged_surf = merged.merge(surface_group, left_on=rni_surf_type, right_on='group')
+
+        all_null_deflection = np.all(merged_surf[deflection_cols].isnull(), axis=1)
+        unpaved = merged_surf['category'] == 'up'
+
+        error_rows = merged_surf.loc[(unpaved & ~all_null_deflection) | (~unpaved & all_null_deflection)]
+        for index, row in error_rows.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col]
+            to_m = row[to_m_col]
+            category = row['category']
+
+            if category == 'up':
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen unpaved namun memiliki nilai lendutan.".\
+                    format(route, from_m, to_m)
+                self.insert_route_message(route, 'error', error_msg)
+            else:
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen paved namun tidak memiliki nilai lendutan.".\
+                    format(route, from_m, to_m)
+                self.insert_route_message(route, 'error', error_msg)
+
+        return self
+
     def col_unique_check(self, column, routes='ALL', routeid_col='LINKID', from_m_col='STA_FROM', to_m_col='STA_TO'
                          , **kwargs):
         """
