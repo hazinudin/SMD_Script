@@ -2789,7 +2789,11 @@ class EventValidation(object):
             new_row_count = int(float(input_seg_len)/float(segment_len))-1  # Count of to be inserted rows.
 
             # Fill the value for the existing segment row
-            first_to_m = input_from + int(float(segment_len)*len_to_m)  # The first corrected to measure value.
+            if input_seg_len > segment_len:
+                first_to_m = input_from + int(float(segment_len)*len_to_m)  # The first corrected to measure value.
+            else:
+                first_to_m = input_from + int(float(input_seg_len)*len_to_m)
+
             row[n_from_m_col] = input_from
             row[n_to_m_col] = first_to_m
             input_df.loc[index] = row
