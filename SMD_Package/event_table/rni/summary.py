@@ -1,5 +1,7 @@
 import json
-from SMD_Package import SMDConfigs, Configs, event_fc_to_df, gdb_table_writer
+from SMD_Package.FCtoDataFrame import event_fc_to_df
+from SMD_Package.load_config import SMDConfigs, Configs
+from SMD_Package.TableWriter.GDBTableWriter import gdb_table_writer
 from SMD_Package.event_table.kemantapan.kemantapan import Kemantapan
 from arcpy import env
 import os
