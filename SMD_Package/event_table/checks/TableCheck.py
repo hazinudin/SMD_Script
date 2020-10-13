@@ -2669,18 +2669,20 @@ class EventValidation(object):
         not_aspal = merged_surf['index'] != 'aspal'
 
         error_rows = merged_surf.loc[(not_aspal & ~all_null_deflection) | (~not_aspal & all_null_deflection)]
-        for index, row in error_rows.iterrows():
-            route = row[routeid_col]
-            from_m = row[from_m_col]
-            to_m = row[to_m_col]
-            category = row['category']
+        grouped_error = error_rows.groupby([routeid_col, from_m_col+'_x', to_m_col+'_x'])['index'].max().reset_index()
 
-            if category == 'up':
-                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen unpaved namun memiliki nilai lendutan.".\
+        for index, row in grouped_error.iterrows():
+            route = row[routeid_col]
+            from_m = row[from_m_col+'_x']
+            to_m = row[to_m_col+'_x']
+            category = str(row['index'])
+
+            if category != 'aspal':
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen rigid/tanah namun memiliki nilai lendutan.".\
                     format(route, from_m, to_m)
                 self.insert_route_message(route, 'error', error_msg)
             else:
-                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen paved namun tidak memiliki nilai lendutan.".\
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen aspal namun tidak memiliki nilai lendutan.".\
                     format(route, from_m, to_m)
                 self.insert_route_message(route, 'error', error_msg)
 
