@@ -29,7 +29,8 @@
     "from_m_col":"FROM_STA",
     "to_m_col":"TO_STA",
     "length_col":"SEGMENT_LENGTH",
-    "segment_len": 0.5
+    "segment_len": 0.5,
+    "deflection_cols":["LWD_D0", "LWD_D1", "LWD_D2", "EV_D0", "EV_D1", "D0_D2"]
   },
   "search_radius":30
 }
