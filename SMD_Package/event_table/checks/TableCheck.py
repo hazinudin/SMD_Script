@@ -2007,7 +2007,7 @@ class EventValidation(object):
 
         return self
 
-    def pci_surftype_check(self, routes='ALL', asp_pref='AS_', rg_pref='RG_', routeid_col='LINKID',
+    def pci_surftype_check(self, routes='ALL', asp_pref='VOL_AS', rg_pref='VOL_RG', routeid_col='LINKID',
                            from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', pci_col='PCI', **kwargs):
         """
         This class method check the consistency between segment's surface type and its AS_x and RG_x value.
