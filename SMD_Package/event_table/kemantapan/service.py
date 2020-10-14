@@ -1,6 +1,6 @@
 from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
 from SMD_Package.event_table.traffic.aadt import TrafficSummary
-from arcpy import env, ListFields
+from arcpy import env, ListFields, Exists
 import json
 import pandas as pd
 import datetime
@@ -102,10 +102,6 @@ class KemantapanService(object):
         self.force_update = False
         self.project_to_sk = False
 
-        # Change the output table suffix if self.project_len is True
-        if self.project_to_sk:
-            self.suffix = 'SK'
-
         # For AADT only
         self.hour_col = None
         self.minute_col = None
@@ -133,11 +129,15 @@ class KemantapanService(object):
                 format(self.grading_col, self.table_name)
             return
 
-        # Select the route request based on source-output update date.
-        self.route_selection = self._route_date_selection()
+        # Change the output table suffix if self.project_len is True
+        if self.project_to_sk:
+            self.suffix = 'SK'
 
         if self.suffix is not None:
             self.output_table = self.output_table + '_' + self.suffix
+
+        # Select the route request based on source-output update date.
+        self.route_selection = self._route_date_selection()
 
         self.summary_result = pd.DataFrame()  # For storing all summary result
         self.route_date = None
@@ -359,7 +359,7 @@ class KemantapanService(object):
                                      sql_prefix='MAX ({0})'.format(self.update_date_col),
                                      sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
 
-        if not self.force_update:
+        if (not self.force_update) and (Exists(self.output_table)):
             output_date = event_fc_to_df(self.output_table, req_columns, routes, self.routeid_col, env.workspace, True)
             merged = pd.merge(source_date, output_date, on=self.routeid_col, how='outer', suffixes=('_SOURCE', '_TARGET'))
             selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
