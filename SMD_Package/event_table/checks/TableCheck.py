@@ -2088,7 +2088,7 @@ class EventValidation(object):
                     self.insert_route_message(route, 'error', error_message)
 
                 # Compare the surface type and pci value
-                if (surface in ['asphlat', 'rigid']) and pci_null:
+                if (surface in ['asphalt', 'rigid']) and pci_null:
                     error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki tipe perkerasan {4} namun tidak memiliki nilai PCI.'.\
                         format(route, from_m, to_m, lane, surface)
                     self.insert_route_message(route, 'error', error_message)
