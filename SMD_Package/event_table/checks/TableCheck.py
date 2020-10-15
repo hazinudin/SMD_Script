@@ -2768,7 +2768,7 @@ class EventValidation(object):
 
     @staticmethod
     def expand_segment(input_df, segment_len=0.1, from_m_col='FROM_STA', to_m_col='TO_STA',
-                       segment_len_col='SEGMENT_LENGTH', len_to_m=100):
+                       segment_len_col='SEGMENT_LENGTH', len_to_m=100, max_length_allowed=0.5):
         """
         This static method expand the input DataFrame segment with segment length greater than the defined segment
         length in the parameter.
@@ -2793,6 +2793,8 @@ class EventValidation(object):
 
             # Fill the value for the existing segment row
             if input_seg_len > segment_len:
+                if input_seg_len > max_length_allowed:
+                    continue
                 first_to_m = input_from + int(float(segment_len)*len_to_m)  # The first corrected to measure value.
             else:
                 first_to_m = input_from + int(float(input_seg_len)*len_to_m)
