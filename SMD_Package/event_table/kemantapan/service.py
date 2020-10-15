@@ -61,26 +61,6 @@ class KemantapanService(object):
             self.year = request_j['year']
             self.data_type = str(request_j['data_type'])  # 'IRI', 'IRI_POK', 'PCI', 'PCI_POK', 'AADT'
 
-            if self.data_type not in ['AADT', 'FWD', 'LWD', 'BB']:  # If the requested summary is other than PCI/IRI.
-                request_j = input_json_check(input_json, 1, True, ['routes', 'year',
-                                                                   'data_type', 'method'])
-                self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
-
-                if self.method == 'lane_based':
-                    self.lane_based = True
-                else:
-                    self.lane_based = False
-
-                if self.lane_based:
-                    self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.data_type)
-                else:
-                    self.output_table = 'SMD.KEMANTAPAN_{0}_{1}'.format(str.upper(self.method), self.data_type)
-
-            else:  # Includes AADT, LWD, FWD and BB.
-                self.lane_based = None
-                self.method = None
-                self.output_table = 'SMD.{0}_{1}'.format(self.data_type, self.year)
-
         except KeyError:
             raise  # Maybe add an error message in here.
 
@@ -122,6 +102,26 @@ class KemantapanService(object):
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
         self.kwargs = kwargs
         grade_col_exist = self.check_grading_column()
+
+        if self.data_type not in ['AADT', 'FWD', 'LWD', 'BB']:  # If the requested summary is other than PCI/IRI.
+            request_j = input_json_check(input_json, 1, True, ['routes', 'year',
+                                                               'data_type', 'method'])
+            self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
+
+            if self.method == 'lane_based':
+                self.lane_based = True
+            else:
+                self.lane_based = False
+
+            if self.lane_based:
+                self.output_table = 'SMD.KEMANTAPAN_LKM_{0}'.format(self.grading_col)
+            else:
+                self.output_table = 'SMD.KEMANTAPAN_{0}_{1}'.format(str.upper(self.method), self.grading_col)
+
+        else:  # Includes AADT, LWD, FWD and BB.
+            self.lane_based = None
+            self.method = None
+            self.output_table = 'SMD.{0}_{1}'.format(self.data_type, self.year)
 
         if not grade_col_exist and \
                 (self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']):  # Check if the grading column does not exist.
@@ -261,10 +261,16 @@ class KemantapanService(object):
         return self
 
     def add_satker_ppk_id(self):
-        satker_df = event_fc_to_df(self.satker_ppk_route_table,
-                                   [self.satker_routeid, self.satker_ppk_id, self.satker_id,
-                                    self.satker_route_from_date, self.satker_route_to_date], self.success_route,
-                                   self.satker_routeid, env.workspace, True, replace_null=False)
+        if len(self.success_route) < 1000:
+            satker_df = event_fc_to_df(self.satker_ppk_route_table,
+                                       [self.satker_routeid, self.satker_ppk_id, self.satker_id,
+                                        self.satker_route_from_date, self.satker_route_to_date], self.success_route,
+                                       self.satker_routeid, env.workspace, True, replace_null=False)
+        else:
+            satker_df = event_fc_to_df(self.satker_ppk_route_table,
+                                       [self.satker_routeid, self.satker_ppk_id, self.satker_id,
+                                        self.satker_route_from_date, self.satker_route_to_date], "ALL",
+                                       self.satker_routeid, env.workspace, True, replace_null=False)
 
         satker_df = self.route_date_query(satker_df, self.satker_routeid, self.satker_route_from_date,
                                           self.satker_route_to_date)[[self.satker_routeid, self.satker_ppk_id]]
