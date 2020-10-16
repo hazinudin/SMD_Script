@@ -376,10 +376,10 @@ class PCICheck(TableCheckService):
             # Iterate all asphalt condition and severity column
             for col in asphalt_cols:
                 self.check.pci_val_check(rg_pref='-', asp_pref='VOL_AS_'+col, pci_col='SEV_AS_'+col, max_value='NA',
-                                         min_value=None, check_null=True, **self.kwargs)
+                                         min_value=None, check_null=True, routes=valid_routes, **self.kwargs)
             for col in rigid_cols:
                 self.check.pci_val_check(rg_pref='VOL_RG_'+col, as_pref='-', pci_col='SEV_RG_'+col, max_value='NA',
-                                         min_value=None, check_null=True, **self.kwargs)
+                                         min_value=None, check_null=True, routes=valid_routes,  **self.kwargs)
 
             if str(force_write) == 'false':
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
