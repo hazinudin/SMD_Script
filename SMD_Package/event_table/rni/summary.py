@@ -131,7 +131,7 @@ class RNISummary(object):
 
         gdb_table_writer(env.workspace, df, output_table, col_details, replace_key=[self.routeid_col, year_col])
 
-    def _route_date_selection(self, output_table):
+    def _route_date_selection(self, output_table, chunk_size=100):
         if self.route_req == 'ALL':
             routes = self.route_req
         elif (type(self.route_req) == unicode) or (type(self.route_req) == str):
@@ -143,7 +143,8 @@ class RNISummary(object):
         else:
             raise ("Route selection is neither list or string.")
 
-        self.status = {_route: "Missing RNI data." for _route in routes}  # Initialize route status.
+        if self.route_req != 'ALL':
+            self.status = {_route: "Missing RNI data." for _route in routes}  # Initialize route status.
 
         req_columns = [self.update_date_col, self.routeid_col]
         source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
@@ -164,7 +165,15 @@ class RNISummary(object):
         else:
             route_selection = source_routes
 
-        return route_selection
+        if chunk_size < 1:  # Divide into chunks
+            raise ValueError("Chunk size should be equal or larger than 1.")
+        elif chunk_size == 1:
+            return route_selection
+        else:
+            chunk_index = [x for x in range(0, len(route_selection), chunk_size)]
+            chunks = [route_selection[x: x+chunk_size] if x+chunk_size < len(route_selection) else
+                      route_selection[x: len(route_selection)+1] for x in chunk_index]
+            return chunks
 
     @property
     def road_type_group_df(self):
@@ -197,9 +206,7 @@ class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
         super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI", **kwargs)
 
-        routes = self._route_date_selection(self.output_table)
-
-        for route in routes:
+        for route in self.route_selection:
             df = self.rni_route_df(route)
 
             segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
@@ -245,10 +252,9 @@ class RoadTypeSummary(RNISummary):
     def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
         super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
 
-        routes = self._route_date_selection(self.output_table)
         type_group_df = self.road_type_group_df
 
-        for route in routes:
+        for route in self.route_selection:
             df = self.rni_route_df(route)
 
             pivot_roadtype_col = '_road_type'
@@ -303,7 +309,6 @@ class SurfaceTypeSummary(RNISummary):
 
                     return highest_ind
 
-        routes = self._route_date_selection(self.output_table)
         pivot_surface_type = '_surface_type'
 
         surface_g_df = self.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
@@ -311,7 +316,7 @@ class SurfaceTypeSummary(RNISummary):
         surfaces = surface_g_df[pivot_surface_type].tolist()
         surface_order = surface_g_df.groupby(['_surface_type'])['order'].max().reset_index(name='order')
 
-        for route in routes:
+        for route in self.route_selection:
             df = self.rni_route_df(route)
 
             merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
