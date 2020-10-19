@@ -271,6 +271,8 @@ class KemantapanService(object):
                                        [self.satker_routeid, self.satker_ppk_id, self.satker_id,
                                         self.satker_route_from_date, self.satker_route_to_date], "ALL",
                                        self.satker_routeid, env.workspace, True, replace_null=False)
+            satker_df = satker_df.loc[satker_df[self.satker_routeid].isin(self.success_route)]
+            satker_df.reset_index(inplace=True)  # Reset the index after loc function.
 
         satker_df = self.route_date_query(satker_df, self.satker_routeid, self.satker_route_from_date,
                                           self.satker_route_to_date)[[self.satker_routeid, self.satker_ppk_id]]
@@ -306,7 +308,7 @@ class KemantapanService(object):
         df[prov_column] = df[routeid_col].apply(lambda x: str(x[:2]))
 
     def add_balai_id(self):
-        input_provs = self.summary_result[self.prov_column].tolist()
+        input_provs = self.summary_result[self.prov_column].unique().tolist()
         input_routes = self.success_route
 
         # Get the Database table
