@@ -316,7 +316,7 @@ class KemantapanService(object):
                                                           self.balai_prov_from_date, self.balai_prov_to_date],
                                        input_provs, self.balai_prov_prov_id, env.workspace, True, replace_null=False)
 
-        if len(input_routes) < 1000:
+        if len(input_routes) >= 1000:
             balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id,
                                                                      self.balai_route_from_date, self.balai_route_to_date],
                                             "ALL", self.balai_route_route_id, env.workspace, True, replace_null=False)
