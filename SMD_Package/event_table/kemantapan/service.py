@@ -315,9 +315,17 @@ class KemantapanService(object):
         balai_prov_df = event_fc_to_df(self.balai_table, [self.balai_prov_balai_id, self.balai_prov_prov_id,
                                                           self.balai_prov_from_date, self.balai_prov_to_date],
                                        input_provs, self.balai_prov_prov_id, env.workspace, True, replace_null=False)
-        balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id,
-                                                                 self.balai_route_from_date, self.balai_route_to_date],
-                                        input_routes, self.balai_route_route_id, env.workspace, True, replace_null=False)
+
+        if len(input_routes) < 1000:
+            balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id,
+                                                                     self.balai_route_from_date, self.balai_route_to_date],
+                                            "ALL", self.balai_route_route_id, env.workspace, True, replace_null=False)
+            balai_route_df = balai_route_df.loc[balai_route_df[self.balai_route_route_id].isin(input_routes)]
+            balai_route_df.reset_index(inplace=True)
+        else:
+            balai_route_df = event_fc_to_df(self.balai_route_table, [self.balai_route_balai_id, self.balai_route_route_id,
+                                                                     self.balai_route_from_date, self.balai_route_to_date],
+                                            input_routes, self.balai_route_route_id, env.workspace, True, replace_null=False)
 
         # Query based on the route survey date value.
         balai_prov_df = self.route_date_query(balai_prov_df, self.balai_prov_prov_id, self.balai_prov_from_date,
