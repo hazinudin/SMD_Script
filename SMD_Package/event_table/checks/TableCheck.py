@@ -1975,6 +1975,9 @@ class EventValidation(object):
                 lane = row[lane_code]
                 pci_val = row[pci_col]
 
+                if pci_val is np.nan:  # Convert from numpy nan to python None.
+                    pci_val = None
+
                 asp_rg = row[rg_mask | asp_mask]
                 asp_rg_cond = asp_rg.mask(asp_rg == 0)
                 asp_rg_allzero = np.all(asp_rg_cond.isnull())  # True if all value in asp_rg_cond is zero.
@@ -2000,7 +2003,7 @@ class EventValidation(object):
                         error_message = 'Rute {0} pada segmen {1}-{2} lane {3} tidak memiliki nilai {4} namun memiliki nilai kerusakan aspal atau rigid.'.\
                             format(route, from_m, to_m, lane, pci_col)
                         self.insert_route_message(route, 'error', error_message)
-                    elif (pci_val is not None or (pci_val != max_value)) and asp_rg_allnull:
+                    elif (pci_val is not None and (pci_val != max_value)) and asp_rg_allnull:
                         error_message = 'Rute {0} pada segmen {1}-{2} lane {3} memiliki nilai {4} yang bukan {5} atau Null namun tidak memiliki nilai kerusakan aspal atau rigid.'.\
                             format(route, from_m, to_m, lane, pci_col, max_value)
                         self.insert_route_message(route, 'error', error_message)
