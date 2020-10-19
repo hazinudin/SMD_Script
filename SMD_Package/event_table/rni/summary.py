@@ -204,7 +204,12 @@ class RNISummary(object):
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
-        super(WidthSummary, self).__init__(output_table="SMD.REKAP_LEBAR_RNI", **kwargs)
+
+        output_table = "SMD.REKAP_LEBAR_RNI"  # Define the output table.
+        if project_to_sk:
+            output_table = output_table + "_SK"
+
+        super(WidthSummary, self).__init__(output_table=output_table, **kwargs)
 
         for route in self.route_selection:
             df = self.rni_route_df(route)
@@ -237,8 +242,8 @@ class WidthSummary(RNISummary):
 
             if project_to_sk:
                 result = self.project_to_sklen(result).reset_index()
-
-            result.reset_index(inplace=True)
+            else:
+                result.reset_index(inplace=True, drop=True)
 
             missing_col = np.setdiff1d(self.width_class_col, list(result))
             result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
@@ -246,6 +251,7 @@ class WidthSummary(RNISummary):
 
             if write_to_db:
                 self._write_to_df(result, self.output_table)
+                print str(self.route_selection.index(route)) + "/" + str(len(self.route_selection))
 
 
 class RoadTypeSummary(RNISummary):
