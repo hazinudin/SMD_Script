@@ -66,7 +66,7 @@ class RNISummary(object):
         # self.df = event_fc_to_df(self.table_name, columns, self.route_req, self.routeid_col, env.workspace, True)
         # self.df[[self.from_m_col, self.to_m_col]] = self.df[[self.from_m_col, self.to_m_col]].astype(int)
 
-        self.status = None
+        self.status = dict()
         self.route_selection = self._route_date_selection(self.output_table)  # Create the route selection.
 
         # Get the LRS SK length DataFrame.
