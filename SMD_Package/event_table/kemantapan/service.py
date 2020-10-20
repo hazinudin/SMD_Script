@@ -4,6 +4,7 @@ from arcpy import env, ListFields, Exists
 import json
 import pandas as pd
 import datetime
+import numpy as np
 
 
 class KemantapanService(object):
@@ -136,13 +137,13 @@ class KemantapanService(object):
         if self.suffix is not None:
             self.output_table = self.output_table + '_' + self.suffix
 
-        # Select the route request based on source-output update date.
-        self.route_selection = self._route_date_selection()
-
         self.summary_result = pd.DataFrame()  # For storing all summary result
         self.route_date = None
         self.failed_route = list()  # For storing route which cannot be calculated.
         self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
+
+        # Select the route request based on source-output update date.
+        self.route_selection = self._route_date_selection()
 
         for route in self.route_selection:
             if self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']:  # For IRI or PCI
@@ -168,6 +169,7 @@ class KemantapanService(object):
                                                                'Succeeded']
 
             # Get the survey date for each requested routes.
+            # The survey date from each route is used to query the balai and provinsi table.
             if self.route_date is None:
                 self.route_date = input_df.groupby(self.routeid_col).\
                     agg({self.date_col: 'max', self.prov_column: 'first'})
@@ -383,6 +385,10 @@ class KemantapanService(object):
             routes = selection[self.routeid_col].tolist()
         else:
             routes = source_date[self.routeid_col].tolist()
+
+        self.route_status['LINKID'] = np.setdiff1d(source_date[self.routeid_col], routes)  # Update for route which is not updated.
+        self.route_status['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.route_status['status'] = 'Not updated'
 
         return routes
 
