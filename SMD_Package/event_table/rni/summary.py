@@ -255,10 +255,18 @@ class WidthSummary(RNISummary):
 
 
 class RoadTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
-        super(RoadTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_JALAN", **kwargs)
+    def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
+
+        output_table = "SMD.REKAP_TIPE_JALAN"
+        if project_to_sk:
+            output_table = output_table + "_SK"
+
+        super(RoadTypeSummary, self).__init__(output_table=output_table, **kwargs)
 
         type_group_df = self.road_type_group_df
+
+        if project_to_sk:
+            self.output_table = self.output_table + "_SK"
 
         for route in self.route_selection:
             df = self.rni_route_df(route)
@@ -267,22 +275,34 @@ class RoadTypeSummary(RNISummary):
             df = df.merge(type_group_df, on='ROAD_TYPE')
             df[pivot_roadtype_col] = df['ROAD_TYPE_GROUP'].apply(lambda x: self.road_type_col_pref + str(x))
 
-            if lkm:
-                pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                                       columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
-                pivot = pivot.groupby([self.routeid_col]).sum().reset_index()
-            else:
-                centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
-                    agg({self.segment_len_col: np.mean,
-                         pivot_roadtype_col: (lambda x: x.value_counts().index[0])
-                         }).reset_index()
-                pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
-                                               columns=pivot_roadtype_col, aggfunc=np.sum)
+            # if lkm:
+            #     pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+            #                            columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
+            #     pivot = pivot.groupby([self.routeid_col]).sum().reset_index()
+            # else:
+            #     centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
+            #         agg({self.segment_len_col: np.mean,
+            #              pivot_roadtype_col: (lambda x: x.value_counts().index[0])
+            #              }).reset_index()
+            #     pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+            #                                    columns=pivot_roadtype_col, aggfunc=np.sum)
+            #
+            #     if project_to_sk:
+            #         pivot = self.project_to_sklen(pivot)
+            #
+            #     pivot.reset_index(inplace=True)
 
-                if project_to_sk:
-                    pivot = self.project_to_sklen(pivot)
+            centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]). \
+                agg({self.segment_len_col: np.mean,
+                     pivot_roadtype_col: (lambda x: x.value_counts().index[0])
+                     }).reset_index()
+            pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                                           columns=pivot_roadtype_col, aggfunc=np.sum)
 
-                pivot.reset_index(inplace=True)
+            if project_to_sk:
+                pivot = self.project_to_sklen(pivot)
+
+            pivot.reset_index(inplace=True)
 
             missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot))
             pivot[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot.index)
@@ -294,7 +314,14 @@ class RoadTypeSummary(RNISummary):
 
 class SurfaceTypeSummary(RNISummary):
     def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
-        super(SurfaceTypeSummary, self).__init__(output_table="SMD.REKAP_TIPE_PERKERASAN", **kwargs)
+
+        output_table = "SMD.REKAP_TIPE_PERKERASAN"
+        if project_to_sk:
+            output_table = output_table + '_SK'
+        elif lkm:
+            output_table = output_table + '_LKM'
+
+        super(SurfaceTypeSummary, self).__init__(output_table=output_table, **kwargs)
 
         def select_surf_type(series):
             count = series.value_counts()
