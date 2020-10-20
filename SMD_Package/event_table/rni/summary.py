@@ -333,8 +333,8 @@ class SurfaceTypeSummary(RNISummary):
                 if len(same_count) == 1:  # If there is no same count with the most common value.
                     return count.index[0]
                 else:
-                    same_count.reset_index(name='count', inplace=True)
-                    same_count = same_count.merge(surface_order, on='index')
+                    same_count = same_count.reset_index(name='count')
+                    same_count = same_count.merge(surface_order, left_on='index', right_on='_surface_type')
                     min_order = same_count['order'].min()  # The highest available order.
                     highest_ind = same_count.loc[same_count['order'] == min_order].index[0]
 
