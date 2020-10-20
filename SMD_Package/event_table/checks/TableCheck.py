@@ -1953,21 +1953,27 @@ class EventValidation(object):
         route_list = self.route_lane_tuple(df, routeid_col, lane_code, route_only=True)
         for route in route_list:
             df_route = df.loc[df[routeid_col] == route]
+            pci_all_null = np.all(df_route[pci_col].isnull())
 
-            # Check for the consistency for min and max value.
-            if (min_value is not None) and (max_value is not None):
-                df_pci = df_route.loc[(df_route[pci_col] == min_value) |
-                                      (df_route[pci_col] == max_value)]
-            elif (min_value is None) and (max_value is not None):
-                df_pci = df_route.loc[df_route[pci_col] == max_value]
-            elif (max_value is None) and (min_value is not None):
-                df_pci = df_route.loc[df_route[pci_col] == min_value]
-            else:
-                raise TypeError("max_value and min_value could not be None at the same time.")
+            if not pci_all_null:
+                # Check for the consistency for min and max value.
+                if (min_value is not None) and (max_value is not None):
+                    df_pci = df_route.loc[(df_route[pci_col] == min_value) |
+                                          (df_route[pci_col] == max_value)]
+                elif (min_value is None) and (max_value is not None):
+                    df_pci = df_route.loc[df_route[pci_col] == max_value]
+                elif (max_value is None) and (min_value is not None):
+                    df_pci = df_route.loc[df_route[pci_col] == min_value]
+                else:
+                    raise TypeError("max_value and min_value could not be None at the same time.")
 
             if check_null:
                 null_pci = df_route.loc[df_route[pci_col].isnull()]
-                df_pci = df_pci.append(null_pci)
+
+                if pci_all_null:
+                    df_pci = df_route
+                else:
+                    df_pci = df_pci.append(null_pci)
 
             for index, row in df_pci.iterrows():
                 from_m = row[from_m_col]

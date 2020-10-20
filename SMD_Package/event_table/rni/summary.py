@@ -336,7 +336,7 @@ class SurfaceTypeSummary(RNISummary):
                     same_count = same_count.reset_index(name='count')
                     same_count = same_count.merge(surface_order, left_on='index', right_on='_surface_type')
                     min_order = same_count['order'].min()  # The highest available order.
-                    highest_ind = same_count.loc[same_count['order'] == min_order].index[0]
+                    highest_ind = same_count.loc[same_count['order'] == min_order, '_surface_type'].tolist()[0]
 
                     return highest_ind
 
@@ -374,4 +374,5 @@ class SurfaceTypeSummary(RNISummary):
 
             if write_to_db:
                 self._write_to_df(pivot, self.output_table)
+                print str(self.route_selection.index(route)+1) + "/" + str(len(self.route_selection))
 
