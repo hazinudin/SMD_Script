@@ -3,7 +3,7 @@ from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.load_config import SMDConfigs, Configs
 from SMD_Package.TableWriter.GDBTableWriter import gdb_table_writer
 from SMD_Package.event_table.kemantapan.kemantapan import Kemantapan
-from arcpy import env
+from arcpy import env, Exists
 import os
 import pandas as pd
 import numpy as np
@@ -150,11 +150,12 @@ class RNISummary(object):
         source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
                                      sql_prefix='MAX ({0})'.format(self.update_date_col),
                                      sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+        output_table_exist = Exists(output_table)
 
         source_routes = source_date[self.routeid_col].tolist()  # Get the available route from source table.
         self.status.update({_route: "Updated." for _route in source_routes})  # Update the status attribute.
 
-        if not self.force_update:
+        if not self.force_update and output_table_exist:
             output_date = event_fc_to_df(output_table, req_columns, routes, self.routeid_col, env.workspace, True)
             merged = pd.merge(source_date, output_date, on=self.routeid_col, how='outer', suffixes=('_SOURCE', '_TARGET'))
             selection = merged.loc[(merged['UPDATE_DATE_SOURCE'] > merged['UPDATE_DATE_TARGET']) |
@@ -264,9 +265,6 @@ class RoadTypeSummary(RNISummary):
         super(RoadTypeSummary, self).__init__(output_table=output_table, **kwargs)
 
         type_group_df = self.road_type_group_df
-
-        if project_to_sk:
-            self.output_table = self.output_table + "_SK"
 
         for route in self.route_selection:
             df = self.rni_route_df(route)
