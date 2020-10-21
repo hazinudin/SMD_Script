@@ -1981,7 +1981,9 @@ class EventValidation(object):
                 lane = row[lane_code]
                 pci_val = row[pci_col]
 
-                if pci_val is np.nan:  # Convert from numpy nan to python None.
+                if (type(pci_val) == str) or (type(pci_val) == unicode):
+                    pci_val = str(pci_val)
+                elif np.isnan(pci_val):  # Convert from numpy nan to python None.
                     pci_val = None
 
                 asp_rg = row[rg_mask | asp_mask]
