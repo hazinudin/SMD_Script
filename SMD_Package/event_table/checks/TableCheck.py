@@ -631,14 +631,16 @@ class EventValidation(object):
                 last_interval = '{0}-{1}'.format(last_from, last_to)  # The interval value in string
 
                 # Find the row with segment len error, find the index
+                # Exclude the last segment (segment with the largest from_m).
                 error_i = df_route_lane.loc[(~np.isclose(df_route_lane['diff'], df_route_lane[length_col], atol=0.02) |
-                                            (~np.isclose(df_route_lane[length_col], segment_len, atol=0.02)))].index
+                                            (~np.isclose(df_route_lane[length_col], segment_len, atol=0.02))) &
+                                            ~(df_route_lane[from_m_col] == df_route_lane.at[max_to_ind, from_m_col])].index
 
                 # Pop the last segment from the list of invalid segment
-                error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
+                # error_i_pop_last = np.setdiff1d(error_i, max_to_ind)
 
-                if len(error_i_pop_last) != 0:
-                    for error_index in error_i_pop_last:
+                if len(error_i) != 0:
+                    for error_index in error_i:
                         excel_i = error_index + 2  # Create the index for excel table
                         from_m = df_route_lane.at[error_index, from_m_col]  # The from m value
                         to_m = df_route_lane.at[error_index, to_m_col]  # The to m value
