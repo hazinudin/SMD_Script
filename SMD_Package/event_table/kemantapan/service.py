@@ -413,7 +413,7 @@ class KemantapanService(object):
             elif col_dtype == 'float64':
                 gdb_dtype = 'double'
             elif col_dtype in ['int64', 'int32']:
-                gdb_dtype = 'short'
+                gdb_dtype = 'long'
             else:
                 pass
 
