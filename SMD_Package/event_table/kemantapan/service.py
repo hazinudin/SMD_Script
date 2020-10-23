@@ -223,7 +223,8 @@ class KemantapanService(object):
 
         aadt = TrafficSummary(input_df, self.date_col, self.hour_col, self.minute_col, self.routeid_col, self.survey_direc_col,
                               self.veh_col_prefix)
-        self.summary_result = aadt.daily_aadt()
+        summary_table = aadt.daily_aadt()
+        self.summary_result = self.summary_result.append(summary_table)
 
         return self
 
