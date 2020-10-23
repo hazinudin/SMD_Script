@@ -122,7 +122,7 @@ class KemantapanService(object):
         else:  # Includes AADT, LWD, FWD and BB.
             self.lane_based = None
             self.method = None
-            self.output_table = 'SMD.{0}_{1}'.format(self.data_type, self.year)
+            self.output_table = 'SMD.{0}'.format(self.data_type)
 
         if not grade_col_exist and \
                 (self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']):  # Check if the grading column does not exist.
