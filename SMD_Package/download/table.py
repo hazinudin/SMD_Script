@@ -76,6 +76,11 @@ class DownloadBalaiTable(DownloadTable):
         self.create_zipfile(self.output_zipfile, self.files)
 
     def create_sub_divs(self, sub_div):
+        """
+        Create route sub division group based on the sub_div request type.
+        :param sub_div: 'satker' or 'no_prov'
+        :return:
+        """
         if sub_div == 'satker':
             satker_ppk_route_table = self.smd_config.table_names['ppk_route_table']
             satker_route_fields = self.smd_config.table_fields['ppk_route_table']
@@ -95,7 +100,6 @@ class DownloadBalaiTable(DownloadTable):
         elif sub_div == 'no_prov':
             route_prov_df = pd.DataFrame([[x, str(x)[:2]] for x in self.routes], columns=['LINKID', 'NO_PROV'])
             grouped = route_prov_df.groupby('NO_PROV')['LINKID'].apply(list)
-
         else:
             raise ValueError("sub_div is neither 'satker' nor 'no_prov'")
 
