@@ -72,7 +72,8 @@ class DownloadBalaiTable(DownloadTable):
             self.files.append(division_file)
             self.download_as_csv(division_routes, division_file)
 
-        self.create_zipfile(self.request_type + '_' + code + '.zip', self.files)
+        self.output_zipfile = self.request_type + '_' + code + '.zip'  # The output zip file name.
+        self.create_zipfile(self.output_zipfile, self.files)
 
     def create_sub_divs(self, sub_div):
         if sub_div == 'satker':
