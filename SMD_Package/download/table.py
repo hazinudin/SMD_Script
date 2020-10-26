@@ -7,10 +7,6 @@ import os
 
 class DownloadTable(object):
     def __init__(self, table_name, routeid_col="LINKID", **kwargs):
-        self.table_name = table_name
-        self.output_folder = env.scratchFolder  # All of the output file will be stored in this folder.
-        self.routeid_col = routeid_col
-        self.table_exists = Exists(table_name)
 
         smd_config = SMDConfigs()
         if SMDConfigs.smd_dir() == '':
@@ -20,6 +16,11 @@ class DownloadTable(object):
         self.smd_config = smd_config
 
         env.workspace = smd_config.smd_database['instance']
+
+        self.table_name = table_name
+        self.output_folder = env.scratchFolder  # All of the output file will be stored in this folder.
+        self.routeid_col = routeid_col
+        self.table_exists = Exists(table_name)
 
     def download_as_csv(self, routes, output_file, columns="*", **kwargs):
         """
