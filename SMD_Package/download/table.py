@@ -2,6 +2,7 @@ from SMD_Package import event_fc_to_df, SMDConfigs, GetRoutes, output_message
 from arcpy import env, Exists
 import zipfile
 import pandas as pd
+import os
 
 
 class DownloadTable(object):
@@ -12,6 +13,10 @@ class DownloadTable(object):
         self.table_exists = Exists(table_name)
 
         smd_config = SMDConfigs()
+        if SMDConfigs.smd_dir() == '':
+            pass
+        else:
+            os.chdir(SMDConfigs.smd_dir())
         self.smd_config = smd_config
 
         env.workspace = smd_config.smd_database['instance']
