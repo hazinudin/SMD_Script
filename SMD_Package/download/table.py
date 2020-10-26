@@ -49,18 +49,18 @@ class DownloadBalaiTable(DownloadTable):
     """
     Class for downloading table for each Balai.
     """
-    def __init__(self, code_type, code, table_name, sub_div='satker', **kwargs):
+    def __init__(self, type, codes, table_name, sub_div='satker', **kwargs):
         super(DownloadBalaiTable, self).__init__(table_name, **kwargs)
 
-        self.get_route = GetRoutes(code_type, code)
+        self.get_route = GetRoutes(type, codes)
         self.routes = self.get_route.route_list()
         self.table_name = table_name
         self.route_divs = dict()  # The route division dictionary.
         self.files = list()
 
-        if str(code_type) == 'balai':  # The request type either 'BALAI' or 'PROVINSI'
+        if str(type) == 'balai':  # The request type either 'BALAI' or 'PROVINSI'
             self.request_type = 'BALAI'
-        elif str(code_type) == 'no_prov':
+        elif str(type) == 'no_prov':
             self.request_type = 'PROVINSI'
         else:
             self.request_type = '_'
