@@ -67,14 +67,20 @@ class DownloadBalaiTable(DownloadTable):
 
         self.create_sub_divs(sub_div)
 
-        for division in self.route_divs:  # Start download all the data as CSV file.
-            division_routes = self.route_divs[division]
-            division_file = division+'.csv'
-            self.files.append(division_file)
-            self.download_as_csv(division_routes, division_file)
+        if self.table_exists:
+            for division in self.route_divs:  # Start download all the data as CSV file.
+                division_routes = self.route_divs[division]
+                division_file = division+'.csv'
+                self.files.append(division_file)
+                self.download_as_csv(division_routes, division_file)
 
-        self.output_zipfile = self.request_type + '_' + code + '.zip'  # The output zip file name.
-        self.create_zipfile(self.output_zipfile, self.files)
+            self.output_zipfile = '{0}/{1}'.format(self.output_folder,
+                                                   self.request_type + '_' + codes + '.zip')
+            self.create_zipfile(self.output_zipfile, self.files)
+            self.status = "Succeeded."
+        else:
+            self.output_zipfile = "Table does not exists."
+            self.status = "Table does not exists."
 
     def create_sub_divs(self, sub_div):
         """
