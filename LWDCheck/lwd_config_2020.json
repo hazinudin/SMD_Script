@@ -13,7 +13,7 @@
     "AIR_TEMP":{"dtype":"double", "range":{"upper":40, "lower":20, "eq_upper":true, "eq_lower":true, "review":false}, "allow_null":true},
     "SURF_TEMP":{"dtype":"double", "range":{"upper":55, "lower":27, "eq_upper":true, "eq_lower":true, "review":false}, "allow_null":true},
     "SURF_THICKNESS":{"dtype":"double", "range":{"upper":350, "lower":70, "eq_upper":true, "eq_lower":true, "review":true}, "allow_null":true},
-    "LOAD_KG":{"dtype":"double", "allow_null":true},
+    "LOAD_KG":{"dtype":"double", "allow_null":true, "range":{"upper":2035, "lower":1800, "eq_upper":true, "eq_lower":true, "review":true}},
     "LWD_D0":{"dtype":"double", "allow_null":true},
     "LWD_D1":{"dtype":"double", "allow_null":true},
     "LWD_D2":{"dtype":"double", "allow_null":true},
