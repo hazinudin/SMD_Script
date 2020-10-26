@@ -1,5 +1,5 @@
 from SMD_Package import event_fc_to_df, SMDConfigs, GetRoutes
-from arcpy import env
+from arcpy import env, Exists
 import zipfile
 import pandas as pd
 
@@ -9,6 +9,7 @@ class DownloadTable(object):
         self.table_name = table_name
         self.output_folder = env.scratchFolder  # All of the output file will be stored in this folder.
         self.routeid_col = routeid_col
+        self.table_exists = Exists(table_name)
 
         smd_config = SMDConfigs()
         self.smd_config = smd_config
