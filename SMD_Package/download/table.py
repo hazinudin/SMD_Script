@@ -42,9 +42,8 @@ class DownloadTable(object):
         :param input_files: Files to be zipped.
         :return:
         """
-        zip_output_path = '{0}/{1}'.format(self.output_folder, output_zip_file)  # The zip file target directory.
 
-        with zipfile.ZipFile(zip_output_path, 'w') as new_zip:  # Creating a new empty zip file.
+        with zipfile.ZipFile(output_zip_file, 'w') as new_zip:  # Creating a new empty zip file.
             for input_file in input_files:
                 new_zip.write('{0}/{1}'.format(self.output_folder, input_file), input_file)
 
