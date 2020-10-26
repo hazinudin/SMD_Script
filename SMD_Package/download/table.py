@@ -1,4 +1,4 @@
-from SMD_Package import event_fc_to_df, SMDConfigs, GetRoutes
+from SMD_Package import event_fc_to_df, SMDConfigs, GetRoutes, output_message
 from arcpy import env, Exists
 import zipfile
 import pandas as pd
@@ -77,10 +77,10 @@ class DownloadBalaiTable(DownloadTable):
             self.output_zipfile = '{0}/{1}'.format(self.output_folder,
                                                    self.request_type + '_' + codes + '.zip')
             self.create_zipfile(self.output_zipfile, self.files)
-            self.status = "Succeeded."
+            self.status = output_message("Succeeded.", "-")
         else:
             self.output_zipfile = "Table does not exists."
-            self.status = "Table does not exists."
+            self.status = output_message("Failed.", "-")
 
     def create_sub_divs(self, sub_div):
         """
