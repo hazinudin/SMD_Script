@@ -107,7 +107,8 @@ class Deflection(object):
             np.argmin([abs(_ - x) for _ in lookup_thickness])
         ])
 
-        temp_factor = lookup_df.lookup(self.ampt_tlap.round(1), input_thickness)
+        temp_factor = lookup_df.lookup(self.ampt_tlap.apply(lambda x: np.round(x, 1) if np.round(x, 1) < 1.8 else 1.8),
+                                       input_thickness)
         self.sorted[corrected_col] = self.sorted[deflection_col]*temp_factor
 
         return self
