@@ -141,15 +141,14 @@ class FindCoordinateError(object):
 
         return self
 
-    def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', threshold=30, side='ALL',
+    def find_end_error(self, ref_polyline, end_type, ref_distance='lrsDistance', radius=100, threshold=30, side='ALL',
                        same_method=True):
         """
         This class method find error for start or end point.
         :param ref_polyline: The reference data used, should be a Polyline object.
         :param end_type: The end type either 'start' or 'end'.
         :param ref_distance: The reference distance column.
-        :param long_col: The longitude column of the input table.
-        :param lat_col: The latitude column of the input table.
+        :param radius: The valid distance radius in meters.
         :param threshold: The distance threshold in meters.
         :param side: Selected side 'L', 'R' or 'ALL', if 'ALL' then both side will be analyzed.
         :param same_method: The method to calculate valid radius is same for both start and end.
@@ -170,7 +169,7 @@ class FindCoordinateError(object):
 
         grouped = side_selection.groupby([self.to_m_col])
         groups = grouped.groups
-        rads = 100  # Radius threshold for start is rads +- threshold
+        rads = radius  # Radius threshold for start is rads +- threshold
 
         if end_type not in ['start', 'end']:
             raise TypeError("end_type {0} is not 'start' or 'end'.".format(end_type))
