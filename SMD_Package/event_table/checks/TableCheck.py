@@ -823,6 +823,11 @@ class EventValidation(object):
                     segment_group = df_route.loc[(df_route[lane_code] == 'L1') | (df_route[lane_code] == 'R1')].\
                                     groupby(by=[from_m_col, to_m_col])[lane_code].unique().reset_index()
 
+                    if segment_group.empty:
+                        error_msg = "Rute {0} tidak memiliki lane L1 atau R1.".format(route)
+                        self.insert_route_message(route, "error", error_msg)
+                        continue
+
                     g_sorted = segment_group.sort_values(by=from_m_col).reset_index()
                     g_sorted['SHIFTED_FROM_M'] = g_sorted[from_m_col].shift(-1)
                     g_sorted['TO-FROM_GAP'] = g_sorted[to_m_col] - g_sorted['SHIFTED_FROM_M']  # Detect gap/overlap
@@ -1926,7 +1931,7 @@ class EventValidation(object):
 
     def pci_val_check(self, rg_pref='RG_', asp_pref='AS_', pci_col='PCI', routeid_col='LINKID', from_m_col='STA_FROM',
                       to_m_col='STA_TO', lane_code='LANE_CODE', routes='ALL', min_value=0, max_value=100,
-                      check_null=False, **kwargs):
+                      check_null=True, **kwargs):
         """
         This class method will check for consistency between the value of PCI and the RG_x and AS_x columns.
         :param rg_pref: The prefix of Rigid column.
@@ -1957,6 +1962,7 @@ class EventValidation(object):
         for route in route_list:
             df_route = df.loc[df[routeid_col] == route]
             pci_all_null = np.all(df_route[pci_col].isnull())
+            df_pci = pd.DataFrame()
 
             if not pci_all_null:
                 # Check for the consistency for min and max value.
@@ -1976,7 +1982,10 @@ class EventValidation(object):
                 if pci_all_null:
                     df_pci = df_route
                 else:
-                    df_pci = df_pci.append(null_pci)
+                    if df_pci.empty:
+                        df_pci = null_pci
+                    else:
+                        df_pci = df_pci.append(null_pci)
 
             for index, row in df_pci.iterrows():
                 from_m = row[from_m_col]
