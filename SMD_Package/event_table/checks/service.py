@@ -439,7 +439,7 @@ class DeflectionCheck(TableCheckService):
                 if str(force_write) == 'false':
                     self.check.coordinate_check(routes=valid_routes, segment_data=True, lat_col='DEFL_LAT',
                                                 lane_code=None, long_col='DEFL_LONG', comparison='RNIline-LRS',
-                                                window=2, **self.kwargs)
+                                                window=2, radius=500, **self.kwargs)
                     self.check.measurement_check(routes=valid_routes, lane_code=None, tolerance=0, **self.kwargs)
 
                 if str(force_write) == 'true':
