@@ -2,7 +2,7 @@ import pandas as pd
 from zipfile import BadZipfile
 from arcpy import SetParameterAsText
 from SMD_Package.OutputMessage import output_message
-from numpy import nan, unique
+from numpy import nan, unique, all
 import sys
 
 
@@ -20,6 +20,12 @@ def read_input_excel(event_table_path, parameter_index=2):
         try:
             df_self_dtype = pd.read_excel(event_table_path)
             s_converter = {col: str for col in list(df_self_dtype)}  # Create a string converters for read_excel
+            all_str_cols = all([(type(x) == str) | (type(x) == unicode) for x in s_converter.keys()])
+
+            if not all_str_cols:  # Check if all the column is a string/unicode.
+                SetParameterAsText(parameter_index, output_message("Failed", "Terdapat kolom yang bukan text"))
+                sys.exit(0)
+
             col_ar = [x.split('.')[0] for x in s_converter.keys()]
             unique_col_ar = unique(col_ar)
             contain_dup = len(unique_col_ar) != len(col_ar)
