@@ -885,7 +885,7 @@ class EventValidation(object):
     def coordinate_check(self, routes='ALL', routeid_col="LINKID", long_col="STATO_LONG", lat_col="STATO_LAT",
                          from_m_col='STA_FROM', to_m_col='STA_TO', lane_code='LANE_CODE', spatial_ref='4326',
                          length_col='SEGMENT_LENGTH', threshold=30, at_start=False, segment_data=True, comparison='LRS',
-                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100,
+                         window=5, write_error=True, previous_year_table=None, previous_data_mfactor=100, radius=100,
                          kwargs_comparison={}, **kwargs):
         """
         This function checks whether if the segment starting coordinate located not further than
@@ -905,6 +905,7 @@ class EventValidation(object):
         :param write_error: If True then error messages will be written into route message class attribute.
         :param previous_year_table: Previous year table used to check coordinate similarity.
         :param previous_data_mfactor: Conversion factor to convert previous data from-to measurement to match the input.
+        :param radius: The valid radius distance in meters.
         :return:
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
@@ -1096,8 +1097,8 @@ class EventValidation(object):
 
             if segment_data and (comparison == 'LRS'):
                 coordinate_error.find_distance_error('lrsDistance', window=window, threshold=threshold)
-                coordinate_error.find_end_error(route_geom, 'start')
-                coordinate_error.find_end_error(route_geom, 'end')
+                coordinate_error.find_end_error(route_geom, 'start', radius=radius)
+                coordinate_error.find_end_error(route_geom, 'end', radius=radius)
 
                 if lane_code is not None:
                     coordinate_error.find_lane_error(rni_df=rni_df)
@@ -1112,8 +1113,8 @@ class EventValidation(object):
 
             if segment_data and ((comparison == 'RNIseg-LRS') or (comparison == 'RNIline-LRS')):
                 coordinate_error.distance_double_check('rniDistance', 'lrsDistance', window=window, threshold=threshold)
-                coordinate_error.find_end_error(rni_line, 'start', 'rniDistance')
-                coordinate_error.find_end_error(rni_line, 'end', 'rniDistance')
+                coordinate_error.find_end_error(rni_line, 'start', 'rniDistance', radius=radius)
+                coordinate_error.find_end_error(rni_line, 'end', 'rniDistance', radius=radius)
 
                 if lane_code is not None:
                     coordinate_error.find_lane_error(rni_df=rni_df)
