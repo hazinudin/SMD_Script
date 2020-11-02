@@ -2217,8 +2217,8 @@ class EventValidation(object):
 
         for index, row in error_rows.iterrows():
             route = row[routeid_col]
-            from_m = row[from_m_col]
-            to_m = row[to_m_col]
+            from_m = row["_"+from_m_col]
+            to_m = row["_"+to_m_col]
             direction = row[survey_dir_col]
             surface = row['_surface']
             surface_thickness = row[thickness_col]
@@ -2688,10 +2688,11 @@ class EventValidation(object):
                               agg_func={rni_surf_type: lambda x: x.values[0]})
         merged_surf = merged.merge(surface_group, left_on=rni_surf_type, right_on='group')
 
-        all_null_deflection = np.all(merged_surf[deflection_cols].isnull(), axis=1)
+        all_null = np.all(merged_surf[deflection_cols].isnull(), axis=1)
+        any_null = np.any(merged_surf[deflection_cols].isnull(), axis=1)
         not_aspal = merged_surf['index'] != 'aspal'
 
-        error_rows = merged_surf.loc[(not_aspal & ~all_null_deflection) | (~not_aspal & all_null_deflection)]
+        error_rows = merged_surf.loc[(not_aspal & ~all_null) | (~not_aspal & any_null)]
         grouped_error = error_rows.groupby([routeid_col, from_m_col+'_x', to_m_col+'_x'])['index'].max().reset_index()
 
         for index, row in grouped_error.iterrows():
@@ -2701,12 +2702,12 @@ class EventValidation(object):
             category = str(row['index'])
 
             if category != 'aspal':
-                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen rigid/tanah namun memiliki nilai lendutan.".\
-                    format(route, from_m, to_m)
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen rigid/tanah namun memiliki nilai dari salah satu atau semua kolom berikut {3}.".\
+                    format(route, from_m, to_m, deflection_cols)
                 self.insert_route_message(route, 'error', error_msg)
             else:
-                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen aspal namun tidak memiliki nilai lendutan.".\
-                    format(route, from_m, to_m)
+                error_msg = "Rute {0} pada segmen {1}-{2} merupakan segmen aspal namun tidak memiliki nilai dari salah satu atau semua kolom berikut {3}.".\
+                    format(route, from_m, to_m, deflection_cols)
                 self.insert_route_message(route, 'error', error_msg)
 
         return self
