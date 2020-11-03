@@ -360,9 +360,9 @@ class PCICheck(TableCheckService):
         if self.initial_check_passed:
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
-            self.check.segment_duplicate_check(**self.kwargs)
             valid_routes = self.check.valid_route
 
+            self.check.segment_duplicate_check(rotues=valid_routes, **self.kwargs)
             self.check.range_domain_check(routes=valid_routes, **self.kwargs)
             self.check.survey_year_check(self.data_year, **self.kwargs)
             self.check.segment_len_check(routes=valid_routes, **self.kwargs)
