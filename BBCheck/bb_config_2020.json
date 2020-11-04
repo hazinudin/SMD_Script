@@ -11,7 +11,7 @@
     "DEFL_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}},
     "ASPHALT_TEMP":{"dtype":"double", "range":{"upper":63, "lower":null, "eq_upper":false, "eq_lower":false, "review":false}, "allow_null":true},
     "AIR_TEMP":{"dtype":"double", "range":{"upper":40, "lower":20, "eq_upper":true, "eq_lower":true, "review":false}, "allow_null":true},
-    "SURF_TEMP":{"dtype":"double", "range":{"upper":55, "lower":27, "eq_upper":true, "eq_lower":true, "review":false}, "allow_null":true},
+    "SURF_TEMP":{"dtype":"double", "range":{"upper":55, "lower":21, "eq_upper":true, "eq_lower":true, "review":false}, "allow_null":true},
     "SURF_THICKNESS":{"dtype":"double", "range":{"upper":350, "lower":70, "eq_upper":true, "eq_lower":true, "review":true}, "allow_null":true},
     "LOAD_TON":{"dtype":"double", "allow_null":true, "range":{"lower":null, "upper":99999, "eq_lower":false, "eq_upper":true, "review":false}},
     "BB_D1":{"dtype":"double", "allow_null":true},
