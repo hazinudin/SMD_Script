@@ -2659,7 +2659,7 @@ class EventValidation(object):
             self.insert_route_message(route, 'error', msg)
 
     def deflection_surface_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
-                                 to_m_col='TO_STA', **kwargs):
+                                 to_m_col='TO_STA', allow_rigid=True, **kwargs):
         """
         Checks for deflection value for paved segment, unpaved segment should not have any deflection value (all Null).
         :param deflection_cols: The deflection columns to be checked.
@@ -2667,6 +2667,7 @@ class EventValidation(object):
         :param routeid_col: Route ID column.
         :param from_m_col: From Measure column.
         :param to_m_col: To Measure column.
+        :param allow_rigid: Allow deflection data to be filled in the rigid segment.
         :return:
         """
         df = self.selected_route_df(self.copy_valid_df(), routes)
@@ -2692,7 +2693,11 @@ class EventValidation(object):
         any_null = np.any(merged_surf[deflection_cols].isnull(), axis=1)
         not_aspal = merged_surf['index'] != 'aspal'
 
-        error_rows = merged_surf.loc[(not_aspal & ~all_null) | (~not_aspal & any_null)]
+        if allow_rigid:
+            error_rows = merged_surf.loc[(~not_aspal & any_null)]  # Only check for error in the asphalt segment.
+        else:
+            error_rows = merged_surf.loc[(not_aspal & ~all_null) | (~not_aspal & any_null)]  # Check in all surface.
+
         grouped_error = error_rows.groupby([routeid_col, from_m_col+'_x', to_m_col+'_x'])['index'].max().reset_index()
 
         for index, row in grouped_error.iterrows():
