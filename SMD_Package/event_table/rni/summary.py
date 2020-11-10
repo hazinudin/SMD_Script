@@ -73,9 +73,11 @@ class RNISummary(object):
         if (len(self.route_selection) > 1000) or (self.route_req == 'ALL'):
             self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], "ALL",
                                            self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
-        else:
+        elif len(self.route_selection) > 0:
             self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], self.route_selection,
                                            self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
+        else:
+            self.sklen_df = None
 
     @property
     def roadtype_class_col(self):
