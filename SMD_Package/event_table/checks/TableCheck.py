@@ -2289,11 +2289,11 @@ class EventValidation(object):
                                                 **rni_comp_kwargs)
 
             if percentage:  # If the comparison is not lane based
-                current = kemantapan.summary()['mantap_km'].values[0]
-                compare = kemantapan_compare.summary()['mantap_km'].values[0]
+                current = kemantapan.summary()['mantap_psn'].values[0]
+                compare = kemantapan_compare.summary()['mantap_psn'].values[0]
 
                 # Compare the kemantapan percentage between current data and previous data
-                if np.isclose(compare, current, atol=(compare*threshold)):
+                if np.isclose(compare, current, atol=(threshold*100)):
                     pass  # If true then pass
                 else:
                     # Create the error message
