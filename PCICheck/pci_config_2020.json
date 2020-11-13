@@ -55,7 +55,7 @@
     "SEV_RG_PATCHING":{"dtype":"string", "domain":["NA", "R", "S", "T"], "allow_null":true},
     "SEV_RG_SH_DROPOFF":{"dtype":"string", "domain":["NA", "R", "S", "T"], "allow_null":true},
     "SURVEY_DATE":{"dtype":"date"},
-    "SURVEY_YEAR":{"dtype":"integer"},
+    "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":2020, "lower":0, "eq_lower":false, "eq_upper":true, "review":false}},
     "PCI":{"dtype":"double", "allow_null":true},
     "TO_STA_LONG":{"dtype":"double", "range":{"upper":142, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}},
     "TO_STA_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}},

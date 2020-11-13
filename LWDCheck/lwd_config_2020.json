@@ -5,7 +5,7 @@
     "TO_STA":{"dtype":"double"},
     "SEGMENT_LENGTH":{"dtype":"double"},
     "SURVEY_DIREC":{"dtype":"string", "domain":["O", "N"]},
-    "SURVEY_YEAR":{"dtype":"integer"},
+    "SURVEY_YEAR":{"dtype":"integer", "range":{"upper":2020, "lower":0, "eq_upper":true, "eq_lower":false, "review":false}},
     "SURVEY_DATE":{"dtype":"date"},
     "DEFL_LONG":{"dtype":"double", "range":{"upper":142, "lower":95, "eq_lower":true, "eq_upper":true, "review":false}, "allow_null":true},
     "DEFL_LAT":{"dtype":"double", "range":{"upper":6, "lower":-11, "eq_lower":true, "eq_upper":true, "review":false}, "allow_null":true},
