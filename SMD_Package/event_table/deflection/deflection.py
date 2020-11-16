@@ -58,18 +58,22 @@ class Deflection(object):
         elif data_type == 'LWD':
             self.sorted = self.df
 
-        self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
-        self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
-        self.ampt_tlap = 41/self.sorted[asp_temp]  # The AMPT/TLAP series.
-        self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
-        self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
-        self.sorted[self.corr_curvature] = self.sorted[self.corr_d0]-self.sorted[self.corr_d200]
+        if self.sorted is not None:
+            self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
+            self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
+            self.ampt_tlap = 41/self.sorted[asp_temp]  # The AMPT/TLAP series.
+            self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
+            self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
+            self.sorted[self.corr_curvature] = self.sorted[self.corr_d0]-self.sorted[self.corr_d200]
 
     def _sorting(self):
         """
         This class method sort the input DataFrame to get the closest row to referenced force value.
         :return:
         """
+        if np.all(self.df[self.force_col].isnull()): # If all the row in Force column is Null.
+            return None
+
         self.df['_ref_diff'] = self.df[self.force_col]-self.force_ref  # Create the diff column
         self.df['_ref_diff'] = self.df['_ref_diff'].abs()  # Get only the absolute value
         grouped = self.df.groupby([self.route_col, self.survey_direc, self.from_m, self.to_m])  # Do a group by

@@ -449,9 +449,13 @@ class DeflectionCheck(TableCheckService):
             if sorting:
                 deflection = Deflection(self.check.df_valid, 'FORCE', 'FWD', 'FWD_D1', 'FWD_D2', 'ASPHALT_TEMP',
                                         routes=self.check.valid_route, **self.kwargs)
-                self.check.df_valid = deflection._sorting()
-    
-            self.write_to_table(None)
+                sorting = deflection._sorting()
+
+                if sorting is not None:
+                    self.check.df_valid = sorting
+
+            if sorting is not None:  # In case sorting() returns None.
+                self.write_to_table(None)
             self.return_all_message()
 
 
