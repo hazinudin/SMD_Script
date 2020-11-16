@@ -2195,6 +2195,7 @@ class EventValidation(object):
         rni_surface_type = self.config.table_fields['rni']['surface_type']
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
+        df = df.drop(df.loc[df[thickness_col].isnull()].index)  # Drop row with Null Thickness.
         surf_df = self.surftype_df('_surface')  # The surface type DataFrame.
 
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)  # Expand the segment to 100meter segment.
