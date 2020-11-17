@@ -1,5 +1,6 @@
 from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
 from SMD_Package.event_table.traffic.aadt import TrafficSummary
+from SMD_Package.event_table.deflection.deflection import Deflection
 from arcpy import env, ListFields, Exists
 import json
 import pandas as pd
@@ -93,7 +94,7 @@ class KemantapanService(object):
         self.force_col = None
         self.d0_col = None
         self.d200_col = None
-        self.asp_temp = None
+        self.asp_temp = 'ASPHALT_TEMP'
 
         if self.semester is None:
             self.__dict__.update(config[str(self.data_type)][str(self.year)])
@@ -123,6 +124,15 @@ class KemantapanService(object):
             self.lane_based = None
             self.method = None
             self.output_table = 'SMD.{0}'.format(self.data_type)
+
+            if self.data_type == 'LWD':  # The force column for LWD data.
+                self.force_col = "LOAD_KG"
+                self.d0_col = 'LWD_D0'
+                self.d200_col = 'LWD_D1'
+            if self.data_type == 'FWD':  # The force column for FWD data.
+                self.force_col = 'FORCE'
+                self.d0_col = 'FWD_D1'
+                self.d200_col = 'FWD_D2'
 
         if not grade_col_exist and \
                 (self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']):  # Check if the grading column does not exist.
@@ -238,6 +248,10 @@ class KemantapanService(object):
         if input_df.empty:
             self.failed_route.append(route)
             return self
+
+        deflection = Deflection(input_df, self.force_col, self.data_type, self.d0_col, self.d200_col, self.asp_temp)
+        summary_table = deflection.sorted
+        self.summary_result = self.summary_result.append(summary_table)
 
         return self  # TODO: Initialize deflection class from here.
 
