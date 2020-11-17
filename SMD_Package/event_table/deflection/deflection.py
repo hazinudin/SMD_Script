@@ -65,6 +65,7 @@ class Deflection(object):
             self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
             self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
             self.sorted[self.corr_curvature] = self.sorted[self.corr_d0]-self.sorted[self.corr_d200]
+            self.sorted.drop(['OBJECTID', 'SURVEY_DATE', 'UPDATE_DATE'], axis=1, inplace=True)
 
     def _sorting(self):
         """
