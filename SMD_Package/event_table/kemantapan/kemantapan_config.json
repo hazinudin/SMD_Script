@@ -109,5 +109,51 @@
       "survey_direc_col":"SURVEY_DIREC",
       "veh_col_prefix":"NUM_VEH"
     }
+  },
+
+  "FWD": {
+    "2019": {
+      "table_name": "",
+      "routeid_col": "LINKID",
+      "from_m_col": "FROM_STA",
+      "to_m_col": "TO_STA",
+      "force_col": "FORCE",
+      "d0_col": "FWD_D1",
+      "d200_col": "FWD_D2",
+      "date_col": "SURVEY_DATE"
+    },
+    "2020": {
+      "table_name": "SMD.FWD_2020",
+      "routeid_col": "LINKID",
+      "from_m_col": "FROM_STA",
+      "to_m_col": "TO_STA",
+      "force_col": "FORCE",
+      "d0_col": "FWD_D1",
+      "d200_col": "FWD_D2",
+      "date_col": "SURVEY_DATE"
+    }
+  },
+
+  "LWD": {
+    "2019": {
+      "table_name": "",
+      "routeid_col": "LINKID",
+      "from_m_col": "FROM_STA",
+      "to_m_col": "TO_STA",
+      "force_col": "FORCE",
+      "d0_col": "LWD_D0",
+      "d200_col": "LWD_D1",
+      "date_col": "SURVEY_DATE"
+    },
+    "2020": {
+      "table_name": "SMD.LWD_2020",
+      "routeid_col": "LINKID",
+      "from_m_col": "FROM_STA",
+      "to_m_col": "TO_STA",
+      "force_col": "FORCE",
+      "d0_col": "LWD_D0",
+      "d200_col": "LWD_D1",
+      "date_col": "SURVEY_DATE"
+    }
   }
 }
