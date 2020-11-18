@@ -2198,6 +2198,9 @@ class EventValidation(object):
         df = df.drop(df.loc[df[thickness_col].isnull()].index)  # Drop row with Null Thickness.
         surf_df = self.surftype_df('_surface')  # The surface type DataFrame.
 
+        if df.empty:
+            return self
+
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)  # Expand the segment to 100meter segment.
 
         merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection,
