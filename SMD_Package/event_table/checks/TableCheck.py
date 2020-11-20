@@ -1150,6 +1150,14 @@ class EventValidation(object):
         df = self.copy_valid_df()
         df = self.selected_route_df(df, routes)
 
+        # Check if all lane code is correct within the specified domain
+        lane_domains = self.column_details.get('LANE_CODE').get('domain')
+        if lane_domains is not None:
+            all_correct = np.all(df[lane_code].isin(lane_domains))
+
+            if not all_correct:  # If there is invalid value then don't proceed.
+                return self
+
         df['SIDE'] = df[lane_code].apply(lambda x: str(x[0]))
         segment_g = df.groupby([routeid_col, from_m_col, to_m_col, 'SIDE'])[lane_code].unique().reset_index()
 
