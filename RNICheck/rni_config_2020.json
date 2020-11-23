@@ -56,7 +56,7 @@
     "ignore_exceed_ref":true,
     "first_lane_only_gap":true
   },
-    "compare_table":{
+  "compare_table":{
     "table_name":"SMD.RNI_2019_RERUN_2",
     "route_id":"LINKID",
     "from_measure":"STA_FROM",
