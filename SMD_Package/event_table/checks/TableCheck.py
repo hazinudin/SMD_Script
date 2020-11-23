@@ -2670,8 +2670,8 @@ class EventValidation(object):
                 format(route, from_m, to_m)
             self.insert_route_message(route, 'error', msg)
 
-    def deflection_surface_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
-                                 to_m_col='TO_STA', allow_rigid=True, roughness_table='SMD.ROUGHNESS_1_2020', **kwargs):
+    def deflection_null_row_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
+                                  to_m_col='TO_STA', allow_rigid=True, roughness_table='SMD.ROUGHNESS_1_2020', **kwargs):
         """
         Checks for deflection value for paved segment, unpaved segment should not have any deflection value (all Null).
         :param deflection_cols: The deflection columns to be checked.
