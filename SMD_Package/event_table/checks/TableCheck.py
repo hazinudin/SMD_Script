@@ -2671,7 +2671,7 @@ class EventValidation(object):
             self.insert_route_message(route, 'error', msg)
 
     def deflection_surface_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
-                                 to_m_col='TO_STA', allow_rigid=True, **kwargs):
+                                 to_m_col='TO_STA', allow_rigid=True, roughness_table='SMD.ROUGHNESS_1_2020', **kwargs):
         """
         Checks for deflection value for paved segment, unpaved segment should not have any deflection value (all Null).
         :param deflection_cols: The deflection columns to be checked.
@@ -2682,8 +2682,17 @@ class EventValidation(object):
         :param allow_rigid: Allow deflection data to be filled in the rigid segment.
         :return:
         """
+        import copy
+
         df = self.selected_route_df(self.copy_valid_df(), routes)
         rni_surf_type = self.config.table_fields['rni']['surface_type']
+        rni_hor_align = self.config.table_fields['rni']['hor_align']
+        rni_ver_align = self.config.table_fields['rni']['ver_align']
+        rni_added_col = [rni_surf_type, rni_hor_align, rni_ver_align]
+
+        roughness_config = copy.deepcopy(self.config.table_fields['rni'])
+        roughness_config['table_name'] = roughness_table
+
         surface_group = RNISummary.surface_group_df().reset_index()
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col)
 
@@ -2697,16 +2706,32 @@ class EventValidation(object):
             deflection_cols = list(deflection_cols)
 
         # Get the first available surface type from each RNI segment.
-        merged = add_rni_data(df, routeid_col, new_from_col, new_to_col, None, self.sde_connection, rni_surf_type,
-                              agg_func={rni_surf_type: lambda x: x.values[0]})
+        merged = add_rni_data(df, routeid_col, new_from_col, new_to_col, None, self.sde_connection, rni_added_col,
+                              agg_func={rni_surf_type: lambda x: x.values[0],
+                                        rni_hor_align: lambda x: x.values[0],
+                                        rni_ver_align: lambda x: x.values[0]})
+
+        # Add the IRI data from the Roughness table.
+        merged = add_rni_data(merged, routeid_col, new_from_col, new_to_col, None, self.sde_connection, 'IRI',
+                              agg_func={'IRI': lambda x: x.max()}, mfactor=100, rni_kwargs=roughness_config)
+
+        # Merge with surface group details.
         merged_surf = merged.merge(surface_group, left_on=rni_surf_type, right_on='group')
 
         all_null = np.all(merged_surf[deflection_cols].isnull(), axis=1)
         any_null = np.any(merged_surf[deflection_cols].isnull(), axis=1)
+
+        # The conditions.
         not_aspal = merged_surf['index'] != 'aspal'
+        hor_align_allow = merged_surf[rni_hor_align].isin([2, 3])
+        ver_align_allow = merged_surf[rni_ver_align].isin([2, 3])
+        iri_allow = merged_surf['IRI'] >= 12
 
         if allow_rigid:
-            error_rows = merged_surf.loc[(~not_aspal & any_null)]  # Only check for error in the asphalt segment.
+            error_rows = merged_surf.loc[(~not_aspal & any_null) &
+                                         (~hor_align_allow & any_null) &
+                                         (~ver_align_allow & any_null) &
+                                         (~iri_allow & any_null)]  # Only check for error in the asphalt segment.
         else:
             error_rows = merged_surf.loc[(not_aspal & ~all_null) | (~not_aspal & any_null)]  # Check in all surface.
 
