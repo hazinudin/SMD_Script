@@ -36,6 +36,8 @@
       "from_measure":"FROM_STA",
       "to_measure":"TO_STA",
       "surface_type":"SURF_TYPE",
+      "ver_align": "VER_ALIGNMENT",
+      "hor_align": "HOR_ALIGNMENT",
       "lane_width":"LANE_WIDTH",
       "longitude":"TO_STA_LONG",
       "latitude":"TO_STA_LAT",
