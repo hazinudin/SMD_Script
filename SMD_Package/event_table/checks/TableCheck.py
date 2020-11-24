@@ -2685,6 +2685,10 @@ class EventValidation(object):
         import copy
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
+
+        if df.empty:
+            return self
+
         rni_surf_type = self.config.table_fields['rni']['surface_type']
         rni_hor_align = self.config.table_fields['rni']['hor_align']
         rni_ver_align = self.config.table_fields['rni']['ver_align']
