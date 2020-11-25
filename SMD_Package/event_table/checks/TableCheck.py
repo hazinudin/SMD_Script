@@ -2671,7 +2671,8 @@ class EventValidation(object):
             self.insert_route_message(route, 'error', msg)
 
     def deflection_null_row_check(self, deflection_cols=None, routes='ALL', routeid_col='LINKID', from_m_col='FROM_STA',
-                                  to_m_col='TO_STA', allow_rigid=True, roughness_table='SMD.ROUGHNESS_1_2020', **kwargs):
+                                  to_m_col='TO_STA', allow_rigid=True, roughness_table='SMD.ROUGHNESS_1_2020',
+                                  second_roughness_table='SMD.ROUGHNESS_2019_2_RERUN_2', **kwargs):
         """
         Checks for deflection value for paved segment, unpaved segment should not have any deflection value (all Null).
         :param deflection_cols: The deflection columns to be checked.
@@ -2680,6 +2681,8 @@ class EventValidation(object):
         :param from_m_col: From Measure column.
         :param to_m_col: To Measure column.
         :param allow_rigid: Allow deflection data to be filled in the rigid segment.
+        :param roughness_table: The roughness table used to get the IRI data.
+        :param second_roughness_table: The second roughness table used if the data is not available in the first table.
         :return:
         """
         import copy
@@ -2689,6 +2692,7 @@ class EventValidation(object):
         if df.empty:
             return self
 
+        input_routes = df[routeid_col].unique().tolist()
         rni_surf_type = self.config.table_fields['rni']['surface_type']
         rni_hor_align = self.config.table_fields['rni']['hor_align']
         rni_ver_align = self.config.table_fields['rni']['ver_align']
@@ -2716,8 +2720,22 @@ class EventValidation(object):
                                         rni_ver_align: lambda x: x.values[0]})
 
         # Add the IRI data from the Roughness table.
-        merged = add_rni_data(merged, routeid_col, new_from_col, new_to_col, None, self.sde_connection, 'IRI',
-                              agg_func={'IRI': lambda x: x.max()}, mfactor=100, rni_kwargs=roughness_config)
+        merged_iri = add_rni_data(merged, routeid_col, new_from_col, new_to_col, None, self.sde_connection, 'IRI',
+                                  agg_func={'IRI': lambda x: x.max()}, mfactor=100, rni_kwargs=roughness_config)
+        if merged_iri is None:
+            roughness_config['table_name'] = second_roughness_table  # Replace the IRI table
+            roughness_config['from_measure'] = 'STA_FROM'
+            roughness_config['to_measure'] = 'STA_TO'
+            merged_iri = add_rni_data(merged, routeid_col, new_from_col, new_to_col, None, self.sde_connection, 'IRI',
+                                      agg_func={'IRI': lambda x: x.max()}, mfactor=100, rni_kwargs=roughness_config)
+
+        if merged_iri is not None:
+            merged = merged_iri
+        else:
+            for route in input_routes:
+                error_msg = 'Rute {route} tidak memiliki data IRI pada tabel {table1} dan {table2}'.format(
+                    route=input_routes, table1=roughness_table, table2=second_roughness_table)
+                self.insert_route_message(route, 'error', error_msg)
 
         # Merge with surface group details.
         merged_surf = merged.merge(surface_group, left_on=rni_surf_type, right_on='group')
