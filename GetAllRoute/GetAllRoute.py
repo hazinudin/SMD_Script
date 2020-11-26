@@ -27,7 +27,7 @@ input_details = input_json_check(inputJSON, 1, escape_str=True, req_keys=['type'
 
 # Define variable
 queryType = str(input_details['type'])
-queryValue = str(input_details['codes'])
+queryValue = input_details['codes']
 lrsNetwork = config['table_names']['lrs_network']
 balaiTable = config['table_names']['balai_table']
 balaiRouteTable = config['table_names']['balai_route_table']
