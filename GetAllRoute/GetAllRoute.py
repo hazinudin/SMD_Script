@@ -26,8 +26,8 @@ with open('smd_config.json') as config_f:
 input_details = input_json_check(inputJSON, 1, escape_str=True, req_keys=['type', 'codes'])
 
 # Define variable
-queryType = input_details['type']
-queryValue = input_details['codes']
+queryType = str(input_details['type'])
+queryValue = str(input_details['codes'])
 lrsNetwork = config['table_names']['lrs_network']
 balaiTable = config['table_names']['balai_table']
 balaiRouteTable = config['table_names']['balai_route_table']
@@ -52,11 +52,12 @@ for table in [balaiTable, lrsNetwork]:
         SetParameterAsText(1, output_message("Failed", message))
         sys.exit(0)
 
-code_check_result = verify_balai(queryValue, env.workspace, return_false=True)
-if len(code_check_result) != 0:  # If there is an error
-    message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
-    SetParameterAsText(1, output_message("Failed", message))
-    sys.exit(0)
+if queryType == 'balai':
+    code_check_result = verify_balai(queryValue, env.workspace, return_false=True)
+    if len(code_check_result) != 0:  # If there is an error
+        message = "Kode {0} {1} tidak valid.".format(queryType, code_check_result)
+        SetParameterAsText(1, output_message("Failed", message))
+        sys.exit(0)
 
 # Creating the route query request object
 route_query = GetRoutes(queryType, queryValue)
