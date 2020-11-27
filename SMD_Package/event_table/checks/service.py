@@ -444,7 +444,8 @@ class DeflectionCheck(TableCheckService):
 
                 if str(force_write) == 'true':
                     self.check.measurement_check(routes=valid_routes, ignore_end_gap=True, end_only=True,
-                                                 lane_code=None, **self.kwargs)  # The input data should not exceed RNI max M.
+                                                 lane_code=None, start_at_zero=False,
+                                                 **self.kwargs)  # The input data should not exceed RNI max M.
 
             if sorting and len(valid_routes) != 0:
                 deflection = Deflection(self.check.df_valid, 'FORCE', 'FWD', 'FWD_D1', 'FWD_D2', 'ASPHALT_TEMP',
