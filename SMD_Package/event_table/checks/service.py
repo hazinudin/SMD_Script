@@ -433,7 +433,6 @@ class DeflectionCheck(TableCheckService):
             valid_routes = self.check.no_error_route  # Refresh the valid route with no error routes.
 
             if len(valid_routes) != 0:
-                self.check.median_direction_check(routes=valid_routes, **self.kwargs)
                 self.check.surf_thickness_check(routes=valid_routes, **self.kwargs)
 
                 if str(force_write) == 'false':
@@ -441,6 +440,7 @@ class DeflectionCheck(TableCheckService):
                                                 lane_code=None, long_col='DEFL_LONG', comparison='RNIline-LRS',
                                                 window=2, radius=500, **self.kwargs)
                     self.check.measurement_check(routes=valid_routes, lane_code=None, tolerance=0, **self.kwargs)
+                    self.check.median_direction_check(routes=valid_routes, **self.kwargs)
 
                 if str(force_write) == 'true':
                     self.check.measurement_check(routes=valid_routes, ignore_end_gap=True, end_only=True,
