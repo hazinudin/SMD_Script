@@ -253,7 +253,7 @@ class KemantapanService(object):
         summary_table = deflection.sorted
         self.summary_result = self.summary_result.append(summary_table)
 
-        return self  # TODO: Initialize deflection class from here.
+        return self  #
 
     def route_dataframe(self, route):
         """
