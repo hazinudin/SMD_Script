@@ -2221,7 +2221,7 @@ class EventValidation(object):
         grouped_surf = grouped.join(surf_df, on=rni_surface_type, how='inner')
 
         asphalt_error = ((grouped_surf['_surface'] == 'asphalt') &
-                         ((grouped_surf[thickness_col] < 700) | (grouped_surf[thickness_col] > 3500)))
+                         ((grouped_surf[thickness_col] < 70) | (grouped_surf[thickness_col] > 350)))
         rigid_error = ((grouped_surf['_surface'] == 'rigid') &
                        ((grouped_surf[thickness_col] < 150) | (grouped_surf[thickness_col] > 320)))
 
