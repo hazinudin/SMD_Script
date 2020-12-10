@@ -172,8 +172,15 @@ class Kemantapan(object):
             avg_grade = self.graded_df.groupby(by=[self.route_col])[self.grading_col].mean()
 
             pivot_join = pivot_join.join(avg_grade)  # Join the average grade DataFrame.
+            pivot_join = self._create_length_col(pivot_join, ['mantap_km', 'tdk_mantap_km'])
 
         return pivot_join
+
+    @staticmethod
+    def _create_length_col(df, input_columns, length_columns='TOTAL_LENGTH'):
+        df.loc[:, length_columns] = np.sum(df[input_columns], axis=1)
+
+        return df
 
     @staticmethod
     def _add_suffix(pivot_table, suffix, levels=1):
