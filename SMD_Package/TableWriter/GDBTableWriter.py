@@ -24,6 +24,9 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
     env.overwriteOutput = True
     table_exist = Exists(table_name)  # Check if the table already exist in the workspace.
     date_column = 'UPDATE_DATE'
+    cols_dtype = {str(x).upper(): y for x, y in cols_dtype.items()}
+    input_cols_upper = set([str(x).upper() for x in cols_dtype.keys()])  # Get all the input column as upper string.
+    dataframe.rename(columns={x: str(x).upper() for x in list(dataframe)}, inplace=True)  # Change column to uppercase.
 
     if new_table or (not table_exist):  # If the table does not exist or new_table is True, then create new table.
         CreateTable_management(workspace, table_name)
@@ -31,9 +34,14 @@ def gdb_table_writer(workspace, dataframe, table_name, cols_dtype, new_table=Fal
             AddField_management(table_name, col, cols_dtype[col]['dtype'])
 
     existing_col = [str(f.name) for f in ListFields(table_name)]  # List all available table column
+    missing_col = input_cols_upper.difference(existing_col)  # Column in input but does not exist in the target table.
 
     if write_date and (date_column not in existing_col):  # If the date column does not exist
         AddField_management(table_name, date_column, "DATE")
+
+    for col in missing_col:
+        col_dtype = cols_dtype[col]['dtype']
+        AddField_management(table_name, str(col), col_dtype)
 
     input_routes = dataframe[input_routeid].unique().tolist()  # List of every route in the input DataFrame
 
