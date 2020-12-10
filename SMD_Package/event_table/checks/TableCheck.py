@@ -652,14 +652,14 @@ class EventValidation(object):
                         self.insert_route_message(route, 'error', error_message)
 
                 # Check whether the stated length for the last segment match the actual length
-                len_statedlen_diff = last_segment_len - last_segment_statedlen
+                len_statedlen_diff = abs(last_segment_len - last_segment_statedlen)
 
                 if np.isclose(last_segment_len, 0):  # Prevent last segment from having same from-to value.
                     error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memililki nilai {3}-{4} yang sama (panjang = 0).'.\
                         format(last_interval, route, lane, from_m_col, to_m_col)
                     self.insert_route_message(route, 'error', error_message)
                 else:
-                    if len_statedlen_diff > 0.01 and (last_segment_statedlen > last_segment_len):
+                    if len_statedlen_diff > 0.01 or (last_segment_statedlen > last_segment_len):
                         # Create error message
                         error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang yang berbeda dengan yang tertera pada kolom {3} yaitu ({4}).'.\
                             format(last_interval, route, lane, length_col, last_segment_statedlen)
