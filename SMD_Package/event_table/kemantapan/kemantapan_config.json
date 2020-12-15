@@ -1,159 +1,57 @@
 {
   "IRI":{
-    "2019_2":{
-      "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
-      "grading_col":"IRI",
-      "routeid_col":"LINKID",
-      "from_m_col":"STA_FROM",
-      "to_m_col":"STA_TO",
-      "lane_code_col":"LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor":1
-    },
-    "2020_1":{
-      "table_name":"SMD.ROUGHNESS_1_2020",
-      "grading_col":"IRI",
-      "routeid_col":"LINKID",
-      "from_m_col":"FROM_STA",
-      "to_m_col":"TO_STA",
-      "lane_code_col":"LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor":1
-    }
-  },
-
-  "IRI_POK":{
-    "2019_2":{
-      "table_name":"SMD.ROUGHNESS_2_2019_RERUN_2",
-      "grading_col":"IRI_POK",
-      "routeid_col":"LINKID",
-      "from_m_col":"STA_FROM",
-      "to_m_col":"STA_TO",
-      "lane_code_col":"LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor":1
-    },
-    "2020_1":{
-      "table_name":"SMD.ROUGHNESS_1_2020",
-      "grading_col":"IRI_POK",
-      "routeid_col":"LINKID",
-      "from_m_col":"FROM_STA",
-      "to_m_col":"TO_STA",
-      "lane_code_col":"LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor":1
-    }
+    "table_name":"SMD.ROUGHNESS_1_2020",
+    "grading_col":"IRI",
+    "routeid_col":"LINKID",
+    "from_m_col":"STA_FROM",
+    "to_m_col":"STA_TO",
+    "lane_code_col":"LANE_CODE",
+    "date_col":"SURVEY_DATE",
+    "segment_len_col":"SEGMENT_LENGTH",
+    "to_km_factor":1
   },
 
   "PCI": {
-    "2019": {
-      "table_name": "SMD.PCI_2019_RERUN2",
-      "grading_col": "PCI",
-      "routeid_col": "LINKID",
-      "from_m_col": "STA_FROM",
-      "to_m_col": "STA_TO",
-      "lane_code_col": "LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor": 1
-    },
-    "2020": {
-      "table_name": "SMD.PCI_2020",
-      "grading_col": "PCI",
-      "routeid_col": "LINKID",
-      "from_m_col": "FROM_STA",
-      "to_m_col": "TO_STA",
-      "lane_code_col": "LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor": 1
-    }
-  },
-
-  "PCI_POK": {
-    "2019": {
-      "table_name": "SMD.PCI_2019_RERUN2",
-      "grading_col": "PCI_POK",
-      "routeid_col": "LINKID",
-      "from_m_col": "STA_FROM",
-      "to_m_col": "STA_TO",
-      "lane_code_col": "LANE_CODE",
-      "date_col":"SURVEY_DATE",
-      "to_km_factor": 1
-    },
-    "2020": {
-      "table_name": "",
-      "grading_col": "",
-      "routeid_col": "",
-      "from_m_col": "",
-      "to_m_col": "",
-      "lane_code": "",
-      "to_km_factor": 1
-    }
+    "table_name": "SMD.PCI_2020",
+    "grading_col": "PCI",
+    "routeid_col": "LINKID",
+    "from_m_col": "STA_FROM",
+    "to_m_col": "STA_TO",
+    "lane_code_col": "LANE_CODE",
+    "date_col":"SURVEY_DATE",
+    "segment_len_col":"SEGMENT_LENGTH",
+    "to_km_factor": 1
   },
 
   "AADT":{
-    "2019":{
-      "table_name":"SMD.RTC_2019",
-      "date_col":"SURVEY_DATE",
-      "routeid_col":"LINKID",
-      "hour_col":"SURVEY_HOURS",
-      "minute_col":"SURVEY_MINUTE",
-      "survey_direc_col":"SURVEY_DIREC",
-      "veh_col_prefix":"NUM_VEH"
-    },
-    "2020":{
-      "table_name":"SMD.RTC_2020",
-      "date_col":"SURVEY_DATE",
-      "routeid_col":"LINKID",
-      "hour_col":"SURVEY_HOURS",
-      "minute_col":"SURVEY_MINUTE",
-      "survey_direc_col":"SURVEY_DIREC",
-      "veh_col_prefix":"NUM_VEH"
-    }
+    "table_name":"SMD.RTC_2019",
+    "date_col":"SURVEY_DATE",
+    "routeid_col":"LINKID",
+    "hour_col":"SURVEY_HOURS",
+    "minute_col":"SURVEY_MINUTE",
+    "survey_direc_col":"SURVEY_DIREC",
+    "veh_col_prefix":"NUM_VEH"
   },
 
   "FWD": {
-    "2019": {
-      "table_name": "",
-      "routeid_col": "LINKID",
-      "from_m_col": "FROM_STA",
-      "to_m_col": "TO_STA",
-      "force_col": "FORCE",
-      "d0_col": "FWD_D1",
-      "d200_col": "FWD_D2",
-      "date_col": "SURVEY_DATE"
-    },
-    "2020": {
-      "table_name": "SMD.FWD_2020",
-      "routeid_col": "LINKID",
-      "from_m_col": "FROM_STA",
-      "to_m_col": "TO_STA",
-      "force_col": "FORCE",
-      "d0_col": "FWD_D1",
-      "d200_col": "FWD_D2",
-      "date_col": "SURVEY_DATE"
-    }
+    "table_name": "SMD.FWD_2020",
+    "routeid_col": "LINKID",
+    "from_m_col": "FROM_STA",
+    "to_m_col": "TO_STA",
+    "force_col": "FORCE",
+    "d0_col": "FWD_D1",
+    "d200_col": "FWD_D2",
+    "date_col": "SURVEY_DATE"
   },
 
   "LWD": {
-    "2019": {
-      "table_name": "",
-      "routeid_col": "LINKID",
-      "from_m_col": "FROM_STA",
-      "to_m_col": "TO_STA",
-      "force_col": "FORCE",
-      "d0_col": "LWD_D0",
-      "d200_col": "LWD_D1",
-      "date_col": "SURVEY_DATE"
-    },
-    "2020": {
-      "table_name": "SMD.LWD_2020",
-      "routeid_col": "LINKID",
-      "from_m_col": "FROM_STA",
-      "to_m_col": "TO_STA",
-      "force_col": "FORCE",
-      "d0_col": "LWD_D0",
-      "d200_col": "LWD_D1",
-      "date_col": "SURVEY_DATE"
-    }
+    "table_name": "SMD.LWD_2020",
+    "routeid_col": "LINKID",
+    "from_m_col": "FROM_STA",
+    "to_m_col": "TO_STA",
+    "force_col": "FORCE",
+    "d0_col": "LWD_D0",
+    "d200_col": "LWD_D1",
+    "date_col": "SURVEY_DATE"
   }
 }

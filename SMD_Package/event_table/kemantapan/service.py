@@ -97,10 +97,12 @@ class KemantapanService(object):
         self.d200_col = None
         self.asp_temp = 'ASPHALT_TEMP'
 
-        if self.semester is None:
-            self.__dict__.update(config[str(self.data_type)][str(self.year)])
-        else:
-            self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
+        # if self.semester is None:
+        #     self.__dict__.update(config[str(self.data_type)][str(self.year)])
+        # else:
+        #     self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
+
+        self.__dict__.update(config[str(self.data_type)])  # Update class attribute using config.
 
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
         self.kwargs = kwargs
