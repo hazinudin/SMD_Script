@@ -60,6 +60,7 @@ class Kemantapan(object):
         self.grading_col = grading_col
         self.route_col = routeid_col
         self.project_to_sk = False
+        self.segment_len_col = None
 
         self.__dict__.update(kwargs)
 
@@ -87,11 +88,12 @@ class Kemantapan(object):
             merge_df = self.rni_table_join(df_rni, df_event, routeid_col, from_m_col, to_m_col, grading_col,
                                            self.rni_route_col, self.rni_from_col, self.rni_to_col, self.surftype_col, lane_based,
                                            match_only=False, lane_code=lane_code_col, rni_lane_code=self.rni_lane_code,
-                                           agg_method=method)
+                                           agg_method=method, segment_len_col=self.segment_len_col)
             self.merged_df = merge_df
             self.match_only = merge_df.loc[merge_df['_merge'] == 'both']
             self.grading(surftype_col, grading_col)
-            self.mantap_percent = self.kemantapan_percentage(self.graded_df, routeid_col, from_m_col, to_m_col, 0.01)
+            self.mantap_percent = self.kemantapan_percentage(self.graded_df, routeid_col, from_m_col, to_m_col, 0.01,
+                                                             segment_len_col=self.segment_len_col)
             self.no_match_route = merge_df.loc[merge_df['_merge'] == 'left_only', routeid_col].tolist()
 
             if len(self.no_match_route) != 0:
@@ -391,9 +393,10 @@ class Kemantapan(object):
     @staticmethod
     def rni_table_join(df_rni, df_event, route_col, from_m_col, to_m_col, grading_col, rni_route_col, rni_from_col,
                        rni_to_col, surftype_col, lane_based, match_only=True, lane_code=None, rni_lane_code=None,
-                       agg_method='mean'):
+                       agg_method='mean', segment_len_col=None):
         """
         This static method used for joining the input event table and the RNI table
+        :param segment_len_col: The segment length column.
         :param df_rni: The RNI DataFrame.
         :param df_event: The input event DataFrame.
         :param route_col: The column which stores the RouteID for event table.
@@ -415,14 +418,20 @@ class Kemantapan(object):
             input_group_col = [route_col, from_m_col, to_m_col]  # The column used for input groupby
             rni_group_col = [rni_route_col, rni_from_col, rni_to_col]  # The column used for the RNI groupby
             df_rni[surftype_col] = pd.Series(df_rni[surftype_col].astype(int))  # Convert the surftype to integer type
+            input_groupby = df_event.groupby(by=input_group_col)
 
             # GroupBy the input event DataFrame to make summarize the value used for grading from all lane.
             if agg_method == 'mean':
-                input_groupped = df_event.groupby(by=input_group_col)[grading_col].mean().reset_index()
+                input_groupped = input_groupby[grading_col].mean().reset_index()
             elif agg_method == 'max':
-                input_groupped = df_event.groupby(by=input_group_col)[grading_col].max().reset_index()
+                input_groupped = input_groupby[grading_col].max().reset_index()
             else:
                 raise ValueError("'{0}' is not a valid agg_method.".format(agg_method))
+
+            # GroupBy the input event DataFrame to get the segment_length value.
+            if segment_len_col is not None:
+                grouped_segment_len = input_groupby[segment_len_col].max().reset_index()
+                input_groupped = pd.merge(input_groupped, grouped_segment_len, on=input_group_col)
 
             # GroupBy the RNI Table to get the summary of surface type from all lane in a segment.
             # Get the first surface type in single RNI segment group
@@ -556,7 +565,7 @@ class Kemantapan(object):
 
     @staticmethod
     def kemantapan_percentage(df_graded, route_col, from_m_col, to_m_col, to_km_factor, grade_result_col='_grade',
-                              kemantapan_col='_kemantapan'):
+                              kemantapan_col='_kemantapan', segment_len_col=None):
         """
         This function will find the length percentage of every route with 'Mantap' dan 'Tidak Mantap' status.
         :param df_graded: The event DataFrame which already being graded.
@@ -564,8 +573,12 @@ class Kemantapan(object):
         :param kemantapan_col: The newly added column which store the kemantapan status.
         :return: DataFrame with '_kemantapan' column.
         """
-        df_graded.loc[:, '_len'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])
-        df_graded['_len'] = df_graded['_len']*to_km_factor
+        if segment_len_col is None:
+            df_graded.loc[:, '_len'] = pd.Series(df_graded[to_m_col]-df_graded[from_m_col])  # Create the length column.
+            df_graded['_len'] = df_graded['_len']*to_km_factor
+        else:
+            df_graded['_len'] = df_graded[segment_len_col]
+
         df_graded.loc[df_graded[grade_result_col].isin(['good', 'fair']), kemantapan_col] = 'mantap'
         df_graded.loc[df_graded[grade_result_col].isin(['poor', 'bad']), kemantapan_col] = 'tdk_mantap'
 
