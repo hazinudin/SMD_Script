@@ -81,6 +81,7 @@ class KemantapanService(object):
         self.prov_column = 'BM_PROV_ID'
         self.balai_column = 'BALAI_ID'
         self.update_date_col = 'UPDATE_DATE'
+        self.segment_len_col = 'SEGMENT_LENGTH'
         self.force_update = False
         self.project_to_sk = False
 
@@ -158,7 +159,7 @@ class KemantapanService(object):
         for route in self.route_selection:
             if self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']:  # For IRI or PCI
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
-                                     self.grading_col, self.date_col]
+                                     self.grading_col, self.date_col, self.segment_len_col]
                 input_df = self.route_dataframe(route)
                 self.calculate_kemantapan(input_df, route)
 
