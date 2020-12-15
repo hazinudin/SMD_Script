@@ -204,6 +204,12 @@ class RNISummary(object):
 
         return group_df
 
+    @staticmethod
+    def _create_length_col(df, input_columns, length_columns='TOTAL_LENGTH'):
+        df.loc[:, length_columns] = np.sum(df[input_columns], axis=1)
+
+        return df
+
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
