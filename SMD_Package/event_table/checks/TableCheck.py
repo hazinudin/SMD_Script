@@ -2653,6 +2653,10 @@ class EventValidation(object):
         rni_medwidth = smd_config.table_fields['rni']['median']
 
         df = self.selected_route_df(self.copy_valid_df(), routes)
+
+        if df.empty:  # If the query result returns empty DataFrame.
+            return self
+
         self.expand_segment(df, from_m_col=from_m_col, to_m_col=to_m_col, segment_len_col=kwargs.get('length_col'))
 
         merged = add_rni_data(df, routeid_col, "_"+from_m_col, "_"+to_m_col, None, self.sde_connection, rni_medwidth,
