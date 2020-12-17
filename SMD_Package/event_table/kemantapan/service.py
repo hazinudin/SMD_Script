@@ -217,7 +217,7 @@ class KemantapanService(object):
 
         if kemantapan.all_match:
             summary_table = kemantapan.summary().reset_index()
-            self.summary_result = self.summary_result.append(summary_table)
+            self.summary_result = self.summary_result.append(summary_table.round(2))  # Round the result.
 
         self.failed_route += kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
 
