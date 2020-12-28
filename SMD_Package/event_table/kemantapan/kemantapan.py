@@ -4,6 +4,7 @@ import json
 from SMD_Package.FCtoDataFrame import event_fc_to_df
 from SMD_Package.load_config import SMDConfigs
 from arcpy import env
+import cx_Oracle
 import os
 
 
@@ -628,6 +629,195 @@ class Kemantapan(object):
         return group_df.reset_index()
 
 
+class KemantapanSQL(Kemantapan):
+    """
+    Class used for calculating Kemantapan using SQL query.
+    """
+    def __init__(self, routes, data_type, table_name, to_km_factor=0.01, **kwargs):
+        """
+        Initialization.
+        :param routes: Input routes.
+        :param data_type: The data type (IRI or PCI).
+        :param to_km_factor: Multiplier to convert from-to to KM unit.
+        """
+        if SMDConfigs.smd_dir() == '':
+            pass
+        else:
+            os.chdir(SMDConfigs.smd_dir())  # Change directory to SMD root dir.
 
+        # make sure the kemantapan_type is between 'IRI and 'PCI'
+        if data_type not in ['IRI', 'PCI']:
+            raise Exception('{0} is not a valid kemantapan type.'.format(data_type))  # Raise an exception.
+        else:
+            self.type = data_type
 
+            if data_type == 'IRI':
+                grading_col = 'IRI'
+            else:
+                grading_col = 'PCI'
 
+        # Check the input routes
+        if type(routes) == str:
+            routes = [routes]
+        elif type(routes) == list:
+            pass
+        else:
+            raise(Exception('Input routes is neither a str or list'))  # Raise an exception.
+
+        env.workspace = SMDConfigs().smd_database['instance']
+
+        # Get the RNI table details.
+        rni_table = SMDConfigs().table_names['rni']
+        rni_route_col = SMDConfigs().table_fields['rni']['route_id']
+        rni_from_col = SMDConfigs().table_fields['rni']['from_measure']
+        rni_to_col = SMDConfigs().table_fields['rni']['to_measure']
+        rni_lane_code = SMDConfigs().table_fields['rni']['lane_code']
+        surftype_col = SMDConfigs().table_fields['rni']['surface_type']
+
+        lrs_table = SMDConfigs().table_names['lrs_network']
+        lrs_routeid = SMDConfigs().table_fields['lrs_network']['route_id']
+        self.sklen_col = SMDConfigs().table_fields['lrs_network']['sk_length']
+        lrs_cols = [lrs_routeid, self.sklen_col]
+        self.routes = routes
+        self.str_routes = str(routes).strip('[').strip(']')
+        self.grades = ['GOOD', 'FAIR', 'POOR', 'BAD']
+        self.mantap_grade = ['GOOD', 'FAIR']
+        self.columns = list()  # Will be filled with basic grade columns e.g('P_GOOD', 'UP_BAD', etc).
+
+        # RNI table attribute.
+        self.rni_table = rni_table
+        self.rni_route_col = rni_route_col
+        self.rni_from_col = rni_from_col
+        self.rni_to_col = rni_to_col
+        self.rni_lane_code = rni_lane_code
+        self.surftype_col = surftype_col
+
+        # Input table attribute.
+        self.table_name = table_name
+        self.grading_col = grading_col
+        self.route_col = 'LINKID'
+        self.from_m_col = 'FROM_STA'
+        self.to_m_col = 'TO_STA'
+        self.lane_code = 'LANE_CODE'
+        self.project_to_sk = False
+        self.segment_len_col = 'SEGMENT_LENGTH'
+        self.to_km_factor = to_km_factor
+        self.total_len_col = 'TOTAL_LENGTH'
+
+        self.__dict__.update(kwargs)
+
+        # Get the LRS SK Length data.
+        self.sklen_df = event_fc_to_df(lrs_table, lrs_cols, routes, lrs_routeid, env.workspace, True).\
+            set_index(lrs_routeid)
+
+        table_join = self.sql_rni_table_join()
+        groupby_cases = self.sql_groupby_cases()
+        self.basic_grading_query = groupby_cases + ' FROM (' + table_join + ') merged GROUP BY merged.LINKID'
+
+    def execute_sql(self):
+        dsn_tns = cx_Oracle.makedsn('10.10.1.97', '1521', service_name='geodbbm')
+        connection = cx_Oracle.connect('SMD', 'SMD123M', dsn_tns)
+        df_ora = pd.read_sql(self.basic_grading_query, con=connection, params={'to_km_factor': self.to_km_factor})
+
+        return df_ora
+
+    def sql_rni_table_join(self):
+        sql = open('SMD_Package/event_table/kemantapan/table_join.sql')  # Open the SQL file.
+        sql_str = sql.read()
+
+        # The original column and table from the SQL script.
+        # Can be replaced by class attribute.
+        sql_columns = {
+            'route_col': 'LINKID',
+            'from_m_col': 'FROM_STA',
+            'to_m_col': 'TO_STA',
+            'lane_code': 'LANE_CODE',
+            'segment_len_col': 'SEGMENT_LENGTH',
+            'grading_col': 'IRI',
+            'surftype_col': 'SURF_TYPE',
+            'table_name': 'roughness_1_2020',
+            'rni_table': 'rni_2020',
+            'str_routes': "'01001'"
+        }
+
+        # Update the SQL string with class attribute
+        for key, item in sql_columns.items():
+            new_item = self.__dict__[key]
+            sql_str = sql_str.replace(item, new_item)
+
+        return sql_str
+
+    def sql_groupby_cases(self):
+        sql_select = 'SELECT merged.{route_col}, ' \
+                     'SUM(merged.{segment_len_col}) as {total_len_col}, ' \
+                     'AVG(merged.{grading_col}) AS {grading_col}'.format(**self.__dict__)
+
+        upper_end_case = 'WHEN merged.{surftype_col} IN ({types}) and merged.{grading_col} > {value} THEN ' \
+                         'merged.{segment_len_col} '
+
+        lower_end_case = 'WHEN merged.{surftype_col} IN ({types}) and merged.{grading_col} <= {value} THEN ' \
+                         'merged.{segment_len_col} '
+
+        middle_case = 'WHEN merged.{surftype_col} IN ({types}) and merged.{grading_col} > {lower_bound} and  ' \
+                      'merged.{grading_col} <= {upper_bound} THEN merged.{segment_len_col} '
+
+        surftype_df = pd.DataFrame.from_dict(self.group_details()).T.reset_index()
+
+        if self.type == 'IRI':
+            range_column = 'iri_range'
+        else:
+            range_column = 'pci_range'
+
+        sum_cases = list()
+
+        # Group based on the category 'P' or 'UP'
+        category_group = surftype_df.groupby('category').agg({
+            range_column: lambda x: list(x),
+            'group': lambda x: list(x)
+        }).reset_index()
+
+        for index, row in category_group.iterrows():
+            category = row['category']  # 'P' or 'UP'
+            groups = row['group']  # The surface type classification group.
+            grade_ranges = row[range_column]
+
+            category_cases = {grade: '' for grade in self.grades}  # For storing SUM for each grade.
+
+            for group, grade_range in zip(groups, grade_ranges):
+                types = str(group).strip('[').strip(']')
+                grade_range.sort()  # Sort the grade_range values.
+
+                if len(grade_range)+1 != len(self.grades):  # Raise an error for grading level defined in config file.
+                    raise(Exception("Surface type group {0} has less grading level than {1}".
+                                    format(group, self.grades)))
+
+                for i, grade in enumerate(self.grades, start=0):
+                    if i == 0:  # GOOD grade.
+                        value = grade_range[i]
+                        statement = lower_end_case.format(types=types, value=value, **self.__dict__)
+                        category_cases[grade] += statement
+
+                    elif i != len(self.grades)-1:  # FAIR and POOR grade.
+                        lower_bound = grade_range[i-1]
+                        upper_bound = grade_range[i]
+                        statement = middle_case.format(types=types, upper_bound=upper_bound, lower_bound=lower_bound,
+                                                       **self.__dict__)
+                        category_cases[grade] += statement
+
+                    else:  # BAD grade.
+                        value = grade_range[i-1]
+                        statement = upper_end_case.format(types=types, value=value, **self.__dict__)
+                        category_cases[grade] += statement
+
+            for grade, statement in category_cases.items():
+                column_name = "{0}_{1}".format(str(category).upper(), grade)
+                sum_statement = 'SUM(CASE ' + statement + 'ELSE 0 END) AS ' + column_name
+                sum_cases.append(sum_statement)
+                self.columns.append(column_name)  # Append the column name to class attribute.
+
+                sql_select += ', ' + sum_statement
+
+        return sql_select
+
+    def _sql_other_columns(self):
+        pass
