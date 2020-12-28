@@ -45,6 +45,7 @@ class RNISummary(object):
         self.update_date_col = 'UPDATE_DATE'
         self.force_update = False
         self.output_table = output_table
+        self.total_len_col = 'TOTAL_LENGTH'
 
         lrs_table = smd_config.table_names['lrs_network']
         self.lrs_routeid_col = smd_config.table_fields['lrs_network']['route_id']
@@ -249,6 +250,7 @@ class WidthSummary(RNISummary):
                                          aggfunc=np.sum)
             route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
             result = pivot.join(route_g)
+            result[self.total_len_col] = result.sum(axis=1)  # Create the total length column.
 
             if project_to_sk:
                 result = self.project_to_sklen(result).reset_index()
@@ -310,6 +312,7 @@ class RoadTypeSummary(RNISummary):
                 pivot = self.project_to_sklen(pivot)
 
             pivot.reset_index(inplace=True)
+            pivot[self.total_len_col] = pivot.sum(axis=1)
 
             missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot))
             pivot[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot.index)
@@ -380,6 +383,7 @@ class SurfaceTypeSummary(RNISummary):
             missing_col = np.setdiff1d(surfaces, list(pivot))
             pivot[missing_col] = pd.DataFrame(0, index=pivot.index, columns=missing_col)
             pivot.fillna(0, inplace=True)
+            pivot[self.total_len_col] = pivot.sum(axis=1)
 
             if write_to_db:
                 self._write_to_df(pivot, self.output_table)
