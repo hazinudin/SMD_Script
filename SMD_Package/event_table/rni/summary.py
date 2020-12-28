@@ -110,9 +110,10 @@ class RNISummary(object):
         df[[self.from_m_col, self.to_m_col]] = df[[self.from_m_col, self.to_m_col]].astype(int)
         return df
 
-    def _write_to_df(self, df, output_table):
+    def _write_to_df(self, df, output_table, decimal_rounding=2):
         col_details = dict()
         year_col = 'YEAR'
+        df = df.round(decimal_rounding)
         df[year_col] = self.year
 
         for col_name in df.dtypes.to_dict():
