@@ -157,8 +157,12 @@ class KemantapanService(object):
 
         # Select the route request based on source-output update date.
         self.route_selection = self._route_date_selection()
+        _count = 0  # Count for debug print.
 
         for route in self.route_selection:
+            print("{0}/{1} input:{2} output:{3}".
+                  format(_count, len(self.route_selection), self.table_name, self.output_table))  # Print for debug
+
             if self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']:  # For IRI or PCI
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
                                      self.grading_col, self.date_col, self.segment_len_col]
@@ -189,6 +193,8 @@ class KemantapanService(object):
             else:
                 next_route = input_df.groupby(self.routeid_col).agg({self.date_col: 'max', self.prov_column: 'first'})
                 self.route_date = self.route_date.append(next_route)
+
+            _count += 1  # Increment.
 
         self.update_route_status()
         self.success_route = self._success_route()
