@@ -271,12 +271,12 @@ class RoughnessCheck(TableCheckService):
             self.check.segment_duplicate_check(routes=valid_routes, **self.kwargs)
             self.check.range_domain_check(routes=valid_routes, **self.kwargs)
             self.check.survey_year_check(self.data_year, **self.kwargs)
-            self.check.segment_len_check(routes=valid_routes, **self.kwargs)
             self.check.measurement_check(routes=valid_routes, compare_to='RNI', **self.kwargs)
             self.check.lane_direction_check(routes=valid_routes, **self.kwargs)
             self.check.lane_code_check(routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
+                self.check.segment_len_check(routes=valid_routes, **self.kwargs)  # TEMPORARY.
                 self.check.coordinate_check(routes=valid_routes, comparison='RNIline-LRS',
                                             previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table, **self.kwargs)
@@ -310,7 +310,6 @@ class RNICheck(TableCheckService):
             self.check.segment_duplicate_check(routes=valid_routes, **self.kwargs)
             self.check.lane_sequence_check(routes=valid_routes, **self.kwargs)
             self.check.survey_year_check(self.data_year, **self.kwargs)
-            self.check.segment_len_check(routes=valid_routes, **self.kwargs)
             self.check.rni_roadtype_check(road_type_details, routes=valid_routes, **self.kwargs)
             self.check.rni_median_inn_shwidth(r_shwidth='R_INN_SHWIDTH', l_shwidth='L_INN_SHWIDTH',
                                               routes=valid_routes, **self.kwargs)
@@ -329,6 +328,7 @@ class RNICheck(TableCheckService):
                 self.check.side_consistency_check(col, routes=valid_routes, **self.kwargs)
 
             if str(force_write) == 'false':
+                self.check.segment_len_check(routes=valid_routes, **self.kwargs)  # TEMPORARY
                 self.check.coordinate_check(routes=valid_routes, comparison='LRS', previous_year_table=compare_fc,
                                             kwargs_comparison=self.data_config.compare_table,
                                             **self.kwargs)
