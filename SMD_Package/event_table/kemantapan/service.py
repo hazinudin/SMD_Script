@@ -85,6 +85,7 @@ class KemantapanService(object):
         self.segment_len_col = 'SEGMENT_LENGTH'
         self.force_update = False
         self.project_to_sk = False
+        self.chunk_size = 400  # Processing chunks.
 
         # For AADT only
         self.hour_col = None
