@@ -105,7 +105,6 @@ class KemantapanService(object):
         #     self.__dict__.update(config[str(self.data_type)][str(self.year)+'_'+str(self.semester)])
 
         self.__dict__.update(config[str(self.data_type)])  # Update class attribute using config.
-
         self.__dict__.update(request_j)  # Update the class attribute based on the input JSON.
         self.kwargs = kwargs
         grade_col_exist = self.check_grading_column()
@@ -113,7 +112,12 @@ class KemantapanService(object):
         if self.data_type not in ['AADT', 'FWD', 'LWD', 'BB']:  # If the requested summary is other than PCI/IRI.
             request_j = input_json_check(input_json, 1, True, ['routes', 'year',
                                                                'data_type', 'method'])
+
             self.method = str(request_j['method'])  # 'mean', 'max', 'lane_based'
+
+            # Initiate the KemantapanSQL class from here.
+            self.kemantapan = KemantapanSQL(data_type=self.data_type, table_name=self.table_name, method=self.method,
+                                            to_km_factor=self.to_km_factor)
 
             if self.method == 'lane_based':
                 self.lane_based = True
@@ -158,7 +162,7 @@ class KemantapanService(object):
         self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
 
         # Select the route request based on source-output update date.
-        self.route_selection = self._route_date_selection(chunk_size=400)
+        self.route_selection = self._route_date_selection(chunk_size=self.chunk_size)
         _count = 0  # Count for debug print.
 
         for routes in self.route_selection:
@@ -234,8 +238,8 @@ class KemantapanService(object):
         return self
 
     def calculate_kemantapan_sql(self, route):
-        kemantapan = KemantapanSQL(route, self.data_type, self.table_name)
-        self.summary_result = self.summary_result.append(kemantapan.summary())
+        summary = self.kemantapan.summary(route)
+        self.summary_result = self.summary_result.append(summary)
 
         return self
 
