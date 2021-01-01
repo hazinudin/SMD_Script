@@ -280,11 +280,12 @@ class KemantapanService(object):
         :return:
         """
 
-        if (type(route) != str) and (type(route) != unicode):
-            raise ("Route request should be in string.")
-        else:
-            df = event_fc_to_df(self.table_name, self.data_columns, route, self.routeid_col, env.workspace, True)
+        # if (type(route) != str) and (type(route) != unicode):
+        #     raise ("Route request should be in string.")
+        # else:
+        #     df = event_fc_to_df(self.table_name, self.data_columns, route, self.routeid_col, env.workspace, True)
 
+        df = event_fc_to_df(self.table_name, self.data_columns, route, self.routeid_col, env.workspace, True)
         return df
 
     def add_year_semester_col(self):
