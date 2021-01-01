@@ -7,6 +7,9 @@
   },
   "smd_database":{
     "instance":"SMD@10.10.1.97.sde",
+    "ip_address": "10.10.1.97",
+    "port": "1521",
+    "service_name": "geodbbm",
     "username":"SMD",
     "password":"SMD123M"
   },
