@@ -633,7 +633,7 @@ class KemantapanSQL(Kemantapan):
     """
     Class used for calculating Kemantapan using SQL query.
     """
-    def __init__(self, routes, data_type, table_name, to_km_factor=0.01, **kwargs):
+    def __init__(self, data_type, table_name, method='mean', to_km_factor=1, **kwargs):
         """
         Initialization.
         :param routes: Input routes.
@@ -656,14 +656,6 @@ class KemantapanSQL(Kemantapan):
             else:
                 grading_col = 'PCI'
 
-        # Check the input routes
-        if type(routes) == str:
-            routes = [routes]
-        elif type(routes) == list:
-            pass
-        else:
-            raise(Exception('Input routes is neither a str or list'))  # Raise an exception.
-
         env.workspace = SMDConfigs().smd_database['instance']
 
         # Get the RNI table details.
@@ -678,11 +670,16 @@ class KemantapanSQL(Kemantapan):
         lrs_routeid = SMDConfigs().table_fields['lrs_network']['route_id']
         self.sklen_col = SMDConfigs().table_fields['lrs_network']['sk_length']
         lrs_cols = [lrs_routeid, self.sklen_col]
-        self.routes = routes
-        self.str_routes = str(routes).strip('[').strip(']')
         self.grades = ['GOOD', 'FAIR', 'POOR', 'BAD']
         self.mantap_grade = ['GOOD', 'FAIR']
         self.columns = list()  # Will be filled with basic grade columns e.g('P_GOOD', 'UP_BAD', etc).
+
+        if str(method) == 'mean':
+            self.method = 'AVG'
+        elif str(method) == 'max':
+            self.method = 'MAX'
+        else:
+            self.method = str(method)  # Supported method is 'mean', 'max', 'lane_based'
 
         # RNI table attribute.
         self.rni_table = rni_table
@@ -706,24 +703,59 @@ class KemantapanSQL(Kemantapan):
 
         self.__dict__.update(kwargs)
 
-        # Get the LRS SK Length data.
-        self.sklen_df = event_fc_to_df(lrs_table, lrs_cols, routes, lrs_routeid, env.workspace, True).\
-            set_index(lrs_routeid)
-
-        table_join = self.sql_rni_table_join()
-        groupby_cases = self.sql_groupby_cases()
-        self.basic_grading_query = groupby_cases + ' FROM (' + table_join + ') merged GROUP BY merged.LINKID'
-
-    def execute_sql(self):
+    @staticmethod
+    def execute_sql(query, params=None):
         dsn_tns = cx_Oracle.makedsn('10.10.1.97', '1521', service_name='geodbbm')
         connection = cx_Oracle.connect('SMD', 'SMD123M', dsn_tns)
-        df_ora = pd.read_sql(self.basic_grading_query, con=connection, params={'to_km_factor': self.to_km_factor})
+        df_ora = pd.read_sql(query, con=connection, params=params)
 
         return df_ora
 
-    def sql_rni_table_join(self):
-        sql = open('SMD_Package/event_table/kemantapan/table_join.sql')  # Open the SQL file.
-        sql_str = sql.read()
+    @staticmethod
+    def routes_to_str(routes):
+        # Check the input routes
+        if (type(routes) == str) or (type(routes) == unicode):
+            routes = [str(routes)]
+        elif type(routes) == list:
+            pass
+        else:
+            raise(Exception('Input routes is neither a str or list'))  # Raise an exception.
+
+        return str(routes).strip('[').strip(']')
+
+    def df_sql(self, routes):
+        table_join = self.sql_rni_table_join(routes)  # 1st
+        groupby_cases = self.sql_groupby_cases()  # 2nd
+        final_select = self._sql_other_columns()   # 3rd
+        basic_grading_query = groupby_cases + ' FROM (' + table_join + ') merged GROUP BY merged.LINKID'
+
+        final_query = final_select + ' FROM (' + basic_grading_query + ') graded'
+
+        df = self.execute_sql(final_query, params={'to_km_factor': self.to_km_factor})
+        return df
+
+    def summary(self, routes):
+        df = self.df_sql(routes)
+
+        columns_ar = df.columns.to_series()
+        km_columns = columns_ar.loc[columns_ar.apply(lambda _: '_KM' in str(_))].tolist()
+        psn_columns = [str(_).replace('KM', 'PSN') for _ in km_columns]  # Add percentage column (replace KM with PSN).
+        df[psn_columns] = df[km_columns].apply(lambda _: _/df[self.total_len_col]*100)
+
+        return df
+
+    def sql_rni_table_join(self, routes):
+        routes = self.routes_to_str(routes)
+
+        if self.method == 'lane_based':
+            sql = open('SMD_Package/event_table/kemantapan/table_join_lkm.sql')  # Open the SQL file.
+        else:
+            sql = open('SMD_Package/event_table/kemantapan/table_join.sql')
+
+        sql_str = sql.read()  # Read the SQL file as string object.
+
+        # Replace the '01001' (built-in within the SQL) with request routes.
+        sql_str = sql_str.replace("'01001'", routes)
 
         # The original column and table from the SQL script.
         # Can be replaced by class attribute.
@@ -737,7 +769,8 @@ class KemantapanSQL(Kemantapan):
             'surftype_col': 'SURF_TYPE',
             'table_name': 'roughness_1_2020',
             'rni_table': 'rni_2020',
-            'str_routes': "'01001'"
+            # 'str_routes': "'01001'",
+            'method': 'AVG'  # Only change for "mean" and "max" method.
         }
 
         # Update the SQL string with class attribute
@@ -810,7 +843,7 @@ class KemantapanSQL(Kemantapan):
                         category_cases[grade] += statement
 
             for grade, statement in category_cases.items():
-                column_name = "{0}_{1}".format(str(category).upper(), grade)
+                column_name = "{0}_{1}_KM".format(str(category).upper(), grade)
                 sum_statement = 'SUM(CASE ' + statement + 'ELSE 0 END) AS ' + column_name
                 sum_cases.append(sum_statement)
                 self.columns.append(column_name)  # Append the column name to class attribute.
@@ -820,4 +853,48 @@ class KemantapanSQL(Kemantapan):
         return sql_select
 
     def _sql_other_columns(self):
-        pass
+        columns_sr = pd.Series(self.columns)
+        select_statement = "SELECT graded.*"
+        mantap_col_filter = None
+
+        for grade in self.grades:  # Iterate over all the grade.
+            grade_column_sql = str()  # String for storing the column operation.
+            column_filter = columns_sr.apply(lambda x: grade in str(x))
+            grade_columns = columns_sr.loc[column_filter]
+
+            if grade in self.mantap_grade:
+                if mantap_col_filter is None:
+                    mantap_col_filter = column_filter.values
+                else:
+                    mantap_col_filter = mantap_col_filter | column_filter.values
+
+            for index, column in grade_columns.iteritems():
+                if len(grade_column_sql) == 0:
+                    grade_column_sql = '(' + str(column)
+                else:
+                    grade_column_sql += ' + ' + str(column)
+
+            grade_column_sql += ') AS ' + grade + '_KM'
+            select_statement += ', ' + grade_column_sql  # Append to the SELECT statement.
+
+        mantap_columns = columns_sr.loc[mantap_col_filter]  # The MANTAP columns.
+        tdk_mantap_columns = columns_sr.loc[~mantap_col_filter]  # The TIDAK_MANTAP columns.
+
+        mantap_columns = {
+            "MANTAP_KM": mantap_columns,
+            "TDK_MANTAP_KM": tdk_mantap_columns
+        }
+
+        for mantap_column, columns in mantap_columns.items():
+            mantap_sql_column = str()
+
+            for i, column in columns.iteritems():
+                if len(mantap_sql_column) == 0:
+                    mantap_sql_column = '(' + str(column)
+                else:
+                    mantap_sql_column += ' + ' + str(column)
+
+            mantap_sql_column += ') AS ' + mantap_column
+            select_statement += ', ' + mantap_sql_column  # Append to the SELECT statement.
+
+        return select_statement
