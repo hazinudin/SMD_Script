@@ -1,4 +1,5 @@
-from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check
+from SMD_Package import SMDConfigs, GetRoutes, event_fc_to_df, Kemantapan, gdb_table_writer, input_json_check, \
+    KemantapanSQL
 from SMD_Package.event_table.traffic.aadt import TrafficSummary
 from SMD_Package.event_table.deflection.deflection import Deflection
 from arcpy import env, ListFields, Exists
@@ -151,48 +152,50 @@ class KemantapanService(object):
             self.output_table = self.output_table + '_' + self.suffix
 
         self.summary_result = pd.DataFrame()  # For storing all summary result
-        self.route_date = None
+        self.route_date = self.create_route_date(self.date_col)
         self.failed_route = list()  # For storing route which cannot be calculated.
         self.route_status = pd.DataFrame(columns=[self.routeid_col, 'time', 'status'])  # For storing all status for each requested routes.
 
         # Select the route request based on source-output update date.
-        self.route_selection = self._route_date_selection()
+        self.route_selection = self._route_date_selection(chunk_size=400)
         _count = 0  # Count for debug print.
 
-        for route in self.route_selection:
+        for routes in self.route_selection:
             print("{0}/{1} input:{2} output:{3}".
                   format(_count, len(self.route_selection), self.table_name, self.output_table))  # Print for debug
 
             if self.data_type not in ['AADT', 'LWD', 'FWD', 'BB']:  # For IRI or PCI
                 self.data_columns = [self.routeid_col, self.from_m_col, self.to_m_col, self.lane_code_col,
                                      self.grading_col, self.date_col, self.segment_len_col]
-                input_df = self.route_dataframe(route)
-                self.calculate_kemantapan(input_df, route)
+                # input_df = self.route_dataframe(route)
+                # self.calculate_kemantapan(input_df, route)
+                self.calculate_kemantapan_sql(routes)
 
             elif self.data_type == 'AADT':  # For AADT
                 self.data_columns = '*'
-                input_df = self.route_dataframe(route)
-                self.calculate_aadt(input_df, route)
+                input_df = self.route_dataframe(routes)
+                self.calculate_aadt(input_df, routes)
 
             else:  # For deflection data (LWD, FWD, BB)
                 self.data_columns = '*'
-                input_df = self.route_dataframe(route)
-                self.calculate_defl(input_df, route)
+                input_df = self.route_dataframe(routes)
+                self.calculate_defl(input_df, routes)
                 pass  # Insert the calculation class method for Deflection data.
 
-            self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
-            self.route_status.loc[len(self.route_status)+1] = [str(route),
-                                                               datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                               'Succeeded']
-
-            # Get the survey date for each requested routes.
-            # The survey date from each route is used to query the balai and provinsi table.
-            if self.route_date is None:
-                self.route_date = input_df.groupby(self.routeid_col).\
-                    agg({self.date_col: 'max', self.prov_column: 'first'})
-            else:
-                next_route = input_df.groupby(self.routeid_col).agg({self.date_col: 'max', self.prov_column: 'first'})
-                self.route_date = self.route_date.append(next_route)
+            # self._add_prov_id(input_df, self.routeid_col, self.prov_column)  # Add prov column to the input df.
+            for route in routes:
+                self.route_status.loc[len(self.route_status)+1] = [str(route),
+                                                                   datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                                   'Succeeded']
+            #
+            # # Get the survey date for each requested routes.
+            # # The survey date from each route is used to query the balai and provinsi table.
+            # if self.route_date is None:
+            #     self.route_date = input_df.groupby(self.routeid_col).\
+            #         agg({self.date_col: 'max', self.prov_column: 'first'})
+            # else:
+            #     next_route = input_df.groupby(self.routeid_col).agg({self.date_col: 'max', self.prov_column: 'first'})
+            #     self.route_date = self.route_date.append(next_route)
 
             _count += 1  # Increment.
 
@@ -226,6 +229,12 @@ class KemantapanService(object):
             self.summary_result = self.summary_result.append(summary_table.round(2))  # Round the result.
 
         self.failed_route += kemantapan.no_match_route  # Get all the route which failed when merged to RNI.
+
+        return self
+
+    def calculate_kemantapan_sql(self, route):
+        kemantapan = KemantapanSQL(route, self.data_type, self.table_name)
+        self.summary_result = self.summary_result.append(kemantapan.summary())
 
         return self
 
@@ -287,7 +296,7 @@ class KemantapanService(object):
         return self
 
     def add_satker_ppk_id(self):
-        if len(self.success_route) < 1000:
+        if len(self.success_route) < 500:
             satker_df = event_fc_to_df(self.satker_ppk_route_table,
                                        [self.satker_routeid, self.satker_ppk_id, self.satker_id,
                                         self.satker_route_from_date, self.satker_route_to_date], self.success_route,
@@ -384,7 +393,7 @@ class KemantapanService(object):
     def _success_route(self):
         return self.route_status.loc[self.route_status['status'] == 'Succeeded', self.routeid_col].tolist()
 
-    def _route_date_selection(self):
+    def _route_date_selection(self, chunk_size=1):
         if self.routes == 'ALL':
             routes = self.routes
         elif (type(self.routes) == unicode) or (type(self.routes) == str):
@@ -397,9 +406,7 @@ class KemantapanService(object):
             raise ("Route selection is neither list or string.")
 
         req_columns = [self.update_date_col, self.routeid_col]
-        source_date = event_fc_to_df(self.table_name, req_columns, routes, self.routeid_col, env.workspace, True,
-                                     sql_prefix='MAX ({0})'.format(self.update_date_col),
-                                     sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+        source_date = self.create_route_date(self.update_date_col)
 
         if (not self.force_update) and (Exists(self.output_table)):
             output_date = event_fc_to_df(self.output_table, req_columns, routes, self.routeid_col, env.workspace, True)
@@ -414,7 +421,35 @@ class KemantapanService(object):
         self.route_status['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.route_status['status'] = 'Not updated'
 
-        return routes
+        if chunk_size < 1:  # Divide into chunks
+            raise ValueError("Chunk size should be equal or larger than 1.")
+        elif chunk_size == 1:
+            return routes
+        else:
+            chunk_index = [x for x in range(0, len(routes), chunk_size)]
+            chunks = [routes[x: x+chunk_size] if x+chunk_size < len(routes) else
+                      routes[x: len(routes)+1] for x in chunk_index]
+            return chunks
+
+    def create_route_date(self, date_col):
+        if self.routes == 'ALL':
+            routes = self.routes
+        elif (type(self.routes) == unicode) or (type(self.routes) == str):
+            routes = [self.routes]
+        elif type(self.routes) == list:
+            routes = self.routes
+        elif self.routes is None:
+            raise ("No Route parameter in the input JSON.")
+        else:
+            raise ("Route selection is neither list or string.")
+
+        source_date = event_fc_to_df(self.table_name, [date_col, self.routeid_col], routes,
+                                     self.routeid_col, env.workspace, True,
+                                     sql_prefix='MAX ({0})'.format(self.update_date_col),
+                                     sql_postfix='GROUP BY ({0})'.format(self.routeid_col))
+
+        self._add_prov_id(source_date, self.routeid_col, self.prov_column)
+        return source_date
 
     def check_grading_column(self):
         list_fields = ListFields(self.table_name)
