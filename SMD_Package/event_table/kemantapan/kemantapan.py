@@ -888,6 +888,7 @@ class KemantapanSQL(Kemantapan):
         :return: String.
         """
         columns_sr = pd.Series(self.columns)
+        columns_prefix = columns_sr.apply(lambda x: str(x).split('_')[0]).unique()
         select_statement = "SELECT graded.*"
         mantap_col_filter = None
 
@@ -914,12 +915,17 @@ class KemantapanSQL(Kemantapan):
         mantap_columns = columns_sr.loc[mantap_col_filter]  # The MANTAP columns.
         tdk_mantap_columns = columns_sr.loc[~mantap_col_filter]  # The TIDAK_MANTAP columns.
 
-        mantap_columns = {
+        kemantapan_columns = {
             "MANTAP_KM": mantap_columns,
             "TDK_MANTAP_KM": tdk_mantap_columns
         }
 
-        for mantap_column, columns in mantap_columns.items():
+        for prefix in columns_prefix:
+            for kemantapan in ["MANTAP_KM", "TDK_MANTAP_KM"]:
+                columns = kemantapan_columns[kemantapan]
+                kemantapan_columns[prefix+'_'+kemantapan] = columns[columns.str.startswith(prefix)]
+
+        for mantap_column, columns in kemantapan_columns.items():
             mantap_sql_column = str()
 
             for i, column in columns.iteritems():
