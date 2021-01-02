@@ -705,6 +705,12 @@ class KemantapanSQL(Kemantapan):
 
     @staticmethod
     def execute_sql(query, params=None):
+        """
+        Execute SQL script from a string.
+        :param query: SQL string.
+        :param params: SQL parameter.
+        :return: Pandas DataFrame.
+        """
         dsn_tns = cx_Oracle.makedsn('10.10.1.97', '1521', service_name='geodbbm')
         connection = cx_Oracle.connect('SMD', 'SMD123M', dsn_tns)
         df_ora = pd.read_sql(query, con=connection, params=params)
@@ -713,6 +719,11 @@ class KemantapanSQL(Kemantapan):
 
     @staticmethod
     def routes_to_str(routes):
+        """
+        Convert route list to a string for SQL script.
+        :param routes: Routes as string, list or unicode.
+        :return: String.
+        """
         # Check the input routes
         if (type(routes) == str) or (type(routes) == unicode):
             routes = [str(routes)]
@@ -724,6 +735,11 @@ class KemantapanSQL(Kemantapan):
         return str(routes).strip('[').strip(']')
 
     def df_sql(self, routes):
+        """
+        Execute Kemantapan SQL script.
+        :param routes: Routes request.
+        :return: Pandas DataFrame.
+        """
         table_join = self.sql_rni_table_join(routes)  # 1st
         groupby_cases = self.sql_groupby_cases()  # 2nd
         final_select = self._sql_other_columns()   # 3rd
@@ -735,6 +751,11 @@ class KemantapanSQL(Kemantapan):
         return df
 
     def summary(self, routes):
+        """
+        Create summary table from Kemantapan DataFrame, complete with percentage column.
+        :param routes: Rotues request.
+        :return: Pandas DataFrame.
+        """
         df = self.df_sql(routes)
 
         columns_ar = df.columns.to_series()
@@ -745,6 +766,11 @@ class KemantapanSQL(Kemantapan):
         return df
 
     def sql_rni_table_join(self, routes):
+        """
+        SQL table join script
+        :param routes: Routes request.
+        :return: String.
+        """
         routes = self.routes_to_str(routes)
 
         if self.method == 'lane_based':
@@ -781,6 +807,10 @@ class KemantapanSQL(Kemantapan):
         return sql_str
 
     def sql_groupby_cases(self):
+        """
+        SQL group by cases and columns.
+        :return: String.
+        """
         sql_select = 'SELECT merged.{route_col}, ' \
                      'SUM(merged.{segment_len_col}) as {total_len_col}, ' \
                      'AVG(merged.{grading_col}) AS {grading_col}'.format(**self.__dict__)
@@ -853,6 +883,10 @@ class KemantapanSQL(Kemantapan):
         return sql_select
 
     def _sql_other_columns(self):
+        """
+        Additional columns.
+        :return: String.
+        """
         columns_sr = pd.Series(self.columns)
         select_statement = "SELECT graded.*"
         mantap_col_filter = None
