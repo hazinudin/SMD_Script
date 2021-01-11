@@ -666,10 +666,10 @@ class KemantapanSQL(Kemantapan):
         rni_lane_code = SMDConfigs().table_fields['rni']['lane_code']
         surftype_col = SMDConfigs().table_fields['rni']['surface_type']
 
-        lrs_table = SMDConfigs().table_names['lrs_network']
-        lrs_routeid = SMDConfigs().table_fields['lrs_network']['route_id']
+        self.lrs_table = SMDConfigs().table_names['lrs_network']
+        self.lrs_routeid = SMDConfigs().table_fields['lrs_network']['route_id']
         self.sklen_col = SMDConfigs().table_fields['lrs_network']['sk_length']
-        lrs_cols = [lrs_routeid, self.sklen_col]
+        self.lrs_cols = [self.lrs_routeid, self.sklen_col]
         self.grades = ['GOOD', 'FAIR', 'POOR', 'BAD']
         self.mantap_grade = ['GOOD', 'FAIR']
         self.columns = list()  # Will be filled with basic grade columns e.g('P_GOOD', 'UP_BAD', etc).
@@ -750,10 +750,11 @@ class KemantapanSQL(Kemantapan):
         df = self.execute_sql(final_query, params={'to_km_factor': self.to_km_factor})
         return df
 
-    def summary(self, routes):
+    def summary(self, routes, project_to_sk=False):
         """
         Create summary table from Kemantapan DataFrame, complete with percentage column.
         :param routes: Rotues request.
+        :param project_to_sk: If True then all the length column will be projected to SK length.
         :return: Pandas DataFrame.
         """
         df = self.df_sql(routes)
@@ -762,6 +763,13 @@ class KemantapanSQL(Kemantapan):
         km_columns = columns_ar.loc[columns_ar.apply(lambda _: '_KM' in str(_))].tolist()
         psn_columns = [str(_).replace('KM', 'PSN') for _ in km_columns]  # Add percentage column (replace KM with PSN).
         df[psn_columns] = df[km_columns].apply(lambda _: _/df[self.total_len_col]*100)
+
+        if project_to_sk and (self.method != 'lane_based'):
+            sklen_df = event_fc_to_df(self.lrs_table, self.lrs_cols, routes, self.lrs_routeid, env.workspace, True)
+            df = pd.merge(df, sklen_df, left_on=self.route_col, right_on=self.lrs_routeid)
+            df[km_columns] = df[km_columns].apply(lambda _: _ * (df[self.sklen_col] / df[self.total_len_col]))
+            df[self.total_len_col] = df[self.sklen_col]
+            df.drop(self.sklen_col, axis=1, inplace=True)
 
         return df
 

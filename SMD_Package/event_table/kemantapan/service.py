@@ -238,7 +238,7 @@ class KemantapanService(object):
         return self
 
     def calculate_kemantapan_sql(self, route):
-        summary = self.kemantapan.summary(route)
+        summary = self.kemantapan.summary(route, project_to_sk=self.project_to_sk)
         self.summary_result = self.summary_result.append(summary)
 
         return self
