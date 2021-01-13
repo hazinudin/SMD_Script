@@ -609,6 +609,7 @@ class EventValidation(object):
         """
         env.workspace = self.sde_connection  # Setting up the env.workspace
         df = self.copy_valid_df()  # Create a copy of the valid DataFrame
+        orig_df = self.copy_valid_df()  # The unmodified DataFrame.
 
         df[from_m_col] = pd.Series(df[from_m_col] / 100)  # Convert the from measure to Km
         df[to_m_col] = pd.Series(df[to_m_col] / 100)  # Convert the to measure to Km
@@ -623,6 +624,7 @@ class EventValidation(object):
 
                 df_route_lane = df.loc[(df[lane_code] == lane) & (df[routeid_col] == route)]
                 max_to_ind = df_route_lane[from_m_col].idxmax()
+
                 # Rounded
                 last_segment_len = np.round(df_route_lane.at[max_to_ind, 'diff'], 2)  # The last segment real length
                 last_segment_statedlen = df_route_lane.at[max_to_ind, length_col]  # The last segment stated len
@@ -671,6 +673,12 @@ class EventValidation(object):
                         error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki panjang segmen ({3}) yang melebihi {4}km.'.\
                             format(last_interval, route, lane, last_segment_len, segment_len)
                         self.insert_route_message(route, 'error', error_message)
+
+                # Check if the last TO_M is integer OR has .0 decimal.
+                if not last_to.is_integer():
+                    error_message = 'Segmen akhir {0} di rute {1} pada lane {2} memiliki nilai {3}={4} yang bukan merupakan bilangan bulat(integer).'.\
+                        format(last_interval, route, lane, to_m_col, last_to)
+                    self.insert_route_message(route, 'error', error_message)
 
         return self
 
