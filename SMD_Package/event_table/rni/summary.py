@@ -284,6 +284,63 @@ class WidthSummary(RNISummary):
                 self._write_to_df(result, self.output_table)
                 print str(self.route_selection.index(route)) + "/" + str(len(self.route_selection))
 
+    def sql_segment_groupby(self, routes):
+        if (type(routes) == str) or (type(routes) == unicode):
+            pass
+        elif type(routes) == list:
+            routes = [str(_) for _ in routes]
+            routes = str(routes).strip('[').strip(']')
+        else:
+            raise (Exception('Input routes is neither a str or list'))  # Raise an exception.
+
+        seg_groupby = "SELECT {routeid_col}, {from_m_col}, MAX({to_m_col}) AS {to_m_col}, " \
+                      "SUM({lane_width}) AS {lane_width}, MAX({segment_len_col}) AS {segment_len_col}\n" \
+                      "FROM {table_name} \n" \
+                      "WHERE {routeid_col} IN ({routes}) \n" \
+                      "GROUP BY {routeid_col}, {from_m_col}".format(routes=routes, **self.__dict__)
+
+        return seg_groupby
+
+    def sql_route_groupby(self, routes):
+        sql_select = 'SELECT t1.{routeid_col}, \n' \
+                     'SUM(t1.{segment_len_col}) AS {total_len_col}, \n' \
+                     'AVG(t1.{lane_width}) AS {lane_width}, \n'.format(**self.__dict__)
+
+        upper_end_case = 'SUM(CASE WHEN t1.{lane_width} > {value} THEN t1.{segment_len_col} ELSE 0 END)'
+        lower_end_case = 'SUM(CASE WHEN t1.{lane_width} <= {value} THEN t1.{segment_len_col} ELSE 0 END)'
+        middle_case = 'SUM(CASE WHEN t1.{lane_width} > {lower_bound} AND t1.{lane_width} <= {upper_bound} THEN ' \
+                      't1.{segment_len_col} ELSE 0 END)'
+
+        for i, width in enumerate(self.width_range, start=1):  # Iterate over all width range.
+            column_name = self.width_col_pref + str(i)
+            self.columns.append(column_name)
+
+            if i == 1:
+                statement = lower_end_case.format(value=width, **self.__dict__) + " AS " + column_name + ", \n"
+                sql_select += statement
+
+            # elif i != len(self.width_range):
+            else:
+                lower_bound = self.width_range[i-2]
+                upper_bound = width
+                statement = middle_case.format(lower_bound=lower_bound, upper_bound=upper_bound, **self.__dict__)
+                statement += " AS " + column_name + ", \n"
+                sql_select += statement
+
+        # CASE for the last classification.
+        statement = upper_end_case.format(value=max(self.width_range), **self.__dict__) + " AS " + \
+                    self.width_col_pref + str(len(self.width_range)+1) + "\n"
+
+        self.columns.append(self.width_col_pref + str(len(self.width_range)+1))
+
+        sql_select += statement
+
+        sql_select += " FROM( \n" + self.sql_segment_groupby(routes=routes) + ") t1 \n " \
+                                                                                          "GROUP BY t1.{routeid_col}".\
+            format(**self.__dict__)
+
+        return sql_select
+
 
 class RoadTypeSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
