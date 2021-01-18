@@ -289,7 +289,7 @@ class WidthSummary(RNISummary):
 
             if write_to_db:
                 self._write_to_df(result, self.output_table)
-                print str(self.route_selection.index(route)) + "/" + str(len(self.route_selection))
+                print str(self.route_selection.index(route)+1) + "/" + str(len(self.route_selection))
 
     def sql_segment_groupby(self, routes):
         if (type(routes) == str) or (type(routes) == unicode):
