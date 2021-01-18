@@ -465,3 +465,48 @@ class SurfaceTypeSummary(RNISummary):
                 self._write_to_df(pivot, self.output_table)
                 print str(self.route_selection.index(route)+1) + "/" + str(len(self.route_selection))
 
+    def _sql_segment_groupby(self, routes, lkm=False):
+        if (type(routes) == str) or (type(routes) == unicode):
+            pass
+        elif type(routes) == list:
+            routes = [str(_) for _ in routes]
+            routes = str(routes).strip('[').strip(']')
+        else:
+            raise (Exception('Input routes is neither a str or list'))  # Raise an exception.
+
+        if lkm:
+            seg_groupby = "SELECT {routeid_col}, {from_m_col}, {to_m_col}, " \
+                          "{surf_type_col}, {segment_len_col}\n" \
+                          "FROM {table_name} \n" \
+                          "WHERE {routeid_col} IN ({routes}) \n".format(routes=routes, **self.__dict__)
+
+        else:
+            seg_groupby = "SELECT {routeid_col}, {from_m_col}, MAX({to_m_col}) AS {to_m_col}, " \
+                          "MAX({surf_type_col}) AS {surf_type_col}, MAX({segment_len_col}) AS {segment_len_col}\n" \
+                          "FROM {table_name} \n" \
+                          "WHERE {routeid_col} IN ({routes}) \n" \
+                          "GROUP BY {routeid_col}, {from_m_col}".format(routes=routes, **self.__dict__)
+
+        return seg_groupby
+
+    def sql_route_groupby(self, routes, lkm=False):
+        sql_select = 'SELECT t1.{routeid_col}, \n' \
+                     'SUM(t1.{segment_len_col}) AS {total_len_col}\n'.format(**self.__dict__)
+
+        surface_df = self.surface_group_df().reset_index()
+        surface_df = surface_df.groupby('index')['group'].apply(lambda x: list(x))
+
+        case = ", SUM(CASE WHEN t1.{surf_type_col} IN ({surface_group}) THEN t1.{segment_len_col} ELSE 0 END) AS " \
+               "{surface_type} \n"
+
+        for surface_type, surface_group in surface_df.iteritems():
+            str_group = str(surface_group).strip('[').strip(']')
+            statement = case.format(surface_group=str_group, surface_type=str(surface_type).upper(),
+                                    **self.__dict__)
+            sql_select += statement
+
+        sql_select += " FROM( \n" + self._sql_segment_groupby(routes=routes, lkm=lkm) + ") t1 \n " \
+                                                                                          "GROUP BY t1.{routeid_col}".\
+            format(**self.__dict__)
+
+        return sql_select
