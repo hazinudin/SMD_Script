@@ -217,6 +217,20 @@ class RNISummary(object):
 
         return df
 
+    @staticmethod
+    def execute_sql(query, params=None):
+        """
+        Execute SQL script from a string.
+        :param query: SQL string.
+        :param params: SQL parameter.
+        :return: Pandas DataFrame.
+        """
+        dsn_tns = cx_Oracle.makedsn('10.10.1.97', '1521', service_name='geodbbm')
+        connection = cx_Oracle.connect('SMD', 'SMD123M', dsn_tns)
+        df_ora = pd.read_sql(query, con=connection, params=params)
+
+        return df_ora
+
 
 class WidthSummary(RNISummary):
     def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
