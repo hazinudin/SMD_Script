@@ -240,39 +240,46 @@ class WidthSummary(RNISummary):
             output_table = output_table + "_SK"
 
         super(WidthSummary, self).__init__(output_table=output_table, **kwargs)
+        self.columns = None
 
         for route in self.route_selection:
-            df = self.rni_route_df(route)
+            if sql:
+                self.columns = list()  # Change columns into list variable.
+                sql_query = self.sql_route_groupby(route)
+                result = self.execute_sql(sql_query)
+            else:
+                df = self.rni_route_df(route)
 
-            segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
-            lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
-            width_cat_col = 'width_cat'
-            lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
+                segment_g = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col])
+                lane_w_g = segment_g.agg({self.lane_width: 'sum', self.segment_len_col: 'mean'}).reset_index()
+                width_cat_col = 'width_cat'
+                lane_w_g[('%s' % width_cat_col)] = pd.Series(np.nan)
 
-            first_range = self.width_range[0]
-            last_range = self.width_range[len(self.width_range)-1]
-            lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = '{0}1'.format(self.width_col_pref)
-            lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = '{0}{1}'.\
-                format(self.width_col_pref, len(self.width_range))
+                first_range = self.width_range[0]
+                last_range = self.width_range[len(self.width_range)-1]
+                lane_w_g.loc[lane_w_g[self.lane_width] <= first_range, width_cat_col] = '{0}1'.\
+                    format(self.width_col_pref)
+                lane_w_g.loc[lane_w_g[self.lane_width] >= last_range, width_cat_col] = '{0}{1}'.\
+                    format(self.width_col_pref, len(self.width_range))
 
-            for w_range in self.width_range:
-                range_ind = self.width_range.index(w_range)
-                if range_ind == 0:
-                    continue
-                else:
-                    prev_range = self.width_range[range_ind-1]
-                    lane_w_g.loc[((lane_w_g[self.lane_width] <= w_range) &
-                                  (lane_w_g[self.lane_width] > prev_range)),
-                                 width_cat_col] = '{0}{1}'.format(self.width_col_pref, range_ind + 1)
+                for w_range in self.width_range:
+                    range_ind = self.width_range.index(w_range)
+                    if range_ind == 0:
+                        continue
+                    else:
+                        prev_range = self.width_range[range_ind-1]
+                        lane_w_g.loc[((lane_w_g[self.lane_width] <= w_range) &
+                                      (lane_w_g[self.lane_width] > prev_range)),
+                                     width_cat_col] = '{0}{1}'.format(self.width_col_pref, range_ind + 1)
 
-            pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
-                                         aggfunc=np.sum)
-            route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
-            result = pivot.join(route_g)
-            result[self.total_len_col] = result.sum(axis=1)  # Create the total length column.
+                pivot = lane_w_g.pivot_table(self.segment_len_col, index=self.routeid_col, columns=width_cat_col,
+                                             aggfunc=np.sum)
+                route_g = lane_w_g.groupby(self.routeid_col)[self.lane_width].mean()
+                result = pivot.join(route_g)
+                result[self.total_len_col] = result.sum(axis=1)  # Create the total length column.
 
             if project_to_sk:
-                result = self.project_to_sklen(result).reset_index()
+                result = self.project_to_sklen(result, columns=self.columns)
             else:
                 result.reset_index(inplace=True, drop=True)
 
