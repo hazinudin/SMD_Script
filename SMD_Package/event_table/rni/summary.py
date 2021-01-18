@@ -436,40 +436,45 @@ class SurfaceTypeSummary(RNISummary):
                     return highest_ind
 
         pivot_surface_type = '_surface_type'
-
         surface_g_df = self.surface_group_df().reset_index().rename(columns={'index': pivot_surface_type})
         surface_g_df[pivot_surface_type] = surface_g_df[pivot_surface_type].apply(lambda x: str(x).upper())
         surfaces = surface_g_df[pivot_surface_type].tolist()
         surface_order = surface_g_df.groupby(['_surface_type'])['order'].max().reset_index(name='order')
 
         for route in self.route_selection:
-            df = self.rni_route_df(route)
-
-            merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col, right_on='group')
-
-            if lkm:
-                pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-                                           columns=pivot_surface_type, aggfunc=np.sum).reset_index()
-                pivot = pivot.groupby(self.routeid_col).sum().reset_index()
+            if sql:
+                query = self.sql_route_groupby(routes=route, lkm=lkm)
+                result = self.execute_sql(query)
             else:
-                centerline = merged.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
-                    agg({self.segment_len_col: np.mean,
-                         '_surface_type': (lambda x: select_surf_type(x))
-                         }).reset_index()
-                pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
-                                               columns=pivot_surface_type, aggfunc=np.sum)
-                if project_to_sk:
-                    pivot = self.project_to_sklen(pivot)
+                    df = self.rni_route_df(route)
 
-                pivot.reset_index(inplace=True)
+                    merged = df.merge(surface_g_df[[pivot_surface_type, 'group']], left_on=self.surf_type_col,
+                                      right_on='group')
 
-            missing_col = np.setdiff1d(surfaces, list(pivot))
-            pivot[missing_col] = pd.DataFrame(0, index=pivot.index, columns=missing_col)
-            pivot.fillna(0, inplace=True)
-            pivot[self.total_len_col] = pivot.sum(axis=1)
+                    if lkm:
+                        pivot = merged.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                                                   columns=pivot_surface_type, aggfunc=np.sum).reset_index()
+                        pivot = pivot.groupby(self.routeid_col).sum()
+                    else:
+                        centerline = merged.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
+                            agg({self.segment_len_col: np.mean,
+                                 '_surface_type': (lambda x: select_surf_type(x))
+                                 }).reset_index()
+                        pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                                                       columns=pivot_surface_type, aggfunc=np.sum)
+
+                    result = pivot.reset_index(inplace=True)
+
+            if project_to_sk and not lkm:
+                result = self.project_to_sklen(result, surfaces)
+
+            missing_col = np.setdiff1d(surfaces, list(result))
+            result[missing_col] = pd.DataFrame(0, index=result.index, columns=missing_col)
+            result.fillna(0, inplace=True)
+            result[self.total_len_col] = result.sum(axis=1)
 
             if write_to_db:
-                self._write_to_df(pivot, self.output_table)
+                self._write_to_df(result, self.output_table)
                 print str(self.route_selection.index(route)+1) + "/" + str(len(self.route_selection))
 
     def _sql_segment_groupby(self, routes, lkm=False):
