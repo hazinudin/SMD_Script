@@ -406,7 +406,7 @@ class RoadTypeSummary(RNISummary):
 
 
 class SurfaceTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, **kwargs):
+    def __init__(self, write_to_db=True, lkm=False, project_to_sk=False, sql=False, **kwargs):
 
         output_table = "SMD.REKAP_TIPE_PERKERASAN"
         if project_to_sk:
