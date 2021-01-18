@@ -191,8 +191,8 @@ class RNISummary(object):
             type_dict = json.load(j_file)
 
         df = pd.DataFrame.from_dict(type_dict, orient='index').stack().reset_index(level=0)
-        df.rename(columns={'level_0': 'ROAD_TYPE_GROUP', 0: 'ROAD_TYPE'}, inplace=True)
-        df['ROAD_TYPE'] = df['ROAD_TYPE'].astype(int)
+        df.rename(columns={'level_0': 'ROAD_TYPE_GROUP', 0: self.road_type_col}, inplace=True)
+        df[self.road_type_col] = df[self.road_type_col].astype(int)
 
         return df
 
@@ -357,47 +357,53 @@ class RoadTypeSummary(RNISummary):
         super(RoadTypeSummary, self).__init__(output_table=output_table, **kwargs)
 
         type_group_df = self.road_type_group_df
+        groups = type_group_df['ROAD_TYPE_GROUP'].unique().tolist()
+        columns = [self.road_type_col_pref + '_' + str(x) for x in groups]
 
         for route in self.route_selection:
-            df = self.rni_route_df(route)
+            if sql:
+                query = self.sql_route_groupby(route)
+                result = self.execute_sql(query)
+            else:
+                df = self.rni_route_df(route)
 
-            pivot_roadtype_col = '_road_type'
-            df = df.merge(type_group_df, on='ROAD_TYPE')
-            df[pivot_roadtype_col] = df['ROAD_TYPE_GROUP'].apply(lambda x: self.road_type_col_pref + str(x))
+                pivot_roadtype_col = '_road_type'
+                df = df.merge(type_group_df, on=self.road_type_col)
+                df[pivot_roadtype_col] = df['ROAD_TYPE_GROUP'].apply(lambda x: self.road_type_col_pref + str(x))
 
-            # if lkm:
-            #     pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
-            #                            columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
-            #     pivot = pivot.groupby([self.routeid_col]).sum().reset_index()
-            # else:
-            #     centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
-            #         agg({self.segment_len_col: np.mean,
-            #              pivot_roadtype_col: (lambda x: x.value_counts().index[0])
-            #              }).reset_index()
-            #     pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
-            #                                    columns=pivot_roadtype_col, aggfunc=np.sum)
-            #
-            #     if project_to_sk:
-            #         pivot = self.project_to_sklen(pivot)
-            #
-            #     pivot.reset_index(inplace=True)
+                # if lkm:
+                #     pivot = df.pivot_table(self.segment_len_col, index=[self.routeid_col, self.lane_code_col],
+                #                            columns=pivot_roadtype_col, aggfunc=np.sum).reset_index()
+                #     pivot = pivot.groupby([self.routeid_col]).sum().reset_index()
+                # else:
+                #     centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]).\
+                #         agg({self.segment_len_col: np.mean,
+                #              pivot_roadtype_col: (lambda x: x.value_counts().index[0])
+                #              }).reset_index()
+                #     pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                #                                    columns=pivot_roadtype_col, aggfunc=np.sum)
+                #
+                #     if project_to_sk:
+                #         pivot = self.project_to_sklen(pivot)
+                #
+                #     pivot.reset_index(inplace=True)
 
-            centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]). \
-                agg({self.segment_len_col: np.mean,
-                     pivot_roadtype_col: (lambda x: x.value_counts().index[0])
-                     }).reset_index()
-            pivot = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
-                                           columns=pivot_roadtype_col, aggfunc=np.sum)
+                centerline = df.groupby([self.routeid_col, self.from_m_col, self.to_m_col]). \
+                    agg({self.segment_len_col: np.mean,
+                         pivot_roadtype_col: (lambda x: x.value_counts().index[0])
+                         }).reset_index()
+
+                result = centerline.pivot_table(self.segment_len_col, index=[self.routeid_col],
+                                                columns=pivot_roadtype_col, aggfunc=np.sum)
+                result.reset_index(inplace=True)
+                result[self.total_len_col] = result.sum(axis=1)
 
             if project_to_sk:
-                pivot = self.project_to_sklen(pivot)
+                result = self.project_to_sklen(result, columns=columns)
 
-            pivot.reset_index(inplace=True)
-            pivot[self.total_len_col] = pivot.sum(axis=1)
-
-            missing_col = np.setdiff1d(self.roadtype_class_col, list(pivot))
-            pivot[missing_col] = pd.DataFrame(0, columns=missing_col, index=pivot.index)
-            pivot.fillna(0, inplace=True)
+            missing_col = np.setdiff1d(self.roadtype_class_col, list(result))
+            result[missing_col] = pd.DataFrame(0, columns=missing_col, index=result.index)
+            result.fillna(0, inplace=True)
 
             if write_to_db:
                 self._write_to_df(result, self.output_table)
