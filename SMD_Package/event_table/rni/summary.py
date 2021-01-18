@@ -74,10 +74,10 @@ class RNISummary(object):
         # Get the LRS SK length DataFrame.
         if (len(self.route_selection) > 1000) or (self.route_req == 'ALL'):
             self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], "ALL",
-                                           self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
+                                           self.lrs_routeid_col, env.workspace)
         elif len(self.route_selection) > 0:
             self.sklen_df = event_fc_to_df(lrs_table, [self.lrs_routeid_col, self.lrs_sklen_col], self.route_selection,
-                                           self.lrs_routeid_col, env.workspace).set_index(self.lrs_routeid_col)
+                                           self.lrs_routeid_col, env.workspace)
         else:
             self.sklen_df = None
 
