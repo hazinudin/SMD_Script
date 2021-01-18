@@ -400,7 +400,47 @@ class RoadTypeSummary(RNISummary):
             pivot.fillna(0, inplace=True)
 
             if write_to_db:
-                self._write_to_df(pivot, self.output_table)
+                self._write_to_df(result, self.output_table)
+                print str(self.route_selection.index(route)+1) + "/" + str(len(self.route_selection))
+
+    def _sql_segment_groupby(self, routes):
+        if (type(routes) == str) or (type(routes) == unicode):
+            pass
+        elif type(routes) == list:
+            routes = [str(_) for _ in routes]
+            routes = str(routes).strip('[').strip(']')
+        else:
+            raise (Exception('Input routes is neither a str or list'))  # Raise an exception.
+
+        seg_groupby = "SELECT {routeid_col}, {from_m_col}, MAX({to_m_col}) AS {to_m_col}, " \
+                      "MAX({road_type_col}) AS {road_type_col}, MAX({segment_len_col}) AS {segment_len_col}\n" \
+                      "FROM {table_name} \n" \
+                      "WHERE {routeid_col} IN ({routes}) \n" \
+                      "GROUP BY {routeid_col}, {from_m_col}".format(routes=routes, **self.__dict__)
+
+        return seg_groupby
+
+    def sql_route_groupby(self, routes):
+        sql_select = 'SELECT t1.{routeid_col}, \n' \
+                     'SUM(t1.{segment_len_col}) AS {total_len_col}\n'.format(**self.__dict__)
+
+        road_type_df = self.road_type_group_df
+        road_type_ser = road_type_df.groupby('ROAD_TYPE_GROUP')[self.road_type_col].apply(list)
+
+        case = ", SUM(CASE WHEN t1.{road_type_col} IN ({type_group}) THEN t1.{segment_len_col} ELSE 0 END) AS " \
+               "{column_name} \n"
+
+        for road_type, type_group in road_type_ser.iteritems():
+            str_group = str(type_group).strip('[').strip(']')
+            statement = case.format(type_group=str_group, column_name=str(self.road_type_col_pref + "_" + road_type),
+                                    **self.__dict__)
+            sql_select += statement
+
+        sql_select += " FROM( \n" + self._sql_segment_groupby(routes=routes) + ") t1 \n " \
+                                                                                        "GROUP BY t1.{routeid_col}".\
+            format(**self.__dict__)
+
+        return sql_select
 
 
 class SurfaceTypeSummary(RNISummary):
@@ -469,7 +509,6 @@ class SurfaceTypeSummary(RNISummary):
             missing_col = np.setdiff1d(surfaces, list(result))
             result[missing_col] = pd.DataFrame(0, index=result.index, columns=missing_col)
             result.fillna(0, inplace=True)
-            result[self.total_len_col] = result.sum(axis=1)
 
             if write_to_db:
                 self._write_to_df(result, self.output_table)
