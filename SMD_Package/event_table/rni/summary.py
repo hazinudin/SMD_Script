@@ -348,7 +348,7 @@ class WidthSummary(RNISummary):
 
 
 class RoadTypeSummary(RNISummary):
-    def __init__(self, write_to_db=True, project_to_sk=False, **kwargs):
+    def __init__(self, write_to_db=True, project_to_sk=False, sql=True, **kwargs):
 
         output_table = "SMD.REKAP_TIPE_JALAN"
         if project_to_sk:
