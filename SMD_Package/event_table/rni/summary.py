@@ -99,13 +99,17 @@ class RNISummary(object):
 
         return cols
 
-    def project_to_sklen(self, df):
-        df['sum'] = df.sum(axis=1)
-        joined = df.join(self.sklen_df[self.lrs_sklen_col])
-        joined['factor'] = joined[self.lrs_sklen_col]/joined['sum']
-        joined = joined.apply(lambda x:x*x['factor'], axis=1).drop(['factor', 'sum', self.lrs_sklen_col], axis=1)
+    def project_to_sklen(self, df, columns=None):
+        joined = pd.merge(df, self.sklen_df, left_on=self.routeid_col, right_on=self.lrs_routeid_col)
+        joined['factor'] = joined[self.lrs_sklen_col]/joined[self.total_len_col]
 
-        return joined
+        if columns is None:
+            joined = joined.apply(lambda x: x*x['factor'], axis=1)
+        else:
+            joined[columns] = joined[columns].apply(lambda x: x*joined['factor'])
+            joined[self.total_len_col] = joined[self.lrs_sklen_col]
+
+        return joined.drop(['factor', self.lrs_sklen_col], axis=1)
 
     def rni_route_df(self, route):
         df = event_fc_to_df(self.table_name, self.rni_columns, route, self.routeid_col, env.workspace, True)
