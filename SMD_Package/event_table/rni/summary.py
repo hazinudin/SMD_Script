@@ -140,7 +140,7 @@ class RNISummary(object):
 
         gdb_table_writer(env.workspace, df, output_table, col_details, replace_key=[self.routeid_col, year_col])
 
-    def _route_date_selection(self, output_table, chunk_size=100):
+    def _route_date_selection(self, output_table, chunk_size=600):
         if self.route_req == 'ALL':
             routes = self.route_req
         elif (type(self.route_req) == unicode) or (type(self.route_req) == str):
