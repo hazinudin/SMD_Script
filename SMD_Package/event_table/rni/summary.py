@@ -508,6 +508,7 @@ class SurfaceTypeSummary(RNISummary):
                                                        columns=pivot_surface_type, aggfunc=np.sum)
 
                     result = pivot.reset_index(inplace=True)
+                    result[self.total_len_col] = result.sum(axis=1)
 
             if project_to_sk and not lkm:
                 result = self.project_to_sklen(result, surfaces)
