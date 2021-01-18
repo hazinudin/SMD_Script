@@ -8,6 +8,7 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import cx_Oracle
 
 
 class RNISummary(object):
