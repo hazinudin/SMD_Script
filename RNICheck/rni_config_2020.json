@@ -23,7 +23,7 @@
     "R_DITCH_DEPTH":{"dtype":"double", "allow_null":true},
     "R_DITCH_WIDTH":{"dtype":"double", "allow_null":true},
     "MED_WIDTH":{"dtype":"double", "allow_null":true},
-    "ROAD_TYPE":{"dtype":"integer", "range":{"upper":26, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}, "allow_null":true},
+    "ROAD_TYPE":{"dtype":"integer", "range":{"upper":26, "lower":1, "eq_lower":true, "eq_upper":true, "review":false}},
     "L_TERRAIN_TYPE":{"dtype":"string", "domain":["T1", "T2", "T3", "L1", "L2", "L3"], "allow_null":true},
     "R_TERRAIN_TYPE":{"dtype":"string", "domain":["T1", "T2", "T3", "L1", "L2", "L3"], "allow_null":true},
     "VER_ALIGNMENT":{"dtype":"integer", "domain":[1, 2, 3], "allow_null":true},
