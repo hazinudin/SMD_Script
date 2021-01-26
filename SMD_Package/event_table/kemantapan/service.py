@@ -274,6 +274,9 @@ class KemantapanService(object):
 
         deflection = Deflection(input_df, self.force_col, self.data_type, self.d0_col, self.d200_col, self.asp_temp)
         summary_table = deflection.sorted
+
+        summary_table.replace(np.inf, 0, inplace=True)  # Replace the infinite number with zeros
+
         self.summary_result = self.summary_result.append(summary_table)
 
         return self
