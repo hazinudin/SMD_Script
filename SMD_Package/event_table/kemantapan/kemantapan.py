@@ -895,7 +895,7 @@ class KemantapanSQL(Kemantapan):
         Additional columns.
         :return: String.
         """
-        columns_sr = pd.Series(self.columns)
+        columns_sr = pd.Series(pd.Series(self.columns).unique())
         columns_prefix = columns_sr.apply(lambda x: str(x).split('_')[0]).unique()
         select_statement = "SELECT graded.*"
         mantap_col_filter = None
