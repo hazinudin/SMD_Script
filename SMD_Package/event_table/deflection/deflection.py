@@ -61,7 +61,7 @@ class Deflection(object):
         if self.sorted is not None and (not sort_only):
             self.sorted[[self.norm_d0, self.norm_d200]] = self._normalized_d0_d200()  # Create and fill the normalized columns
             self.sorted[self.curvature] = self.sorted[self.norm_d0]-self.sorted[self.norm_d200]  # The d0-d200 columns
-            self.ampt_tlap = 41/self.sorted[asp_temp]  # The AMPT/TLAP series.
+            self.ampt_tlap = 41/abs(self.sorted[asp_temp])  # The AMPT/TLAP series.
             self._temp_correction('d200_temp_correction.json', self.norm_d200, self.corr_d200)
             self._temp_correction('d0_temp_correction.json', self.norm_d0, self.corr_d0)
             self.sorted[self.corr_curvature] = self.sorted[self.corr_d0]-self.sorted[self.corr_d200]
