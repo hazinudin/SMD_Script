@@ -305,7 +305,7 @@ class RNICheck(TableCheckService):
             self.check.route_domain(self.kode_balai, self.route_list)
             self.check.route_selection(selection=self.route_req)
             self.check.range_domain_check(routes=self.check.valid_route, **self.kwargs)
-            valid_routes = self.passed_routes()
+            valid_routes = self.check.valid_route
 
             self.check.segment_duplicate_check(routes=valid_routes, **self.kwargs)
             self.check.lane_sequence_check(routes=valid_routes, **self.kwargs)
