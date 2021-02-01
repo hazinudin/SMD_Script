@@ -358,7 +358,7 @@ class RoadTypeSummary(RNISummary):
 
         type_group_df = self.road_type_group_df
         groups = type_group_df['ROAD_TYPE_GROUP'].unique().tolist()
-        columns = [self.road_type_col_pref + '_' + str(x) for x in groups]
+        columns = [self.road_type_col_pref + str(x) for x in groups]
 
         for route in self.route_selection:
             if sql:
@@ -438,7 +438,7 @@ class RoadTypeSummary(RNISummary):
 
         for road_type, type_group in road_type_ser.iteritems():
             str_group = str(type_group).strip('[').strip(']')
-            statement = case.format(type_group=str_group, column_name=str(self.road_type_col_pref + "_" + road_type),
+            statement = case.format(type_group=str_group, column_name=str(self.road_type_col_pref + road_type),
                                     **self.__dict__)
             sql_select += statement
 
